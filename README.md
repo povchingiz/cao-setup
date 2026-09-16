@@ -1,0 +1,93 @@
+# cao-setup
+
+Portable bootstrap for a CLI Agent Orchestrator (CAO) multi-agent setup.
+One script provisions a fresh **macOS or Ubuntu/Linux** machine: installs CAO
+and four worker CLIs, wires their configs, and applies the fixes needed to make
+all four workers actually run.
+
+## The setup it builds
+
+`cao-run` launches a Claude **supervisor** that delegates to four workers:
+
+| Worker | Engine | Role |
+|--------|--------|------|
+| claude_worker | Claude Code | architecture, contracts, hard logic |
+| jcode_worker | opencode + DeepSeek-V4-Pro (nitec endpoint) | bulk: scaffolding, schemas, CRUD |
+| codex_worker | Codex (ChatGPT plan) | frontend / UI |
+| antigravity_worker | Antigravity (Gemini) | QA, tests, review |
+
+## Quick start
+
+```sh
+git clone <this-repo> ~/cao-setup
+cd ~/cao-setup
+cp .env.example .env          # set LOCAL_API_KEY (DeepSeek endpoint key)
+./bootstrap.sh                # base setup
+# optional: also install the dev-kodeks Claude rules layer
+./bootstrap.sh --with-kodeks
+# optional: also activate the guard-env safety hook (blocks git push/reset etc.)
+./bootstrap.sh --with-kodeks --with-guard-hook
+```
+
+Then the interactive logins the script prints:
+
+```sh
+claude          # /login on first use
+codex login     # ChatGPT browser sign-in
+agy             # Google sign-in if prompted
+```
+
+Then:
+
+```sh
+cao-run
+```
+
+## What the bootstrap does
+
+1. Prereqs: `python3`, `tmux`, `node`/`npm`, `uv` (installs what's missing; brew on mac, apt on Linux).
+2. CAO: `uv tool install` from `awslabs/cli-agent-orchestrator@main`.
+3. Workers via npm: `@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`; `agy` via its official cross-platform installer.
+4. Copies profiles (`agent_store/*.md`), `settings.json`, and the CAO opencode config; registers profiles with `cao install`.
+5. **pyte patch** — lets pyte parse Antigravity's private-SGR ANSI instead of crashing the CAO server.
+6. Skips the Antigravity onboarding wizard; empties `~/.codex/hooks.json` (its startup hook otherwise blocks init with a trust dialog).
+7. Optional dev-kodeks + guard-env hook.
+
+## Files
+
+| Path | What |
+|------|------|
+| `bootstrap.sh` | the provisioner (idempotent) |
+| `cao-run` | launcher: starts daemon, injects key into tmux, launches supervisor |
+| `agent_store/*.md` | 5 CAO profiles (supervisor + 4 workers) |
+| `config/settings.json` | CAO global settings |
+| `config/opencode.json` | CAO-managed opencode config with the nitec/DeepSeek provider |
+| `patches/patch_pyte.py` | idempotent pyte SGR fix |
+| `.env.example` | template for `LOCAL_API_KEY` |
+
+## Secrets
+
+- `LOCAL_API_KEY` lives only in `.env` (gitignored) and is persisted to
+  `~/.config/cao/cao.env` (chmod 600). It is **never** hardcoded — the opencode
+  config references it as `{env:LOCAL_API_KEY}`, and `cao-run` exports it into
+  the tmux server env so worker panes inherit it.
+- Model / endpoint: set in `config/opencode.json` (provider `nitec`,
+  `baseURL: https://llm.nitec.kz/v1`). Models: `deepseek-ai/DeepSeek-V4-Pro`
+  (default), `moonshotai/Kimi-K3`, `zai-org/GLM-5.2-FP8`. Change the default via
+  the `model` field there and the `model:` line in `agent_store/jcode_worker.md`.
+
+## Durability
+
+Re-run `./bootstrap.sh` after any `cao update` — the pyte patch lives in the
+CAO venv (site-packages) and must be re-applied after a reinstall. The patcher
+is idempotent and reports if the patch is already present.
+
+## dev-kodeks (optional)
+
+`--with-kodeks` clones and installs
+[dev-kodeks](https://github.com/povchingiz/dev-kodeks): global Claude Code rules
++ three skills + one hook. It is a **quality/rules layer**, not a CLI provider —
+CAO runs fine without it. Its `guard-env` hook blocks irreversible/environment
+commands (`git push/pull/reset`, `systemctl`, `shutdown`, …). Because CAO
+workers run through `claude`, that hook affects them too, so it is **off by
+default**; enable with `--with-guard-hook`.

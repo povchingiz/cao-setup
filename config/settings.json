@@ -1,0 +1,12 @@
+{
+  "orchestrator": {
+    "default_supervisor": "code_supervisor",
+    "default_provider": "claude_code",
+    "worktree_isolation": true,
+    "max_concurrent_workers": 4,
+    "server_port": 9889
+  },
+  "providers": {
+    "default": "claude_code"
+  }
+}
