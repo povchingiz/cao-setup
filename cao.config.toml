@@ -1,0 +1,54 @@
+# ============================================================
+#  CAO — single source of truth for all NON-SECRET settings.
+#  Edit here, then run:  ./apply.sh
+#  (Secrets live in .env only — never here.)
+# ============================================================
+
+[orchestrator]
+default_supervisor      = "code_supervisor"
+default_provider        = "claude_code"
+worktree_isolation      = true
+max_concurrent_workers  = 4
+server_port             = 9889
+
+# ---- Local OpenAI-compatible endpoint for the bulk worker ----
+# The API key itself is NOT here — it stays in .env as LOCAL_API_KEY and is
+# referenced as {env:LOCAL_API_KEY}. Only the non-secret endpoint + model list.
+[endpoint]
+name     = "nitec"                       # opencode provider id
+base_url  = "https://llm.nitec.kz/v1"
+# Models this endpoint serves (exact ids from `GET /v1/models`).
+models   = [
+  "deepseek-ai/DeepSeek-V4-Pro",
+  "moonshotai/Kimi-K3",
+  "zai-org/GLM-5.2-FP8",
+]
+# Default model the bulk worker uses (must be one of `models` above).
+default_model = "deepseek-ai/DeepSeek-V4-Pro"
+
+# ---- Per-worker provider + model wiring ----
+# provider must be a valid CAO provider id; model applies to opencode workers.
+# Prompts/roles/descriptions live in agent_store/*.md and are NOT touched here.
+[workers.claude_worker]
+provider = "claude_code"
+
+[workers.jcode_worker]
+provider = "opencode_cli"
+# model resolves to "<endpoint.name>/<model>". Leave empty to use default_model.
+model    = "deepseek-ai/DeepSeek-V4-Pro"
+
+[workers.codex_worker]
+provider = "codex"
+
+[workers.antigravity_worker]
+provider = "antigravity_cli"
+
+# Profiles registered with CAO (order = install order). Supervisor first.
+[profiles]
+register = [
+  "code_supervisor",
+  "claude_worker",
+  "jcode_worker",
+  "codex_worker",
+  "antigravity_worker",
+]

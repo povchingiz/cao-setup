@@ -1,7 +1,7 @@
 ---
 name: claude_worker
 description: "Lead architect for contracts, domain logic, and system refactoring."
-provider: claude_code
+provider: "claude_code"
 role: developer
 mcpServers:
   cao-mcp-server:

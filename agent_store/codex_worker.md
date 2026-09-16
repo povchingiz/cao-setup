@@ -1,7 +1,7 @@
 ---
 name: codex_worker
 description: "Frontend developer specialized in React/Vue/Svelte, CSS, templates, and UI components."
-provider: codex
+provider: "codex"
 role: developer
 mcpServers:
   cao-mcp-server:

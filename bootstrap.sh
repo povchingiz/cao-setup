@@ -105,18 +105,23 @@ if ! command -v agy >/dev/null 2>&1; then
 fi
 hash -r || true
 
-# --- 4. Profiles + configs ---------------------------------------------------
-log "Placing agent profiles..."
+# --- 4. Render config, then place profiles -----------------------------------
+log "Rendering settings + opencode + worker frontmatter from cao.config.toml..."
+mkdir -p "$HOME/.config/cao" "$HOME/.aws/opencode"
+CAO_PY="$HOME/.local/share/uv/tools/cli-agent-orchestrator/bin/python"
+if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
+  "$CAO_PY" "$HERE/render_config.py"
+elif python3 -c 'import tomllib' 2>/dev/null; then
+  python3 "$HERE/render_config.py"
+else
+  warn "No Python with tomllib; falling back to committed config files."
+  cp "$HERE/config/settings.json" "$HOME/.config/cao/settings.json"
+  cp "$HERE/config/opencode.json" "$HOME/.aws/opencode/opencode.json"
+fi
+
+log "Placing agent profiles (post-render frontmatter)..."
 mkdir -p "$HOME/.aws/cli-agent-orchestrator/agent_store"
 cp "$HERE"/agent_store/*.md "$HOME/.aws/cli-agent-orchestrator/agent_store/"
-
-log "Placing global settings..."
-mkdir -p "$HOME/.config/cao"
-cp "$HERE/config/settings.json" "$HOME/.config/cao/settings.json"
-
-log "Placing CAO-managed opencode config (nitec/DeepSeek provider)..."
-mkdir -p "$HOME/.aws/opencode"
-cp "$HERE/config/opencode.json" "$HOME/.aws/opencode/opencode.json"
 
 log "Installing cao-run launcher..."
 mkdir -p "$HOME/.local/bin"

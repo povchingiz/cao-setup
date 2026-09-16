@@ -1,7 +1,7 @@
 ---
 name: jcode_worker
 description: "High-speed local bulk code generator using DeepSeek."
-provider: opencode_cli
+provider: "opencode_cli"
 role: developer
 model: "nitec/deepseek-ai/DeepSeek-V4-Pro"
 mcpServers:

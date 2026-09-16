@@ -1,7 +1,7 @@
 ---
 name: antigravity_worker
 description: "QA automation, integration test suites, and edge-case security reviewer."
-provider: antigravity_cli
+provider: "antigravity_cli"
 role: reviewer
 mcpServers:
   cao-mcp-server:
