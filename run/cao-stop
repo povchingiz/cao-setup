@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# cao-stop — shut down the orchestrator: worker/supervisor tmux sessions + daemon.
+# Nothing in CAO auto-stops (workers survive detach by design), so this is how you
+# end a work session cleanly.
+#
+#   cao-stop            stop the daemon + every cao- tmux session (default)
+#   cao-stop --workers  stop worker sessions only, leave the supervisor + daemon up
+#   cao-stop --keep-server / -k
+#                       kill the tmux sessions but leave the daemon running
+set -e
+
+SERVER_PORT=9889
+MODE=all
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --workers)              MODE=workers ;;
+    --keep-server|-k)       MODE=keep-server ;;
+    -h|--help)
+      grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "unknown flag: $1 (see --help)"; exit 1 ;;
+  esac
+  shift
+done
+
+killed=0
+if command -v tmux >/dev/null 2>&1 && tmux ls >/dev/null 2>&1; then
+  # cao- prefixes every session cao-run/assign creates. Supervisor = cao-supervisor.
+  for s in $(tmux ls -F '#{session_name}' 2>/dev/null | grep '^cao-' || true); do
+    if [ "$MODE" = workers ] && [ "$s" = "cao-supervisor" ]; then
+      continue   # --workers keeps the supervisor
+    fi
+    tmux kill-session -t "$s" 2>/dev/null && { echo "✓ stopped tmux session $s"; killed=1; }
+  done
+fi
+[ "$killed" = 0 ] && echo "· no cao- tmux sessions running"
+
+if [ "$MODE" = workers ] || [ "$MODE" = keep-server ]; then
+  echo "· daemon left running (cao-server on :$SERVER_PORT)"
+  exit 0
+fi
+
+# Stop the background daemon that owns the sessions.
+if pgrep -f 'cao-server' >/dev/null 2>&1; then
+  pkill -f 'cao-server' && echo "✓ stopped cao-server daemon"
+else
+  echo "· cao-server daemon not running"
+fi

@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""cao-tokens — token usage across the CLI engines the orchestrator drives.
+
+No vendor billing API is called. Everything here is scraped from the local files
+each CLI writes on this machine:
+
+  claude    ~/.claude/projects/**/*.jsonl   (per-message `usage` blocks)
+  codex     ~/.codex/state_5.sqlite          (threads.tokens_used per model)
+  opencode  ~/.local/share/opencode/opencode.db (session table, incl. real cost)
+  agy       — no local usage log; Google quota is server-side (dashboard only)
+
+These are LIFETIME LOCAL token counts, not a live plan-limit readout.
+
+On COST: claude and codex here run on flat-rate SUBSCRIPTIONS — tokens do not
+bill per unit, so no dollar figure is shown (a per-token estimate would be a
+fiction, not a bill). Only opencode hits a real per-token endpoint, and its cost
+column is the value opencode itself computed and stored — that's the only real $.
+
+On CACHE: the cache column counts cached context RE-READ each turn, so the same
+tokens are counted many times over a long session. It is cheap plumbing, not
+fresh usage — read `output` (real generation) as the number that matters.
+
+Usage:
+  cao-tokens                text table (default)
+  cao-tokens --json         machine-readable
+  cao-tokens --since 7d     claude filtered by file mtime (24h/7d/2w; codex &
+                            opencode totals are lifetime regardless)
+"""
+import json
+import os
+import sqlite3
+import sys
+import time
+from glob import glob
+from pathlib import Path
+
+HOME = Path.home()
+
+# Which engines bill per token. Only these get a $ column; the rest are flat-rate
+# subscriptions where a per-token dollar figure would be meaningless.
+METERED = {"opencode"}
+
+
+def cutoff_ts(since):
+    if not since:
+        return 0.0
+    n, unit = float(since[:-1]), since[-1]
+    mult = {"h": 3600, "d": 86400, "w": 604800}.get(unit)
+    if not mult:
+        sys.exit(f"bad --since '{since}': use e.g. 24h, 7d, 2w")
+    return time.time() - n * mult
+
+
+# ---- claude ----------------------------------------------------------------
+def scrape_claude(cutoff):
+    root = HOME / ".claude" / "projects"
+    agg = {}
+    if not root.exists():
+        return []
+    for f in glob(str(root / "**" / "*.jsonl"), recursive=True):
+        if cutoff and os.path.getmtime(f) < cutoff:
+            continue
+        try:
+            fh = open(f, encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        with fh:
+            for line in fh:
+                try:
+                    o = json.loads(line)
+                except Exception:
+                    continue
+                msg = o.get("message") or {}
+                u = msg.get("usage") or o.get("usage")
+                if not u:
+                    continue
+                model = msg.get("model") or o.get("model") or "claude-unknown"
+                a = agg.setdefault(model, dict(inp=0, out=0, cache=0))
+                a["inp"] += u.get("input_tokens", 0)
+                a["out"] += u.get("output_tokens", 0)
+                a["cache"] += u.get("cache_read_input_tokens", 0) + \
+                    u.get("cache_creation_input_tokens", 0)
+    rows = []
+    for model, a in agg.items():
+        if model in ("<synthetic>",) or a["inp"] + a["out"] + a["cache"] == 0:
+            continue
+        rows.append(dict(engine="claude", model=model, input=a["inp"],
+                         output=a["out"], cache=a["cache"], cost=None))
+    return rows
+
+
+# ---- sqlite helpers --------------------------------------------------------
+def _q(db, sql):
+    if not Path(db).exists():
+        return None
+    try:
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        out = con.execute(sql).fetchall()
+        con.close()
+        return out
+    except sqlite3.Error:
+        return None
+
+
+def scrape_codex(cutoff):
+    db = HOME / ".codex" / "state_5.sqlite"
+    rows = _q(db, "SELECT COALESCE(model,'?'), SUM(tokens_used) FROM threads GROUP BY model")
+    if rows is None:
+        return []
+    out = []
+    for model, toks in rows:
+        toks = toks or 0
+        if toks == 0:
+            continue
+        # codex reports one combined total, no in/out split.
+        out.append(dict(engine="codex", model=model, input=toks, output=0,
+                        cache=0, cost=None))
+    return out
+
+
+def scrape_opencode(cutoff):
+    db = HOME / ".local" / "share" / "opencode" / "opencode.db"
+    rows = _q(db, "SELECT COALESCE(model,'?'), SUM(tokens_input), SUM(tokens_output), "
+                  "SUM(tokens_cache_read)+SUM(tokens_cache_write), SUM(cost) "
+                  "FROM session GROUP BY model")
+    if rows is None:
+        return []
+    out = []
+    for model, ti, to, tc, cost in rows:
+        ti, to, tc, cost = ti or 0, to or 0, tc or 0, cost or 0.0
+        if ti + to + tc == 0:
+            continue
+        if model and model.startswith("{"):  # opencode stores model as JSON blob
+            try:
+                model = json.loads(model).get("id", model)
+            except Exception:
+                pass
+        out.append(dict(engine="opencode", model=model, input=ti, output=to,
+                        cache=tc, cost=round(cost, 4)))
+    return out
+
+
+def fmt(n):
+    return f"{n:,}"
+
+
+def cost_cell(r):
+    if r["engine"] not in METERED:
+        return "sub"           # flat-rate subscription — no per-token bill
+    return f"{r['cost']:.2f}" if r["cost"] else "0.00"
+
+
+def main():
+    args = sys.argv[1:]
+    as_json = "--json" in args
+    since = None
+    if "--since" in args:
+        since = args[args.index("--since") + 1]
+    cutoff = cutoff_ts(since)
+
+    rows = scrape_claude(cutoff) + scrape_codex(cutoff) + scrape_opencode(cutoff)
+
+    if as_json:
+        print(json.dumps(rows, indent=2))
+        return
+
+    print()
+    print("  cao-tokens — local token counts" +
+          (f"  (claude since {since})" if since else "  (lifetime)"))
+    print("  " + "-" * 82)
+    print(f"  {'engine':<9} {'model':<26} {'input':>12} {'output':>10} {'cache':>12} {'$':>6}")
+    print("  " + "-" * 82)
+    t_in = t_out = t_cache = 0
+    t_cost = 0.0
+    for r in sorted(rows, key=lambda r: -(r["output"] + r["input"])):
+        print(f"  {r['engine']:<9} {r['model'][:26]:<26} {fmt(r['input']):>12} "
+              f"{fmt(r['output']):>10} {fmt(r['cache']):>12} {cost_cell(r):>6}")
+        t_in += r["input"]; t_out += r["output"]; t_cache += r["cache"]
+        if r["engine"] in METERED and r["cost"]:
+            t_cost += r["cost"]
+    print("  " + "-" * 82)
+    print(f"  {'TOTAL':<9} {'':<26} {fmt(t_in):>12} {fmt(t_out):>10} "
+          f"{fmt(t_cache):>12} {t_cost:>6.2f}")
+    print()
+    print("  $  = real per-token cost (opencode endpoint only). 'sub' = flat-rate")
+    print("       subscription (claude, codex) — tokens don't bill per unit.")
+    print("  cache = context re-read each turn (same tokens counted repeatedly);")
+    print("          it's cheap plumbing, not fresh usage. Read 'output' as spend.")
+    print("  agy (gemini): no local usage log — quota is server-side (dashboard).")
+    print()
+
+
+if __name__ == "__main__":
+    main()

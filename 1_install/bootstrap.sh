@@ -136,11 +136,14 @@ log "Rendering settings + opencode + profiles from cao.config.toml..."
 py_run "$APPLY/render_config.py"
 mkdir -p "$HOME/.aws/cli-agent-orchestrator/agent_store"
 
-log "Installing cao-run launcher + cao-doctor health check..."
+log "Installing cao-run launcher + cao-doctor + cao-stop + cao-tokens..."
 mkdir -p "$HOME/.local/bin"
 cp "$REPO/run/cao-run"    "$HOME/.local/bin/cao-run"
 cp "$REPO/run/cao-doctor" "$HOME/.local/bin/cao-doctor"
-chmod +x "$HOME/.local/bin/cao-run" "$HOME/.local/bin/cao-doctor"
+cp "$REPO/run/cao-stop"   "$HOME/.local/bin/cao-stop"
+cp "$REPO/run/cao-tokens" "$HOME/.local/bin/cao-tokens"
+chmod +x "$HOME/.local/bin/cao-run" "$HOME/.local/bin/cao-doctor" \
+         "$HOME/.local/bin/cao-stop" "$HOME/.local/bin/cao-tokens"
 
 # Persist LOCAL_API_KEY where cao-run always looks.
 if [ -n "${LOCAL_API_KEY:-}" ]; then
