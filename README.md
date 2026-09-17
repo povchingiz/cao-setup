@@ -116,6 +116,14 @@ session `cao-supervisor`). Delegate by talking to it. You can detach (`Ctrl-b
 d`) and the workers keep running — the `cao-server` daemon owns them, not your
 terminal. Reattach with `tmux attach -t cao-supervisor`.
 
+**Design first for big work.** For a new project or a large feature the
+supervisor acts as architect: it discusses the system with you, writes a Mermaid
+sequence/flow diagram to `cao_session/design/`, and gets your approval before
+any code is delegated — the diagram is the contract the workers build against.
+Small changes skip this and go straight to delegation. The diagram is a living
+document: it's referenced and edited across sessions, not redrawn each time.
+(`cao_session/` is gitignored — local working state.)
+
 ## Inherit your existing MCP servers
 
 Whatever MCP servers you already use in Claude (`~/.claude.json`) can be handed
