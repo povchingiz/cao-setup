@@ -104,3 +104,17 @@ Rules for driving the graph:
   file, add a `depends_on` edge so they don't run concurrently.
 - When every task is `done`, the session's implementation phase is complete —
   hand off to the audit/verify phase.
+
+### Audit Gate (before you call the work finished):
+1. Assign an audit to `antigravity_worker` over the code the session produced.
+   It writes `reports/audit.md` and returns a summary with severity levels.
+2. If the summary says **BLOCKER** (any `[critical]` security finding or a
+   failing test): do NOT finish. Turn each blocker into a fix-task and assign it
+   to the worker that OWNS that code (opencode_worker fixes its own bulk output;
+   claude_worker fixes contract/logic) — not to a stronger model by default. A
+   weak worker fixes its own mistakes cheaply; escalate only if it can't.
+3. Re-audit after fixes. Repeat until no blockers remain.
+4. Non-blocking findings (`[major]`/`[minor]`): record in `context.md`, fix if
+   cheap, otherwise surface them to the human rather than silently shipping.
+5. Only after the audit is blocker-free do you report the session complete —
+   and then the human runs their own test/acceptance pass (you don't skip that).

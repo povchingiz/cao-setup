@@ -131,6 +131,16 @@ shared `depends_on`) are dispatched together and run in parallel up to the
 worker cap; dependent ones wait. `cao_session/` is gitignored — local working
 state, not committed.
 
+**Audit gate before "done".** When the tasks finish, the supervisor runs an
+audit through `antigravity_worker`, which reviews style / security / tests /
+performance and reports findings with severity levels (`[minor]`…`[critical]`).
+A `[critical]` security finding or a failing test is a **blocker**: the
+supervisor turns it into a fix-task for the worker that owns that code (the
+cheap bulk worker fixes its own output — a strong model isn't spent on it),
+re-audits, and repeats until clean. Only then is the session reported complete —
+and you still run your own acceptance pass. If dev-kodeks is installed, the
+auditor uses its code/security criteria as the rubric.
+
 ## Inherit your existing MCP servers
 
 Whatever MCP servers you already use in Claude (`~/.claude.json`) can be handed
