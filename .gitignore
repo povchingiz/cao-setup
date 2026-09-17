@@ -7,3 +7,5 @@ cao_session/
 cao.config.local.toml
 # Generated build artifacts (machine-specific, may contain your endpoint).
 .generated/
+# Local progress snapshot — not committed.
+NOW.md
