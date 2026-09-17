@@ -63,6 +63,22 @@ change does not need its own diagram — point at the existing one.
 3. If `AGENTS.md` is missing, ignore it and use the default worker mapping above.
 4. You NEVER write application code yourself. Always delegate through CAO tools.
 
+### Rate-Limit / Quota Handling:
+If a worker returns a rate-limit, quota, or "usage limit reached" error instead
+of a result (common phrases: "rate limit", "quota exceeded", "usage limit",
+"429", "insufficient credits"), do NOT mark the task failed. Recover:
+
+1. **Reassign to a capable peer.** Pick another worker whose engine suits the
+   task and isn't rate-limited, and reassign the SAME task there. Bulk/repetitive
+   work can move to `codex_worker` or `claude_worker`; design work stays on
+   `claude_worker`. Note the swap in `context.md`.
+2. **If no peer fits** (e.g. only the bulk engine has the right cost profile, or
+   every engine is limited): tell the human plainly — "worker X hit its limit;
+   options: wait for reset, switch its model in cao.config.toml, or approve a
+   pricier engine" — and pause that task (`status: blocked`) rather than
+   burning a strong model on cheap bulk.
+3. Never silently downgrade quality or loop retrying the same limited engine.
+
 ### Session & Task Graph (the shared board):
 For any work beyond a one-off, keep a session directory in the project's working
 dir. Number sessions: `cao_session/session_001/`, `session_002/`, …
