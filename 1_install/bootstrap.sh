@@ -111,39 +111,36 @@ if ! command -v agy >/dev/null 2>&1; then
 fi
 hash -r || true
 
-# --- 4. Render config, then place profiles -----------------------------------
-log "Rendering settings + opencode + worker frontmatter from cao.config.toml..."
+# --- 4. Render config into the live store ------------------------------------
 mkdir -p "$HOME/.config/cao" "$HOME/.aws/opencode"
 CAO_PY="$HOME/.local/share/uv/tools/cli-agent-orchestrator/bin/python"
-if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
-  "$CAO_PY" "$APPLY/render_config.py"
-elif python3 -c 'import tomllib' 2>/dev/null; then
-  python3 "$APPLY/render_config.py"
-else
-  warn "No Python with tomllib (3.11+) found — cannot render config."
-  warn "CAO ships its own Python 3.14; if you see this, the CAO install above failed."
-  exit 1
-fi
+py_run() {  # run a repo python script with a tomllib-capable interpreter
+  if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then "$CAO_PY" "$1"
+  elif python3 -c 'import tomllib' 2>/dev/null; then python3 "$1"
+  else
+    warn "No Python with tomllib (3.11+) — cannot render. CAO ships 3.14; its install above must have failed."
+    exit 1
+  fi
+}
 
+# inherit MCP FIRST (it edits the tracked prompts), so the render below picks up
+# the added servers when it writes the fully-rendered profiles to the live store.
 if [ "$INHERIT_MCP" = "1" ]; then
   log "Inheriting your existing Claude MCP servers into the workers..."
   warn "Copies ~/.claude.json global mcpServers into worker profiles. Review any"
   warn "server carrying a token in its env before committing the profiles."
-  if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
-    "$CAO_PY" "$APPLY/inherit_mcp.py" || warn "inherit_mcp failed"
-  else
-    python3 "$APPLY/inherit_mcp.py" || warn "inherit_mcp failed"
-  fi
+  py_run "$APPLY/inherit_mcp.py"
 fi
 
-log "Placing agent profiles (post-render frontmatter)..."
+log "Rendering settings + opencode + profiles from cao.config.toml..."
+py_run "$APPLY/render_config.py"
 mkdir -p "$HOME/.aws/cli-agent-orchestrator/agent_store"
-cp "$CONFIGURE"/prompts/*.md "$HOME/.aws/cli-agent-orchestrator/agent_store/"
 
-log "Installing cao-run launcher..."
+log "Installing cao-run launcher + cao-doctor health check..."
 mkdir -p "$HOME/.local/bin"
-cp "$REPO/run/cao-run" "$HOME/.local/bin/cao-run"
-chmod +x "$HOME/.local/bin/cao-run"
+cp "$REPO/run/cao-run"    "$HOME/.local/bin/cao-run"
+cp "$REPO/run/cao-doctor" "$HOME/.local/bin/cao-doctor"
+chmod +x "$HOME/.local/bin/cao-run" "$HOME/.local/bin/cao-doctor"
 
 # Persist LOCAL_API_KEY where cao-run always looks.
 if [ -n "${LOCAL_API_KEY:-}" ]; then

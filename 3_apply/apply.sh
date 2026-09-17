@@ -29,13 +29,10 @@ else
 fi
 
 log "Rendering config with $PY..."
+# render_config writes the fully-rendered profiles straight to the live store
+# (tracked prompts in 2_configure/prompts are never modified).
 "$PY" "$HERE/render_config.py"
-
-log "Copying agent profiles to live store..."
 STORE="$HOME/.aws/cli-agent-orchestrator/agent_store"
-mkdir -p "$STORE"
-cp "$CONFIGURE"/prompts/*.md "$STORE/"
-ok "profiles copied"
 
 log "Re-registering profiles..."
 # Read the register list from the toml via the same Python.

@@ -23,7 +23,7 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 1_install/     bootstrap.sh · bootstrap.ps1 · patch_pyte.py     ← run once
 2_configure/   cao.config.toml · prompts/*.md                   ← edit these
 3_apply/       apply.sh · render_config.py · inherit_mcp.py     ← push edits live
-run/           cao-run                                          ← launch
+run/           cao-run · cao-doctor                             ← launch + health check
 .generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
 ```
 
@@ -105,10 +105,16 @@ After any edit: `./3_apply/apply.sh`.
 cao-run
 ```
 
-Launches the daemon if needed and attaches you to the supervisor (tmux session
-`cao-supervisor`). Delegate by talking to it. You can detach (`Ctrl-b d`) and
-the workers keep running — the `cao-server` daemon owns them, not your terminal.
-Reattach with `tmux attach -t cao-supervisor`.
+First it runs a **pre-flight health check** (`cao-doctor`) — verifies the
+toolchain, worker binaries, logins, and that the bulk endpoint answers, so a
+worker can't fail silently mid-task. A missing binary aborts the launch;
+warnings (e.g. an unconfigured endpoint) don't. Run it any time with
+`cao-doctor`, or skip the gate with `cao-run --skip-check`.
+
+Then it launches the daemon if needed and attaches you to the supervisor (tmux
+session `cao-supervisor`). Delegate by talking to it. You can detach (`Ctrl-b
+d`) and the workers keep running — the `cao-server` daemon owns them, not your
+terminal. Reattach with `tmux attach -t cao-supervisor`.
 
 ## Inherit your existing MCP servers
 

@@ -94,46 +94,53 @@ def render_opencode(c):
     print(f"  opencode.json      -> {live}")
 
 
-def set_frontmatter_key(md_path: Path, key: str, value: str):
-    """Set/replace a top-level scalar `key: value` in the YAML frontmatter,
-    leaving the prompt body untouched. Inserts after `role:` if missing."""
-    text = md_path.read_text()
+LIVE_STORE = HOME / ".aws" / "cli-agent-orchestrator" / "agent_store"
+
+
+def _apply_frontmatter(text: str, edits: dict) -> str:
+    """Return `text` with the given top-level frontmatter keys set. Prompt body
+    is untouched. Keys not present are inserted after role:/provider:."""
     if not text.startswith("---\n"):
-        print(f"  WARN {md_path.name}: no frontmatter, skipped")
-        return
+        return text
     end = text.index("\n---", 4)
     fm, body = text[4:end], text[end:]
     lines = fm.split("\n")
-    new_line = f'{key}: "{value}"'
-    for i, ln in enumerate(lines):
-        if ln.strip().startswith(f"{key}:") and not ln.startswith((" ", "\t")):
-            lines[i] = new_line
-            break
-    else:
-        # insert after role: (or provider:) to keep it a top-level key
-        anchor = next((i for i, ln in enumerate(lines)
-                       if ln.startswith(("role:", "provider:"))), len(lines) - 1)
-        lines.insert(anchor + 1, new_line)
-    md_path.write_text("---\n" + "\n".join(lines) + body)
+    for key, value in edits.items():
+        new_line = f'{key}: "{value}"'
+        for i, ln in enumerate(lines):
+            if ln.strip().startswith(f"{key}:") and not ln.startswith((" ", "\t")):
+                lines[i] = new_line
+                break
+        else:
+            anchor = next((i for i, ln in enumerate(lines)
+                           if ln.startswith(("role:", "provider:"))), len(lines) - 1)
+            lines.insert(anchor + 1, new_line)
+    return "---\n" + "\n".join(lines) + body
 
 
 def render_workers(c):
+    """Read each tracked prompt, apply provider/model from config, and write the
+    result to the LIVE store — the tracked source in 2_configure/prompts is NEVER
+    modified (so a private model id can't leak into the committed template)."""
     endpoint = c["endpoint"]["name"]
+    LIVE_STORE.mkdir(parents=True, exist_ok=True)
     for wname, w in c.get("workers", {}).items():
-        md = CONFIGURE / "prompts" / f"{wname}.md"
-        if not md.exists():
-            print(f"  WARN worker '{wname}' has no {md.name}, skipped")
+        src = CONFIGURE / "prompts" / f"{wname}.md"
+        if not src.exists():
+            print(f"  WARN worker '{wname}' has no {src.name}, skipped")
             continue
+        edits = {}
         if "provider" in w:
-            set_frontmatter_key(md, "provider", w["provider"])
+            edits["provider"] = w["provider"]
         if w.get("model"):
             model = w["model"]
-            if "/" not in model:  # bare model -> qualify with endpoint
+            if "/" not in model:
                 model = f"{endpoint}/{model}"
             elif not model.startswith(f"{endpoint}/"):
                 model = f"{endpoint}/{model.split('/', 1)[-1]}" if model.count("/") >= 2 else f"{endpoint}/{model}"
-            set_frontmatter_key(md, "model", model)
-        print(f"  {wname:20s} provider={w.get('provider','-')} model={w.get('model','-')}")
+            edits["model"] = model
+        (LIVE_STORE / f"{wname}.md").write_text(_apply_frontmatter(src.read_text(), edits))
+        print(f"  {wname:20s} provider={w.get('provider','-')} model={w.get('model','-')} -> live store")
 
 
 MAP_START = "<!-- AUTO-MAPPING START"
@@ -145,13 +152,13 @@ def render_supervisor_mapping(c):
     aliases + focus, between the AUTO-MAPPING markers. Rest of the prompt
     (execution rules, division of labor) is left untouched."""
     sup = c.get("orchestrator", {}).get("default_supervisor", "code_supervisor")
-    md = CONFIGURE / "prompts" / f"{sup}.md"
-    if not md.exists():
-        print(f"  WARN supervisor '{sup}' has no {md.name}, mapping skipped")
+    src = CONFIGURE / "prompts" / f"{sup}.md"
+    if not src.exists():
+        print(f"  WARN supervisor '{sup}' has no {src.name}, mapping skipped")
         return
-    text = md.read_text()
+    text = src.read_text()
     if MAP_START not in text or MAP_END not in text:
-        print(f"  WARN {md.name}: no AUTO-MAPPING markers, mapping skipped")
+        print(f"  WARN {src.name}: no AUTO-MAPPING markers, mapping skipped")
         return
 
     rows = []
@@ -170,8 +177,23 @@ def render_supervisor_mapping(c):
         + block + "\n"
         + text[end:]
     )
-    md.write_text(new)
-    print(f"  supervisor mapping   -> {md.name} ({len(rows)} workers)")
+    LIVE_STORE.mkdir(parents=True, exist_ok=True)
+    (LIVE_STORE / f"{sup}.md").write_text(new)
+    print(f"  supervisor mapping   -> live {sup}.md ({len(rows)} workers)")
+
+
+def copy_remaining_profiles(c):
+    """Copy any prompts that render_workers/mapping didn't already write to the
+    live store (e.g. profiles registered but not in [workers.*])."""
+    workers = set(c.get("workers", {}).keys())
+    sup = c.get("orchestrator", {}).get("default_supervisor", "code_supervisor")
+    handled = workers | {sup}
+    LIVE_STORE.mkdir(parents=True, exist_ok=True)
+    for src in (CONFIGURE / "prompts").glob("*.md"):
+        if src.stem in handled:
+            continue
+        (LIVE_STORE / src.name).write_text(src.read_text())
+        print(f"  {src.stem:20s} copied -> live store")
 
 
 def main():
@@ -181,7 +203,8 @@ def main():
     render_opencode(c)
     render_workers(c)
     render_supervisor_mapping(c)
-    print("Done. (Prompt bodies below the markers are untouched.)")
+    copy_remaining_profiles(c)
+    print("Done. Tracked prompts untouched; live store fully rendered.")
 
 
 if __name__ == "__main__":

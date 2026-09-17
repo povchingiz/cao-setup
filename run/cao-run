@@ -4,6 +4,15 @@ set -e
 SERVER_PORT=9889
 LOG_DIR="$HOME/.cao/logs"
 LOG_FILE="$LOG_DIR/server.log"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Pre-flight health check (D1-D4). Skip with --skip-check. A failed REQUIRED
+# check (missing binary/toolchain) aborts before launch; warnings don't block.
+if [ "${1:-}" = "--skip-check" ]; then
+  shift
+elif [ -x "$HERE/cao-doctor" ]; then
+  "$HERE/cao-doctor" || { echo "Pre-flight failed. Fix the above or re-run with --skip-check."; exit 1; }
+fi
 
 # API key for the bulk worker's OpenAI-compatible endpoint.
 # opencode resolves {env:LOCAL_API_KEY} in ~/.aws/opencode/opencode.json at launch.
