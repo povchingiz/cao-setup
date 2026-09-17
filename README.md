@@ -9,13 +9,47 @@ configs, and applies the fixes needed to run them.
 | Worker | Engine | Role |
 |--------|--------|------|
 | claude_worker | Claude Code | architecture, contracts, hard logic |
-| jcode_worker | opencode + DeepSeek-V4-Pro | bulk: scaffolding, schemas, CRUD |
+| opencode_worker | opencode + DeepSeek-V4-Pro | bulk: scaffolding, schemas, CRUD |
 | codex_worker | Codex (ChatGPT plan) | frontend / UI |
 | antigravity_worker | Antigravity (Gemini) | QA, tests, review |
 
 > **Windows:** not supported natively (CAO needs tmux + POSIX ptys). Use
 > **WSL2** — see [WINDOWS.md](WINDOWS.md). Inside WSL these steps apply
 > unchanged, if the repo lives in your WSL home (not `/mnt/c`).
+
+<!-- ===================================================================== -->
+<!-- FOR CLAUDE (or any coding agent) asked to "set this up" / "connect    -->
+<!-- everything". Follow this exactly; don't improvise the order.          -->
+<!-- ===================================================================== -->
+
+## For Claude: "set it all up for me"
+
+If the user handed you this repo and said *"connect everything"*, do this — and
+**stop to ask the user** at each 🔸 (those need a human):
+
+1. **Read first.** Skim this README and `cao.config.toml`. Confirm the OS is
+   macOS or Linux (on Windows, tell the user to use WSL2 per `WINDOWS.md` and
+   stop).
+2. **Secret.** 🔸 Ask the user for their `LOCAL_API_KEY` (the bulk-worker
+   endpoint key). `cp .env.example .env` and write it in. Never print it, never
+   commit `.env`.
+3. **Endpoint/models.** Confirm `[endpoint]` in `cao.config.toml` matches the
+   user's endpoint (`base_url`, `models`, `default_model`). Adjust if they use a
+   different one.
+4. **Run the installer:** `./bootstrap.sh`. Add `--inherit-mcp` if the user
+   wants their existing Claude MCP servers given to the workers. Add
+   `--with-kodeks` only if they explicitly want the dev standard (it's global —
+   see the dev-kodeks section before offering it).
+5. **Logins.** 🔸 These are interactive and only the user can do them — tell them
+   to run, in their terminal: `claude` (then `/login`), `codex login`, and `agy`
+   (Google sign-in). You cannot do these for them.
+6. **Verify.** Once logged in, run a smoke test: `cao-run`, then ask the
+   supervisor to delegate a trivial task to each worker and confirm a reply.
+7. **Done.** Tell the user to launch with `cao-run` from any project directory.
+
+Everything is editable from this repo — change `cao.config.toml` or a prompt in
+`agent_store/`, then `./apply.sh`. Do not edit the live files under `~/.aws` or
+`~/.config` directly; they are generated.
 
 ## Prerequisites
 

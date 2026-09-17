@@ -35,7 +35,7 @@
     "cao-mcp-server*": false
   },
   "agent": {
-    "jcode_worker": {
+    "opencode_worker": {
       "tools": {
         "cao-mcp-server*": true
       }

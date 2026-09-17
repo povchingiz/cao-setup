@@ -5,7 +5,7 @@ SERVER_PORT=9889
 LOG_DIR="$HOME/.cao/logs"
 LOG_FILE="$LOG_DIR/server.log"
 
-# Local model provider credentials for the opencode/DeepSeek bulk worker (jcode_worker).
+# Local model provider credentials for the opencode/DeepSeek bulk worker (opencode_worker).
 # opencode resolves {env:LOCAL_API_KEY} in ~/.aws/opencode/opencode.json at launch.
 # Look for LOCAL_API_KEY in the first env file that has it (portable across machines).
 for ENV_FILE in \

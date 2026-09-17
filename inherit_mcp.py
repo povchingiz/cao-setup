@@ -23,7 +23,7 @@ Scope (kept deliberately simple):
 
 Usage:
     python3 inherit_mcp.py                      # into all workers (default set)
-    python3 inherit_mcp.py claude_worker jcode_worker
+    python3 inherit_mcp.py claude_worker opencode_worker
     python3 inherit_mcp.py --list               # just show what would be inherited
     python3 inherit_mcp.py --dry-run            # show plan, write nothing
 
@@ -40,7 +40,7 @@ HERE = Path(__file__).resolve().parent
 STORE = HERE / "agent_store"
 CLAUDE_JSON = Path.home() / ".claude.json"
 
-DEFAULT_WORKERS = ["claude_worker", "jcode_worker", "codex_worker", "antigravity_worker"]
+DEFAULT_WORKERS = ["claude_worker", "opencode_worker", "codex_worker", "antigravity_worker"]
 SKIP = {"cao-mcp-server"}
 
 

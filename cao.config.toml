@@ -32,7 +32,7 @@ default_model = "deepseek-ai/DeepSeek-V4-Pro"
 [workers.claude_worker]
 provider = "claude_code"
 
-[workers.jcode_worker]
+[workers.opencode_worker]
 provider = "opencode_cli"
 # model resolves to "<endpoint.name>/<model>". Leave empty to use default_model.
 model    = "deepseek-ai/DeepSeek-V4-Pro"
@@ -48,7 +48,7 @@ provider = "antigravity_cli"
 register = [
   "code_supervisor",
   "claude_worker",
-  "jcode_worker",
+  "opencode_worker",
   "codex_worker",
   "antigravity_worker",
 ]

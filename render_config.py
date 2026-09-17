@@ -79,7 +79,7 @@ def render_opencode(c):
             }
         },
         "tools": {"cao-mcp-server*": False},
-        "agent": {"jcode_worker": {"tools": {"cao-mcp-server*": True}}},
+        "agent": {"opencode_worker": {"tools": {"cao-mcp-server*": True}}},
     }
     (HERE / "config" / "opencode.json").write_text(json.dumps(out, indent=2) + "\n")
     live = HOME / ".aws" / "opencode" / "opencode.json"

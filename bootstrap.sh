@@ -152,7 +152,7 @@ fi
 
 log "Initializing CAO database + registering profiles..."
 cao init >/dev/null 2>&1 || true
-for p in code_supervisor claude_worker jcode_worker codex_worker antigravity_worker; do
+for p in code_supervisor claude_worker opencode_worker codex_worker antigravity_worker; do
   cao install "$HOME/.aws/cli-agent-orchestrator/agent_store/$p.md" >/dev/null 2>&1 \
     && ok "registered $p" || warn "failed to register $p"
 done
@@ -229,11 +229,11 @@ cat <<'EOF'
 1. Claude Code login:      claude   (follow /login on first use)
 2. Codex login (ChatGPT):  codex login
 3. Antigravity (agy):      agy      (Google sign-in if prompted)
-4. jcode/DeepSeek:         needs LOCAL_API_KEY in .env (already persisted
+4. opencode/DeepSeek:         needs LOCAL_API_KEY in .env (already persisted
                            to ~/.config/cao/cao.env if you set it).
 
 Then run:  cao-run
 
-All four workers (claude / jcode / codex / antigravity) callable from the
+All four workers (claude / opencode / codex / antigravity) callable from the
 supervisor. Re-run this script after any `cao update` (re-applies pyte patch).
 EOF
