@@ -122,7 +122,14 @@ sequence/flow diagram to `cao_session/design/`, and gets your approval before
 any code is delegated — the diagram is the contract the workers build against.
 Small changes skip this and go straight to delegation. The diagram is a living
 document: it's referenced and edited across sessions, not redrawn each time.
-(`cao_session/` is gitignored — local working state.)
+
+**How work is tracked.** The supervisor keeps a per-session board under
+`cao_session/session_NNN/` — `plan.md` (agreed plan), `tasks.json` (the task
+graph: each task has an `engine`, the `files` it owns, and `depends_on` edges),
+`reports/` (audits), and `context.md` (running log). Independent tasks (no
+shared `depends_on`) are dispatched together and run in parallel up to the
+worker cap; dependent ones wait. `cao_session/` is gitignored — local working
+state, not committed.
 
 ## Inherit your existing MCP servers
 

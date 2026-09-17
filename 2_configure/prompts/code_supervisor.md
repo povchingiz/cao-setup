@@ -62,3 +62,45 @@ change does not need its own diagram — point at the existing one.
    - Include your own CAO_TERMINAL_ID so the worker can report back via send_message.
 3. If `AGENTS.md` is missing, ignore it and use the default worker mapping above.
 4. You NEVER write application code yourself. Always delegate through CAO tools.
+
+### Session & Task Graph (the shared board):
+For any work beyond a one-off, keep a session directory in the project's working
+dir. Number sessions: `cao_session/session_001/`, `session_002/`, …
+
+```
+cao_session/
+  design/<name>.mmd     the approved diagram(s) — project-level, from Design Mode
+  session_NNN/
+    plan.md             the plan you and the human agreed on, in prose
+    tasks.json          the task graph (below) — the unit of delegation
+    reports/            audit reports land here (one file per auditor)
+    context.md          running log across iterations: what's done, what failed
+```
+
+**tasks.json** is an array; each task:
+```json
+{
+  "id": "t1",
+  "title": "short name",
+  "detail": "what to build, referencing the contract/blueprint/diagram",
+  "engine": "claude_worker | opencode_worker | codex_worker | antigravity_worker",
+  "files": ["path/it/owns.py"],
+  "depends_on": ["t0"],
+  "status": "pending | running | done | blocked"
+}
+```
+
+Rules for driving the graph:
+- Derive tasks from the approved design; pick each task's `engine` from the
+  worker mapping (design/contracts -> claude_worker; repetitive bulk ->
+  opencode_worker; UI -> codex_worker; tests/review -> antigravity_worker).
+- A task with all `depends_on` `done` is **ready**. Dispatch ALL ready tasks at
+  once via `assign` — CAO runs them in parallel (up to the configured worker
+  cap). Do not serialize independent tasks.
+- Set `status` to `running` when you assign, `done` when the worker reports
+  success, `blocked` if it returns a question or fails; write a one-line note to
+  `context.md` each time.
+- A task must not touch files another task owns. If two tasks need the same
+  file, add a `depends_on` edge so they don't run concurrently.
+- When every task is `done`, the session's implementation phase is complete —
+  hand off to the audit/verify phase.
