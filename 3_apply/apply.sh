@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 #
-# apply.sh — push cao.config.toml + agent_store prompts into the live CAO setup.
-# Run after editing cao.config.toml or any agent_store/*.md prompt.
+# apply.sh — push 2_configure (cao.config.toml + prompts/) into the live CAO.
+# Run after editing 2_configure/cao.config.toml or any prompts/*.md.
 #
 # Steps:
 #   1. Render cao.config.toml -> settings.json, opencode.json, worker frontmatter.
-#   2. Copy agent_store/*.md into ~/.aws/cli-agent-orchestrator/agent_store/.
+#   2. Copy 2_configure/prompts/*.md into ~/.aws/cli-agent-orchestrator/agent_store/.
 #   3. Re-register every profile with `cao install`.
 #   4. Offer to restart cao-server so changes take effect.
 #
 set -euo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # 3_apply/
+REPO="$(cd "$HERE/.." && pwd)"                          # repo root
+CONFIGURE="$REPO/2_configure"
 log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m[ok]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
@@ -32,12 +34,12 @@ log "Rendering config with $PY..."
 log "Copying agent profiles to live store..."
 STORE="$HOME/.aws/cli-agent-orchestrator/agent_store"
 mkdir -p "$STORE"
-cp "$HERE"/agent_store/*.md "$STORE/"
+cp "$CONFIGURE"/prompts/*.md "$STORE/"
 ok "profiles copied"
 
 log "Re-registering profiles..."
 # Read the register list from the toml via the same Python.
-PROFILES="$("$PY" - "$HERE/cao.config.toml" <<'PYEOF'
+PROFILES="$("$PY" - "$CONFIGURE/cao.config.toml" <<'PYEOF'
 import sys, tomllib
 with open(sys.argv[1], "rb") as f: c = tomllib.load(f)
 print(" ".join(c.get("profiles", {}).get("register", [])))
@@ -56,7 +58,7 @@ if nc -z 127.0.0.1 9889 >/dev/null 2>&1; then
       log "Restarting cao-server..."
       pkill -f cao-server 2>/dev/null || true
       # Reload LOCAL_API_KEY from the canonical env file.
-      for ENV_FILE in "$HOME/.config/cao/cao.env" "$HERE/.env"; do
+      for ENV_FILE in "$HOME/.config/cao/cao.env" "$REPO/.env"; do
         [ -f "$ENV_FILE" ] && { set -a; . "$ENV_FILE"; set +a; break; }
       done
       mkdir -p "$HOME/.cao/logs"

@@ -23,6 +23,10 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="$(cd "$HERE/.." && pwd)"   # repo root (this script lives in 1_install/)
+CONFIGURE="$REPO/2_configure"
+APPLY="$REPO/3_apply"
+GENERATED="$REPO/.generated"
 WITH_KODEKS=0
 WITH_GUARD_HOOK=0
 INHERIT_MCP=0
@@ -66,8 +70,8 @@ pkg_install() {
 export PATH="$HOME/.local/bin:$PATH"
 
 # --- 0. .env (LOCAL_API_KEY) -------------------------------------------------
-if [ -f "$HERE/.env" ]; then
-  set -a; . "$HERE/.env"; set +a
+if [ -f "$REPO/.env" ]; then
+  set -a; . "$REPO/.env"; set +a
   ok ".env loaded"
 else
   warn "No .env — copy .env.example to .env and set LOCAL_API_KEY (DeepSeek bulk worker)."
@@ -113,13 +117,13 @@ log "Rendering settings + opencode + worker frontmatter from cao.config.toml..."
 mkdir -p "$HOME/.config/cao" "$HOME/.aws/opencode"
 CAO_PY="$HOME/.local/share/uv/tools/cli-agent-orchestrator/bin/python"
 if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
-  "$CAO_PY" "$HERE/render_config.py"
+  "$CAO_PY" "$APPLY/render_config.py"
 elif python3 -c 'import tomllib' 2>/dev/null; then
-  python3 "$HERE/render_config.py"
+  python3 "$APPLY/render_config.py"
 else
   warn "No Python with tomllib; falling back to committed config files."
-  cp "$HERE/config/settings.json" "$HOME/.config/cao/settings.json"
-  cp "$HERE/config/opencode.json" "$HOME/.aws/opencode/opencode.json"
+  cp "$GENERATED/settings.json" "$HOME/.config/cao/settings.json"
+  cp "$GENERATED/opencode.json" "$HOME/.aws/opencode/opencode.json"
 fi
 
 if [ "$INHERIT_MCP" = "1" ]; then
@@ -127,19 +131,19 @@ if [ "$INHERIT_MCP" = "1" ]; then
   warn "Copies ~/.claude.json global mcpServers into worker profiles. Review any"
   warn "server carrying a token in its env before committing the profiles."
   if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
-    "$CAO_PY" "$HERE/inherit_mcp.py" || warn "inherit_mcp failed"
+    "$CAO_PY" "$APPLY/inherit_mcp.py" || warn "inherit_mcp failed"
   else
-    python3 "$HERE/inherit_mcp.py" || warn "inherit_mcp failed"
+    python3 "$APPLY/inherit_mcp.py" || warn "inherit_mcp failed"
   fi
 fi
 
 log "Placing agent profiles (post-render frontmatter)..."
 mkdir -p "$HOME/.aws/cli-agent-orchestrator/agent_store"
-cp "$HERE"/agent_store/*.md "$HOME/.aws/cli-agent-orchestrator/agent_store/"
+cp "$CONFIGURE"/prompts/*.md "$HOME/.aws/cli-agent-orchestrator/agent_store/"
 
 log "Installing cao-run launcher..."
 mkdir -p "$HOME/.local/bin"
-cp "$HERE/cao-run" "$HOME/.local/bin/cao-run"
+cp "$REPO/run/cao-run" "$HOME/.local/bin/cao-run"
 chmod +x "$HOME/.local/bin/cao-run"
 
 # Persist LOCAL_API_KEY where cao-run always looks.
@@ -159,7 +163,7 @@ done
 
 # --- 5. pyte patch (Antigravity crash) --------------------------------------
 log "Patching pyte (Antigravity private-SGR crash)..."
-python3 "$HERE/patches/patch_pyte.py" || warn "pyte patch failed — antigravity may crash the server"
+python3 "$HERE/patch_pyte.py" || warn "pyte patch failed — antigravity may crash the server"
 
 # --- 6. Antigravity onboarding skip + codex hooks neutralize -----------------
 log "Skipping Antigravity onboarding wizard..."

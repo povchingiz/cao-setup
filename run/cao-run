@@ -51,4 +51,10 @@ if [ -n "${LOCAL_API_KEY:-}" ] && command -v tmux >/dev/null 2>&1; then
 fi
 
 # 3. Launch the Claude Code supervisor with its MCP orchestration tools.
-exec cao launch --agents code_supervisor --provider claude_code --auto-approve "$@"
+#    --session-name gives a readable tmux session (cao-supervisor) so you can
+#    reattach with `tmux attach -t cao-supervisor` instead of hunting a uuid.
+#    (The server prepends the cao- prefix.) Workers the supervisor spawns via
+#    the assign tool still get auto uuid session names; their tmux WINDOW is
+#    named after the profile (e.g. opencode_worker-xxxx), which stays readable.
+exec cao launch --agents code_supervisor --provider claude_code \
+  --session-name supervisor --auto-approve "$@"

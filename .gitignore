@@ -1,3 +1,5 @@
 .env
 *.bak
 cao.env
+# Per-run session working files (plan/tasks/reports/context) — local only.
+cao_session/

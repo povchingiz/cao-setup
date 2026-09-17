@@ -23,9 +23,12 @@ try:
 except ModuleNotFoundError:
     sys.exit("ERROR: need Python 3.11+ (tomllib). Run through apply.sh.")
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent      # 3_apply/
+REPO = HERE.parent                          # repo root
+CONFIGURE = REPO / "2_configure"
+GENERATED = REPO / ".generated"
 HOME = Path.home()
-CFG = HERE / "cao.config.toml"
+CFG = CONFIGURE / "cao.config.toml"
 
 
 def load():
@@ -46,7 +49,7 @@ def render_settings(c):
         "providers": {"default": o["default_provider"]},
     }
     # write to the repo copy AND the live location
-    (HERE / "config" / "settings.json").write_text(json.dumps(out, indent=2) + "\n")
+    (GENERATED / "settings.json").write_text(json.dumps(out, indent=2) + "\n")
     live = HOME / ".config" / "cao" / "settings.json"
     live.parent.mkdir(parents=True, exist_ok=True)
     live.write_text(json.dumps(out, indent=2) + "\n")
@@ -81,7 +84,7 @@ def render_opencode(c):
         "tools": {"cao-mcp-server*": False},
         "agent": {"opencode_worker": {"tools": {"cao-mcp-server*": True}}},
     }
-    (HERE / "config" / "opencode.json").write_text(json.dumps(out, indent=2) + "\n")
+    (GENERATED / "opencode.json").write_text(json.dumps(out, indent=2) + "\n")
     live = HOME / ".aws" / "opencode" / "opencode.json"
     live.parent.mkdir(parents=True, exist_ok=True)
     live.write_text(json.dumps(out, indent=2) + "\n")
@@ -114,7 +117,7 @@ def set_frontmatter_key(md_path: Path, key: str, value: str):
 def render_workers(c):
     endpoint = c["endpoint"]["name"]
     for wname, w in c.get("workers", {}).items():
-        md = HERE / "agent_store" / f"{wname}.md"
+        md = CONFIGURE / "prompts" / f"{wname}.md"
         if not md.exists():
             print(f"  WARN worker '{wname}' has no {md.name}, skipped")
             continue

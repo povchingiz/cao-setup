@@ -12,7 +12,7 @@
   It will:
     1. Verify / install WSL2 + Ubuntu (may require a reboot the first time).
     2. Clone this repo into the Ubuntu home (~/cao-setup) if not already there.
-    3. Drop you into Ubuntu so you can set .env and run ./bootstrap.sh.
+    3. Drop you into Ubuntu so you can set .env and run ./1_install/bootstrap.sh.
 
   No secrets are handled here. LOCAL_API_KEY is set later inside WSL, in .env.
 #>
@@ -63,7 +63,7 @@ Write-Host ""
 Write-Host "Next, inside Ubuntu (this drops you in):" -ForegroundColor Cyan
 Write-Host "    cd ~/cao-setup" -ForegroundColor White
 Write-Host "    cp .env.example .env   # set LOCAL_API_KEY" -ForegroundColor White
-Write-Host "    ./bootstrap.sh" -ForegroundColor White
+Write-Host "    ./1_install/bootstrap.sh" -ForegroundColor White
 Write-Host ""
 Write-Host "Keep the repo in WSL home (/home/...), NOT on /mnt/c — see WINDOWS.md." -ForegroundColor Yellow
 Write-Host ""
