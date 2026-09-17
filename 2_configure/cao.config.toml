@@ -32,24 +32,36 @@ models   = [
 # Default model the bulk worker uses (must be one of `models` above).
 default_model = "<provider>/<cheap-model>"
 
-# ---- Per-worker provider + model wiring ----
-# provider must be a valid CAO provider id; model applies to opencode workers.
-# Prompts/roles/descriptions live in prompts/*.md and are NOT touched here.
+# ---- Workers: engine, model, and ROLE — the one place to reconfigure them ----
+# For each worker:
+#   provider  = CAO provider id (claude_code | opencode_cli | codex | antigravity_cli)
+#   model     = optional; applies to opencode. Bare id -> "<endpoint.name>/<id>".
+#   aliases   = the words the supervisor uses to route to this worker
+#   focus     = one line describing what it does (shown in the routing table)
+# `apply.sh` writes provider/model into each worker's frontmatter AND regenerates
+# the supervisor's routing table from aliases+focus — so this block is the single
+# source for "who does what". The detailed prompt (execution rules) stays in
+# prompts/<worker>.md; only the routing table is generated.
 [workers.claude_worker]
 provider = "claude_code"
+aliases  = ["claude", "architect"]
+focus    = "architecture, domain logic, API contracts, DDD boundaries, refactoring, hard reasoning"
 
 [workers.opencode_worker]
 provider = "opencode_cli"
-# Bare model qualifies to "<endpoint.name>/<model>". Leave empty to use
-# default_model. To skip the external endpoint entirely, change provider above
-# to claude_code / codex / antigravity_cli and drop this line.
-model    = "<provider>/<cheap-model>"
+model    = "<provider>/<cheap-model>"   # or drop + switch provider to run bulk on another engine
+aliases  = ["opencode", "bulk"]
+focus    = "cheap high-throughput model: boilerplate, DB schemas, migrations, repetitive utilities, bulk code"
 
 [workers.codex_worker]
 provider = "codex"
+aliases  = ["codex", "frontend", "ui"]
+focus    = "React/Vue/Svelte, CSS, templates, UI components"
 
 [workers.antigravity_worker]
 provider = "antigravity_cli"
+aliases  = ["antigravity", "gemini", "qa", "tests"]
+focus    = "integration tests, edge cases, security review"
 
 # Profiles registered with CAO (order = install order). Supervisor first.
 [profiles]

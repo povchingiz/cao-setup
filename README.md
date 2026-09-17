@@ -75,16 +75,27 @@ rather not run a separate cheap endpoint, set `workers.opencode_worker.provider`
 to `claude_code`, `codex`, or `antigravity_cli` and the bulk role runs on that
 engine instead — no external key needed.
 
-## 3. Roles — who does what
+## 3. Roles — who does what, from one place
 
-Two independent knobs, both editable:
+Every role lives in `[workers.*]` in `cao.config.toml`:
 
-- **What a worker does** → its prompt in `2_configure/prompts/<worker>.md`
-  (the text below the frontmatter). `apply.sh` never rewrites prompt text.
-- **Who the supervisor routes to** → the worker mapping in
-  `2_configure/prompts/code_supervisor.md`. Change the aliases/targets to
-  re-assign responsibilities.
-- **Which engine/model a role runs on** → `[workers.*]` in `cao.config.toml`.
+```toml
+[workers.codex_worker]
+provider = "codex"                       # which engine
+model    = "..."                         # optional (opencode only)
+aliases  = ["codex", "frontend", "ui"]   # how the supervisor routes to it
+focus    = "React/Vue/Svelte, CSS, UI"   # what it does
+```
+
+`apply.sh` writes `provider`/`model` into the worker's frontmatter **and
+regenerates the supervisor's routing table** from `aliases` + `focus` — so this
+one block controls engine, model, and responsibility. Change `focus`/`aliases`
+to reassign work; change `provider` to move a role onto another engine.
+
+Only the **detailed prompt** (execution rules) lives separately, in
+`2_configure/prompts/<worker>.md` below the frontmatter — edit it there for
+fine behavior. `apply.sh` never touches that text; it only regenerates the
+supervisor's routing table (between the `AUTO-MAPPING` markers).
 
 After any edit: `./3_apply/apply.sh`.
 

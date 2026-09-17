@@ -136,13 +136,52 @@ def render_workers(c):
         print(f"  {wname:20s} provider={w.get('provider','-')} model={w.get('model','-')}")
 
 
+MAP_START = "<!-- AUTO-MAPPING START"
+MAP_END = "<!-- AUTO-MAPPING END -->"
+
+
+def render_supervisor_mapping(c):
+    """Regenerate the supervisor's Worker Mapping table from [workers.*]
+    aliases + focus, between the AUTO-MAPPING markers. Rest of the prompt
+    (execution rules, division of labor) is left untouched."""
+    sup = c.get("orchestrator", {}).get("default_supervisor", "code_supervisor")
+    md = CONFIGURE / "prompts" / f"{sup}.md"
+    if not md.exists():
+        print(f"  WARN supervisor '{sup}' has no {md.name}, mapping skipped")
+        return
+    text = md.read_text()
+    if MAP_START not in text or MAP_END not in text:
+        print(f"  WARN {md.name}: no AUTO-MAPPING markers, mapping skipped")
+        return
+
+    rows = []
+    for wname, w in c.get("workers", {}).items():
+        aliases = w.get("aliases") or [wname.replace("_worker", "")]
+        quoted = " / ".join(f'"{a}"' for a in aliases)
+        focus = w.get("focus", "")
+        rows.append(f"- {quoted} -> `{wname}` ({focus})")
+    block = "\n".join(rows)
+
+    start = text.index(MAP_START)
+    line_end = text.index("\n", start) + 1        # keep the START marker line
+    end = text.index(MAP_END)
+    new = (
+        text[:line_end]
+        + block + "\n"
+        + text[end:]
+    )
+    md.write_text(new)
+    print(f"  supervisor mapping   -> {md.name} ({len(rows)} workers)")
+
+
 def main():
     c = load()
     print("Rendering cao.config.toml ->")
     render_settings(c)
     render_opencode(c)
     render_workers(c)
-    print("Done. (Prompt bodies in agent_store/*.md untouched.)")
+    render_supervisor_mapping(c)
+    print("Done. (Prompt bodies below the markers are untouched.)")
 
 
 if __name__ == "__main__":
