@@ -23,7 +23,7 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 1_install/     bootstrap.sh · bootstrap.ps1 · patch_pyte.py     ← run once
 2_configure/   cao.config.toml · prompts/*.md                   ← edit these
 3_apply/       apply.sh · render_config.py · inherit_mcp.py     ← push edits live
-run/           cao-run · cao-doctor                             ← launch + health check
+run/           cao-run · cao-doctor · cao-stop · cao-tokens     ← launch · check · stop · usage
 .generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
 ```
 
@@ -115,6 +115,29 @@ Then it launches the daemon if needed and attaches you to the supervisor (tmux
 session `cao-supervisor`). Delegate by talking to it. You can detach (`Ctrl-b
 d`) and the workers keep running — the `cao-server` daemon owns them, not your
 terminal. Reattach with `tmux attach -t cao-supervisor`.
+
+> **Run it in a real terminal, not an IDE-embedded one.** Some IDE integrations
+> (e.g. Zed) strip the supervisor's file-edit tools; it then can't delegate and
+> falls back to hand-holding you through manual edits. A plain terminal keeps
+> full tools. (Workers run in the daemon and are unaffected either way.)
+
+**Stop when done.** Nothing auto-stops — workers survive detach by design, so
+you shut down explicitly:
+
+```sh
+cao-stop              # kill all cao- tmux sessions + the daemon (end of day)
+cao-stop --workers    # kill workers only, keep the supervisor + daemon up
+cao-stop --keep-server / -k   # kill the sessions, leave the daemon running
+```
+
+**Check usage.** `cao-tokens` shows lifetime token counts per engine, scraped
+from each CLI's local store (`~/.claude` jsonl, `~/.codex` + opencode sqlite) —
+no billing API. Claude and Codex run on flat-rate subscriptions, so they show
+`sub` rather than a per-token dollar figure that wouldn't be a real bill; only
+opencode's metered endpoint shows `$`. The `cache` column counts context
+re-read each turn (cheap plumbing, counted repeatedly) — read `output` as real
+generation. `--since 7d` narrows the Claude figures; `--json` for scripts. `agy`
+keeps no local log (Google quota is server-side).
 
 **Design first for big work.** For a new project or a large feature the
 supervisor acts as architect: it discusses the system with you, writes a Mermaid
