@@ -3,7 +3,7 @@
 
 Single source of truth -> generated targets:
   * ~/.config/cao/settings.json          (orchestrator block)
-  * ~/.aws/opencode/opencode.json        (nitec provider + models + default,
+  * ~/.aws/opencode/opencode.json        (bulk provider + models + default,
                                            MCP + agent tool-gating preserved)
   * agent_store/<worker>.md frontmatter  (provider:/model: only — the prompt
                                            body below the frontmatter is NEVER
@@ -28,7 +28,10 @@ REPO = HERE.parent                          # repo root
 CONFIGURE = REPO / "2_configure"
 GENERATED = REPO / ".generated"
 HOME = Path.home()
-CFG = CONFIGURE / "cao.config.toml"
+# Prefer a private local config if present (gitignored) — this keeps your real
+# endpoint/models out of the committed template. Fall back to the template.
+CFG_LOCAL = CONFIGURE / "cao.config.local.toml"
+CFG = CFG_LOCAL if CFG_LOCAL.exists() else CONFIGURE / "cao.config.toml"
 
 
 def load():

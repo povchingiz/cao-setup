@@ -26,7 +26,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"   # repo root (this script lives in 1_install/)
 CONFIGURE="$REPO/2_configure"
 APPLY="$REPO/3_apply"
-GENERATED="$REPO/.generated"
 WITH_KODEKS=0
 WITH_GUARD_HOOK=0
 INHERIT_MCP=0
@@ -74,7 +73,7 @@ if [ -f "$REPO/.env" ]; then
   set -a; . "$REPO/.env"; set +a
   ok ".env loaded"
 else
-  warn "No .env — copy .env.example to .env and set LOCAL_API_KEY (DeepSeek bulk worker)."
+  warn "No .env — copy .env.example to .env and set LOCAL_API_KEY (bulk-worker endpoint key)."
 fi
 
 # --- 1. Prerequisites --------------------------------------------------------
@@ -121,9 +120,9 @@ if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
 elif python3 -c 'import tomllib' 2>/dev/null; then
   python3 "$APPLY/render_config.py"
 else
-  warn "No Python with tomllib; falling back to committed config files."
-  cp "$GENERATED/settings.json" "$HOME/.config/cao/settings.json"
-  cp "$GENERATED/opencode.json" "$HOME/.aws/opencode/opencode.json"
+  warn "No Python with tomllib (3.11+) found — cannot render config."
+  warn "CAO ships its own Python 3.14; if you see this, the CAO install above failed."
+  exit 1
 fi
 
 if [ "$INHERIT_MCP" = "1" ]; then
@@ -233,7 +232,7 @@ cat <<'EOF'
 1. Claude Code login:      claude   (follow /login on first use)
 2. Codex login (ChatGPT):  codex login
 3. Antigravity (agy):      agy      (Google sign-in if prompted)
-4. opencode/DeepSeek:         needs LOCAL_API_KEY in .env (already persisted
+4. bulk worker:         needs LOCAL_API_KEY in .env (already persisted
                            to ~/.config/cao/cao.env if you set it).
 
 Then run:  cao-run

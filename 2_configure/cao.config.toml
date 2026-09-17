@@ -11,31 +11,39 @@ worktree_isolation      = true
 max_concurrent_workers  = 4
 server_port             = 9889
 
-# ---- Local OpenAI-compatible endpoint for the bulk worker ----
-# The API key itself is NOT here — it stays in .env as LOCAL_API_KEY and is
-# referenced as {env:LOCAL_API_KEY}. Only the non-secret endpoint + model list.
+# ---- Endpoint for the bulk worker (opencode) ----
+# The bulk worker runs the cheap/high-throughput half of the work (scaffolding,
+# schemas, boilerplate) through opencode against ANY OpenAI-compatible endpoint:
+# OpenRouter, a provider gateway, or a local server. Point base_url at yours and
+# pick a low-cost model. The API key is NOT here — it lives in .env as
+# LOCAL_API_KEY and is referenced as {env:LOCAL_API_KEY}.
+#
+# Don't want a separate bulk endpoint? Set workers.opencode_worker.provider to
+# claude_code / codex / antigravity_cli instead (see below) and this endpoint is
+# unused — the bulk role then runs on one of those engines.
 [endpoint]
-name     = "nitec"                       # opencode provider id
-base_url  = "https://llm.nitec.kz/v1"
-# Models this endpoint serves (exact ids from `GET /v1/models`).
+name     = "bulk"                        # opencode provider id (any label)
+base_url = "https://openrouter.ai/api/v1"   # example; use your own gateway
+# Models this endpoint serves (exact ids as the endpoint lists them).
 models   = [
-  "deepseek-ai/DeepSeek-V4-Pro",
-  "moonshotai/Kimi-K3",
-  "zai-org/GLM-5.2-FP8",
+  "<provider>/<cheap-model>",
+  "<provider>/<alt-model>",
 ]
 # Default model the bulk worker uses (must be one of `models` above).
-default_model = "deepseek-ai/DeepSeek-V4-Pro"
+default_model = "<provider>/<cheap-model>"
 
 # ---- Per-worker provider + model wiring ----
 # provider must be a valid CAO provider id; model applies to opencode workers.
-# Prompts/roles/descriptions live in agent_store/*.md and are NOT touched here.
+# Prompts/roles/descriptions live in prompts/*.md and are NOT touched here.
 [workers.claude_worker]
 provider = "claude_code"
 
 [workers.opencode_worker]
 provider = "opencode_cli"
-# model resolves to "<endpoint.name>/<model>". Leave empty to use default_model.
-model    = "deepseek-ai/DeepSeek-V4-Pro"
+# Bare model qualifies to "<endpoint.name>/<model>". Leave empty to use
+# default_model. To skip the external endpoint entirely, change provider above
+# to claude_code / codex / antigravity_cli and drop this line.
+model    = "<provider>/<cheap-model>"
 
 [workers.codex_worker]
 provider = "codex"

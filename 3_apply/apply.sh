@@ -39,7 +39,8 @@ ok "profiles copied"
 
 log "Re-registering profiles..."
 # Read the register list from the toml via the same Python.
-PROFILES="$("$PY" - "$CONFIGURE/cao.config.toml" <<'PYEOF'
+CFG_FILE="$CONFIGURE/cao.config.local.toml"; [ -f "$CFG_FILE" ] || CFG_FILE="$CONFIGURE/cao.config.toml"
+PROFILES="$("$PY" - "$CFG_FILE" <<'PYEOF'
 import sys, tomllib
 with open(sys.argv[1], "rb") as f: c = tomllib.load(f)
 print(" ".join(c.get("profiles", {}).get("register", [])))

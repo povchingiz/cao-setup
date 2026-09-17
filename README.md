@@ -6,7 +6,7 @@ configures it, and keeps every setting in one place.
 
 ```
 cao-run  →  supervisor (Claude)  →  assign  →  ┌ claude_worker      architecture, contracts
-                                               ├ opencode_worker    bulk: schemas, CRUD (DeepSeek)
+                                               ├ opencode_worker    bulk: schemas, CRUD (cheap model)
                                                ├ codex_worker        frontend / UI
                                                └ antigravity_worker  QA, tests, review
 ```
@@ -24,7 +24,7 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 2_configure/   cao.config.toml · prompts/*.md                   ← edit these
 3_apply/       apply.sh · render_config.py · inherit_mcp.py     ← push edits live
 run/           cao-run                                          ← launch
-.generated/    settings.json · opencode.json                    ← auto-written, don't edit
+.generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
 ```
 
 Edit only in `2_configure/`. Everything else is machinery. Never edit the live
@@ -67,6 +67,13 @@ Edit `2_configure/cao.config.toml`, then `./3_apply/apply.sh`. That's the loop.
 `apply.sh` renders the toml into `~/.config/cao/settings.json`,
 `~/.aws/opencode/opencode.json`, and each worker's frontmatter, re-registers
 them, and offers to restart the server.
+
+**Bulk worker model.** The bulk role runs the cheap, high-volume half of the
+work through `opencode` against any OpenAI-compatible endpoint — set `[endpoint]`
+`base_url` to OpenRouter or another gateway and pick a low-cost model. If you'd
+rather not run a separate cheap endpoint, set `workers.opencode_worker.provider`
+to `claude_code`, `codex`, or `antigravity_cli` and the bulk role runs on that
+engine instead — no external key needed.
 
 ## 3. Roles — who does what
 

@@ -5,13 +5,12 @@ SERVER_PORT=9889
 LOG_DIR="$HOME/.cao/logs"
 LOG_FILE="$LOG_DIR/server.log"
 
-# Local model provider credentials for the opencode/DeepSeek bulk worker (opencode_worker).
+# API key for the bulk worker's OpenAI-compatible endpoint.
 # opencode resolves {env:LOCAL_API_KEY} in ~/.aws/opencode/opencode.json at launch.
 # Look for LOCAL_API_KEY in the first env file that has it (portable across machines).
 for ENV_FILE in \
   "$HOME/.config/cao/cao.env" \
-  "$HOME/cao-setup/.env" \
-  "$HOME/.config/jcode/llmnitec.env"; do
+  "$HOME/cao-setup/.env"; do
   if [ -f "$ENV_FILE" ]; then
     set -a
     # shellcheck disable=SC1090
