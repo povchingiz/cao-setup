@@ -109,11 +109,51 @@ and model ids in `cao.config.toml` are not secret.
 | `patches/patch_pyte.py` | idempotent pyte fix |
 | `.env.example` | template for `LOCAL_API_KEY` |
 
-## dev-kodeks (optional)
+## dev-kodeks (optional development standard)
 
 `--with-kodeks` installs [dev-kodeks](https://github.com/povchingiz/dev-kodeks):
-global Claude Code rules + three skills + one hook. A **quality layer**, not a
-provider — CAO runs fine without it. Its `guard-env` hook blocks irreversible
-commands (`git push/pull/reset`, `systemctl`, `shutdown`, …); since CAO workers
-run through `claude`, it affects them too, so it's **off by default** — enable
-with `--with-guard-hook`.
+a personal development standard for Claude Code — repo structure, a
+prototype→production path, and a change register. It is a **quality layer**, not
+part of CAO; the orchestrator runs fine without it. **Off by default** — you opt
+in.
+
+**What you get** (three skills that trigger by topic, plus a global `CLAUDE.md`):
+
+| Skill | Helps with |
+|-------|-----------|
+| `repo-standard` | directory layout, root cleanliness, `.env` hygiene, lockfiles, `Makefile`/CI, where a file belongs (12-factor-ish) |
+| `code-standard` | hardening from prototype to prod — timeouts/retries/idempotency, error handling, API contracts, logging/metrics |
+| `change-standard` | a `PLAN.md`/`TEST-PLAN.md` register: acceptance criteria, test scenarios, architecture checks |
+
+This is genuinely useful if you want your projects to come out structured and
+standardized instead of ad-hoc.
+
+### ⚠️ Read before enabling — it changes how Claude behaves, everywhere
+
+`dev-kodeks`'s `install.sh` **symlinks into `~/.claude/`**, so it is **global,
+not per-project**:
+
+- **Every Claude Code session on the machine** picks it up — all your repos,
+  and this terminal. You do not choose where it applies.
+- **CAO workers inherit it too.** `claude_worker` and `code_supervisor` run
+  through the `claude` binary, so its global `CLAUDE.md` (a "scale gate" and
+  work-phase rules: *execution asks zero questions, stops only on
+  irreversible/external actions*) layers on top of each worker's own prompt.
+  Usually complementary, occasionally competing — know it's there if a worker
+  behaves more cautiously than its profile alone implies.
+- It **changes Claude's default behavior** (planning discipline, when it pauses).
+  That's the point — but enable it deliberately, not by accident.
+
+Enable only if you want that standard applied machine-wide. To try it in one
+project first instead, clone dev-kodeks and read its own README rather than
+installing globally here.
+
+### The guard-env hook (extra opt-in)
+
+`--with-guard-hook` (implies `--with-kodeks`) also activates dev-kodeks's
+`guard-env` PreToolUse hook, which **blocks** irreversible/environment commands
+(`git push/pull/reset`, `systemctl`, `shutdown`, …) and prints them for you to
+run by hand. Because CAO workers run through `claude`, this blocks those
+commands **for the workers too** — safer, but it will stop a worker mid-task if
+it tries to `git push`. Off unless you pass the flag; a `settings.json` backup
+is written when it's activated.

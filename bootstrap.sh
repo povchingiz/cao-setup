@@ -163,7 +163,11 @@ ok "codex hooks emptied"
 
 # --- 7. dev-kodeks (optional) ------------------------------------------------
 if [ "$WITH_KODEKS" = "1" ]; then
-  log "Installing dev-kodeks (Claude Code rules + skills)..."
+  warn "dev-kodeks is GLOBAL: it symlinks into ~/.claude/ and affects EVERY"
+  warn "Claude Code session on this machine — all your repos AND CAO workers"
+  warn "(claude_worker/supervisor). It changes Claude's default behavior"
+  warn "(planning discipline, when it pauses). See the README dev-kodeks section."
+  log "Installing dev-kodeks (Claude Code development standard)..."
   KODEKS_DIR="$HOME/dev-kodeks"
   if [ -d "$KODEKS_DIR/.git" ]; then
     git -C "$KODEKS_DIR" pull --ff-only || warn "dev-kodeks pull failed"
