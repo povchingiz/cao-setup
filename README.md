@@ -1,86 +1,98 @@
 # cao-setup
 
-Portable bootstrap for a CLI Agent Orchestrator (CAO) multi-agent setup.
-One script provisions a fresh **macOS or Ubuntu/Linux** machine: installs CAO
-and four worker CLIs, wires their configs, and applies the fixes needed to make
-all four workers actually run.
+One script sets up a CLI Agent Orchestrator (CAO) on a fresh **macOS** or
+**Ubuntu/Linux** machine: installs CAO and four worker CLIs, wires their
+configs, and applies the fixes needed to run them.
 
-## The setup it builds
-
-`cao-run` launches a Claude **supervisor** that delegates to four workers:
+`cao-run` then launches a Claude **supervisor** that delegates to four workers:
 
 | Worker | Engine | Role |
 |--------|--------|------|
 | claude_worker | Claude Code | architecture, contracts, hard logic |
-| jcode_worker | opencode + DeepSeek-V4-Pro (nitec endpoint) | bulk: scaffolding, schemas, CRUD |
+| jcode_worker | opencode + DeepSeek-V4-Pro | bulk: scaffolding, schemas, CRUD |
 | codex_worker | Codex (ChatGPT plan) | frontend / UI |
 | antigravity_worker | Antigravity (Gemini) | QA, tests, review |
 
-> **Windows:** CAO does not run on native Windows (it needs tmux + POSIX ptys).
-> Use **WSL2** — see [WINDOWS.md](WINDOWS.md). Inside WSL the steps below apply
-> unchanged, as long as the repo lives in your WSL home (not `/mnt/c`).
+> **Windows:** not supported natively (CAO needs tmux + POSIX ptys). Use
+> **WSL2** — see [WINDOWS.md](WINDOWS.md). Inside WSL these steps apply
+> unchanged, if the repo lives in your WSL home (not `/mnt/c`).
+
+## Prerequisites
+
+- **macOS:** [Homebrew](https://brew.sh) installed.
+- **Ubuntu/Linux:** `sudo` access (bootstrap uses `apt` for missing packages).
+- Everything else (uv, node, worker CLIs) is installed by `bootstrap.sh`.
 
 ## Quick start
 
 ```sh
-git clone <this-repo> ~/cao-setup
+git clone <your-fork-or-this-repo-url> ~/cao-setup
 cd ~/cao-setup
-cp .env.example .env          # set LOCAL_API_KEY (DeepSeek endpoint key)
-./bootstrap.sh                # base setup
-# optional: also install the dev-kodeks Claude rules layer
-./bootstrap.sh --with-kodeks
-# optional: also activate the guard-env safety hook (blocks git push/reset etc.)
-./bootstrap.sh --with-kodeks --with-guard-hook
+cp .env.example .env          # set LOCAL_API_KEY (endpoint key for the bulk worker)
+./bootstrap.sh
 ```
 
-Then the interactive logins the script prints:
+The scripts are committed executable, so `git clone` on macOS/Linux/WSL keeps
+the `+x` bit — no `chmod` needed. If you ever get "permission denied", run
+`chmod +x bootstrap.sh apply.sh cao-run`.
+
+Optional flags:
+
+```sh
+./bootstrap.sh --with-kodeks              # + dev-kodeks Claude rules layer
+./bootstrap.sh --with-kodeks --with-guard-hook  # + guard-env safety hook
+```
+
+Then the interactive logins the script prints, and launch:
 
 ```sh
 claude          # /login on first use
 codex login     # ChatGPT browser sign-in
 agy             # Google sign-in if prompted
-```
-
-Then:
-
-```sh
 cao-run
 ```
 
-## What the bootstrap does
+## What bootstrap does
 
-1. Prereqs: `python3`, `tmux`, `node`/`npm`, `uv` (installs what's missing; brew on mac, apt on Linux).
-2. CAO: `uv tool install` from `awslabs/cli-agent-orchestrator@main`.
-3. Workers via npm: `@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`; `agy` via its official cross-platform installer.
-4. Copies profiles (`agent_store/*.md`), `settings.json`, and the CAO opencode config; registers profiles with `cao install`.
-5. **pyte patch** — lets pyte parse Antigravity's private-SGR ANSI instead of crashing the CAO server.
-6. Skips the Antigravity onboarding wizard; empties `~/.codex/hooks.json` (its startup hook otherwise blocks init with a trust dialog).
-7. Optional dev-kodeks + guard-env hook.
+1. Installs missing prereqs (`python3`, `tmux`, `node`/`npm`, `uv`) — brew on mac, apt on Linux.
+2. Installs CAO: `uv tool install` from `awslabs/cli-agent-orchestrator@main`.
+3. Installs workers via npm (`@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`) + `agy` via its official installer.
+4. Renders `cao.config.toml` into the live config and registers all profiles.
+5. Patches pyte (Antigravity ANSI crash), skips Antigravity onboarding, empties `~/.codex/hooks.json` (its hook otherwise blocks init).
+6. Optional dev-kodeks + guard-env hook.
 
-## Central control — one file for all settings
+## Change settings — one file
 
-Edit **`cao.config.toml`**, then run **`./apply.sh`**. No hunting through paths.
-
-```sh
-$EDITOR cao.config.toml   # port, endpoint, models, per-worker provider+model
-./apply.sh                # renders everything + re-registers + offers restart
-```
-
-`cao.config.toml` is the single source of truth for non-secret settings:
+Edit **`cao.config.toml`**, run **`./apply.sh`**. That's the whole workflow.
 
 | Section | Controls |
 |---------|----------|
 | `[orchestrator]` | supervisor, default provider, port, max workers, worktree isolation |
-| `[endpoint]` | bulk-worker endpoint `base_url`, `models` list, `default_model` |
+| `[endpoint]` | bulk-worker `base_url`, `models` list, `default_model` |
 | `[workers.*]` | each worker's `provider` and (opencode) `model` |
-| `[profiles]` | which profiles register, in what order |
+| `[profiles]` | which profiles register, and in what order |
 
-`apply.sh` renders it into the real files CAO reads — `~/.config/cao/settings.json`,
+`apply.sh` writes the real files CAO reads — `~/.config/cao/settings.json`,
 `~/.aws/opencode/opencode.json`, and each worker's `.md` **frontmatter** — then
-runs `cao install`. **Prompt bodies in `agent_store/*.md` are never touched** —
-edit those directly (they're readable markdown), then `./apply.sh` to push them.
+re-registers and offers to restart the server. All under your home dir; no sudo.
 
-The secret (`LOCAL_API_KEY`) stays in `.env` only — never in `cao.config.toml`.
+**Worker prompts** live in `agent_store/<worker>.md` (the text below the
+frontmatter). Edit those directly, then `./apply.sh` to push them. `apply.sh`
+never rewrites prompt text — only the `provider:`/`model:` metadata lines.
+
+## Daily loop
+
+- Setting (model, port, endpoint): edit `cao.config.toml` → `./apply.sh`
+- Prompt: edit `agent_store/<worker>.md` → `./apply.sh`
+- New machine: `./bootstrap.sh`
+- After `cao update`: re-run `./bootstrap.sh` (re-applies the pyte patch; idempotent)
+
+## Secrets
+
+`LOCAL_API_KEY` is the only secret. It lives in `.env` (gitignored), is copied
+to `~/.config/cao/cao.env` (chmod 600), and is **never** written into any
+tracked file — configs reference it as `{env:LOCAL_API_KEY}`. The endpoint URL
+and model ids in `cao.config.toml` are not secret.
 
 ## Files
 
@@ -88,43 +100,20 @@ The secret (`LOCAL_API_KEY`) stays in `.env` only — never in `cao.config.toml`
 |------|------|
 | `cao.config.toml` | **single source of truth** for non-secret settings |
 | `apply.sh` | render config + prompts into live CAO, re-register, restart |
-| `render_config.py` | toml -> settings.json / opencode.json / worker frontmatter |
+| `render_config.py` | toml → settings.json / opencode.json / worker frontmatter |
 | `bootstrap.sh` | first-time provisioner (idempotent) |
-| `cao-run` | launcher: starts daemon, injects key into tmux, launches supervisor |
-| `agent_store/*.md` | 5 CAO profiles (supervisor + 4 workers); prompt bodies live here |
-| `config/*.json` | generated snapshots (settings, opencode) — regenerated by apply |
-| `patches/patch_pyte.py` | idempotent pyte SGR fix |
+| `bootstrap.ps1` | Windows helper: sets up WSL2, hands off to `bootstrap.sh` |
+| `cao-run` | launcher: starts daemon, injects key, launches supervisor |
+| `agent_store/*.md` | 5 CAO profiles; **prompt bodies live here** |
+| `config/*.json` | generated snapshots — regenerated by `apply.sh` |
+| `patches/patch_pyte.py` | idempotent pyte fix |
 | `.env.example` | template for `LOCAL_API_KEY` |
-
-## Daily loop
-
-- Change a **setting** (model, port, endpoint): edit `cao.config.toml` → `./apply.sh`.
-- Change a **prompt**: edit `agent_store/<worker>.md` body → `./apply.sh`.
-- New machine: `./bootstrap.sh` (reads the same `cao.config.toml`).
-
-## Secrets
-
-- `LOCAL_API_KEY` lives only in `.env` (gitignored) and is persisted to
-  `~/.config/cao/cao.env` (chmod 600). It is **never** hardcoded — the opencode
-  config references it as `{env:LOCAL_API_KEY}`, and `cao-run` exports it into
-  the tmux server env so worker panes inherit it.
-- Model / endpoint: set in `config/opencode.json` (provider `nitec`,
-  `baseURL: https://llm.nitec.kz/v1`). Models: `deepseek-ai/DeepSeek-V4-Pro`
-  (default), `moonshotai/Kimi-K3`, `zai-org/GLM-5.2-FP8`. Change the default via
-  the `model` field there and the `model:` line in `agent_store/jcode_worker.md`.
-
-## Durability
-
-Re-run `./bootstrap.sh` after any `cao update` — the pyte patch lives in the
-CAO venv (site-packages) and must be re-applied after a reinstall. The patcher
-is idempotent and reports if the patch is already present.
 
 ## dev-kodeks (optional)
 
-`--with-kodeks` clones and installs
-[dev-kodeks](https://github.com/povchingiz/dev-kodeks): global Claude Code rules
-+ three skills + one hook. It is a **quality/rules layer**, not a CLI provider —
-CAO runs fine without it. Its `guard-env` hook blocks irreversible/environment
-commands (`git push/pull/reset`, `systemctl`, `shutdown`, …). Because CAO
-workers run through `claude`, that hook affects them too, so it is **off by
-default**; enable with `--with-guard-hook`.
+`--with-kodeks` installs [dev-kodeks](https://github.com/povchingiz/dev-kodeks):
+global Claude Code rules + three skills + one hook. A **quality layer**, not a
+provider — CAO runs fine without it. Its `guard-env` hook blocks irreversible
+commands (`git push/pull/reset`, `systemctl`, `shutdown`, …); since CAO workers
+run through `claude`, it affects them too, so it's **off by default** — enable
+with `--with-guard-hook`.
