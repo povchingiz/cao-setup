@@ -16,6 +16,7 @@
 # Usage:
 #   cp .env.example .env         # fill LOCAL_API_KEY
 #   ./bootstrap.sh               # base setup
+#   ./bootstrap.sh --inherit-mcp # also copy your ~/.claude.json MCP into workers
 #   ./bootstrap.sh --with-kodeks # also install dev-kodeks (rules + skills)
 #   ./bootstrap.sh --with-kodeks --with-guard-hook  # also activate guard-env hook
 #
@@ -24,10 +25,12 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WITH_KODEKS=0
 WITH_GUARD_HOOK=0
+INHERIT_MCP=0
 for a in "$@"; do
   case "$a" in
     --with-kodeks)     WITH_KODEKS=1 ;;
     --with-guard-hook) WITH_GUARD_HOOK=1; WITH_KODEKS=1 ;;
+    --inherit-mcp)     INHERIT_MCP=1 ;;
     *) echo "unknown flag: $a" >&2; exit 1 ;;
   esac
 done
@@ -117,6 +120,17 @@ else
   warn "No Python with tomllib; falling back to committed config files."
   cp "$HERE/config/settings.json" "$HOME/.config/cao/settings.json"
   cp "$HERE/config/opencode.json" "$HOME/.aws/opencode/opencode.json"
+fi
+
+if [ "$INHERIT_MCP" = "1" ]; then
+  log "Inheriting your existing Claude MCP servers into the workers..."
+  warn "Copies ~/.claude.json global mcpServers into worker profiles. Review any"
+  warn "server carrying a token in its env before committing the profiles."
+  if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
+    "$CAO_PY" "$HERE/inherit_mcp.py" || warn "inherit_mcp failed"
+  else
+    python3 "$HERE/inherit_mcp.py" || warn "inherit_mcp failed"
+  fi
 fi
 
 log "Placing agent profiles (post-render frontmatter)..."

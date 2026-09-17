@@ -61,6 +61,36 @@ cao-run
 5. Patches pyte (Antigravity ANSI crash), skips Antigravity onboarding, empties `~/.codex/hooks.json` (its hook otherwise blocks init).
 6. Optional dev-kodeks + guard-env hook.
 
+## Inherit your existing MCP servers
+
+Whatever MCP servers you already use in Claude (in `~/.claude.json`) can be
+handed to the CAO workers — so an orchestrated agent gets the same tools your
+own Claude session has. Because CAO writes each profile's `mcpServers` into the
+target engine's native config, this reaches **every** worker, not just the
+Claude one.
+
+```sh
+python3 inherit_mcp.py --list      # show what you have to inherit
+python3 inherit_mcp.py --dry-run   # show the plan, write nothing
+python3 inherit_mcp.py             # add them to all worker profiles
+./apply.sh                         # push into the live engine configs
+```
+
+Or during setup: `./bootstrap.sh --inherit-mcp`.
+
+- **Source:** `~/.claude.json` global `mcpServers` only (the standard place).
+  `cao-mcp-server` is skipped (workers already have it). Plugin-provided and
+  per-project MCP are **not** auto-read — enabled-state makes them unreliable to
+  copy blindly; add those by hand.
+- **Which engines:** MCP is a protocol, so any MCP-capable worker loads them —
+  claude, codex, opencode, antigravity all do. **Skills** (e.g. superpowers)
+  are Claude-only markdown, not MCP, and cannot be inherited this way — copy
+  their guidance into a worker's prompt if you want it.
+- **Secrets:** server definitions are copied verbatim into the profile files.
+  If a server carries a token in its `env`, that token lands in the profile —
+  the script warns; review before committing. Prefer servers that read their
+  own env var.
+
 ## Change settings — one file
 
 Edit **`cao.config.toml`**, run **`./apply.sh`**. That's the whole workflow.
@@ -101,6 +131,7 @@ and model ids in `cao.config.toml` are not secret.
 | `cao.config.toml` | **single source of truth** for non-secret settings |
 | `apply.sh` | render config + prompts into live CAO, re-register, restart |
 | `render_config.py` | toml → settings.json / opencode.json / worker frontmatter |
+| `inherit_mcp.py` | copy your `~/.claude.json` MCP servers into worker profiles |
 | `bootstrap.sh` | first-time provisioner (idempotent) |
 | `bootstrap.ps1` | Windows helper: sets up WSL2, hands off to `bootstrap.sh` |
 | `cao-run` | launcher: starts daemon, injects key, launches supervisor |
