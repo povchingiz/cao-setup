@@ -16,6 +16,10 @@ all four workers actually run.
 | codex_worker | Codex (ChatGPT plan) | frontend / UI |
 | antigravity_worker | Antigravity (Gemini) | QA, tests, review |
 
+> **Windows:** CAO does not run on native Windows (it needs tmux + POSIX ptys).
+> Use **WSL2** — see [WINDOWS.md](WINDOWS.md). Inside WSL the steps below apply
+> unchanged, as long as the repo lives in your WSL home (not `/mnt/c`).
+
 ## Quick start
 
 ```sh

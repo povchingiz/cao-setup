@@ -1,0 +1,11 @@
+# Force LF on shell scripts and configs so a Windows checkout (or a clone that
+# feeds WSL) never injects CRLF — bash and the CAO tooling break on CRLF.
+*.sh   text eol=lf
+cao-run text eol=lf
+*.py   text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+.env.example text eol=lf
+# PowerShell stays CRLF (Windows-native).
+*.ps1  text eol=crlf
