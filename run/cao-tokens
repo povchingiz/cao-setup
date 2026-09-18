@@ -29,15 +29,25 @@ lifetime lump. (codex & opencode totals stay lifetime — their local stores hav
 no reliable per-day timeline here.)
 
 Usage:
-  cao-tokens                    per-day table (DEFAULT — the number to watch)
-  cao-tokens --extended  / -x   per-day table + heatmap + per-engine lifetime table
-  cao-tokens --all-time  / -a   per-engine lifetime table only (the pre-2026-09 default)
-  cao-tokens --day 2026-09-17   just that one date (what did "yesterday" actually cost)
-  cao-tokens --heatmap          GitHub-style calendar heatmap only
-  cao-tokens --cao-only         count only cao-driven claude sessions (composes with any mode)
-  cao-tokens --since 7d         limit to the last 24h/7d/2w by message time (claude)
-  cao-tokens --json             machine-readable (of whichever mode is selected)
-  (flags compose: `--cao-only`, `-x --since 8w`, `--day D --cao-only`, etc.)
+  cao-tokens                 DEFAULT: per-day table, ALL engines, last 7 days.
+                             One column per engine; claude & opencode cells are
+                             in/out, codex is a combined total, plus opencode $.
+  cao-tokens --since 2w      widen the window (24h / 7d / 2w / 3d ...)
+  cao-tokens --all  / -a     lifetime per-engine table (all history, no window)
+  cao-tokens --day DATE      just one date, e.g. --day 2026-09-17
+  cao-tokens --claude        per-day CLAUDE only (input/output/cache detail)
+  cao-tokens --heatmap       GitHub-style calendar of claude output
+  cao-tokens --extended / -x heatmap + claude daily + lifetime table
+  cao-tokens --cao-only      only cao-driven sessions (claude-only; composes)
+  cao-tokens --json          machine-readable form of the selected view
+
+Notes:
+  * "in/out" = input tokens / output tokens. Output is real generation — the
+    number that matters. codex reports one combined total (no in/out split).
+  * $ appears only for opencode (its endpoint is metered); claude & codex are
+    flat-rate subscriptions, so no per-token dollar figure is shown.
+  * agy/gemini keeps no local usage log — its quota is server-side (dashboard),
+    so it can't appear in these tables.
 """
 import json
 import os
@@ -218,6 +228,64 @@ def scrape_opencode(cutoff):
     return out
 
 
+# ---- per-day across ALL engines --------------------------------------------
+def _empty_day():
+    return {
+        "claude": {"in": 0, "out": 0},
+        "codex": {"used": 0},
+        "opencode": {"in": 0, "out": 0, "cost": 0.0},
+    }
+
+
+def scan_all_daily(cutoff, cao_only):
+    """{date -> {claude:{in,out}, codex:{used}, opencode:{in,out,cost}}} across
+    every engine that records a per-message/per-session timestamp locally.
+    (agy/gemini keeps no local usage log, so it can't appear here.)"""
+    days = defaultdict(_empty_day)
+
+    # claude — reuse the jsonl scan (already per-day, respects cao_only).
+    _, cl_by_day = _scan_claude(cutoff, cao_only, per_day=True)
+    for d, a in cl_by_day.items():
+        days[d]["claude"]["in"] += a["inp"]
+        days[d]["claude"]["out"] += a["out"]
+
+    # codex — threads.created_at is unix SECONDS; tokens_used is a combined total.
+    cdb = HOME / ".codex" / "state_5.sqlite"
+    rows = _q(cdb, "SELECT created_at, tokens_used FROM threads WHERE tokens_used>0")
+    for ts, toks in rows or []:
+        if not ts or (cutoff and ts < cutoff):
+            continue
+        d = datetime.fromtimestamp(ts, timezone.utc).date().isoformat()
+        days[d]["codex"]["used"] += toks or 0
+
+    # opencode — session.time_created is unix MILLISECONDS; real in/out/cost.
+    odb = HOME / ".local" / "share" / "opencode" / "opencode.db"
+    rows = _q(odb, "SELECT time_created, tokens_input, tokens_output, cost FROM session")
+    for tms, ti, to, cost in rows or []:
+        if not tms:
+            continue
+        sec = tms / 1000.0
+        if cutoff and sec < cutoff:
+            continue
+        d = datetime.fromtimestamp(sec, timezone.utc).date().isoformat()
+        days[d]["opencode"]["in"] += ti or 0
+        days[d]["opencode"]["out"] += to or 0
+        days[d]["opencode"]["cost"] += cost or 0.0
+    return days
+
+
+def hn(n):
+    """Human-compact number: 1234 -> 1.2k, 2_500_000 -> 2.5M, 0 -> 0."""
+    n = int(n)
+    if n == 0:
+        return "0"
+    if abs(n) >= 1_000_000:
+        return f"{n/1_000_000:.1f}M"
+    if abs(n) >= 1_000:
+        return f"{n/1_000:.1f}k"
+    return str(n)
+
+
 def fmt(n):
     return f"{n:,}"
 
@@ -258,6 +326,55 @@ def view_table(rows, since, cao_only):
     print("  scope: default counts ALL Claude Code sessions on this box; add")
     print("         --cao-only for just cao-driven ones, --daily/--heatmap per day.")
     print()
+
+
+def view_daily_all(days, since, cao_only, one_day=None):
+    """Per-day table, ONE column per engine, each cell = in/out (human-compact).
+    codex reports a single combined total (no in/out split) -> shown as one
+    number. opencode also gets a $ column (its endpoint is the only metered one).
+    agy/gemini has no local log, so it isn't shown."""
+    scope = "cao-only (claude)" if cao_only else "all engines"
+    dates = sorted(days)
+    if one_day:
+        dates = [d for d in dates if d == one_day]
+
+    print()
+    print(f"  cao-tokens — tokens per day  [{scope}]")
+    print("  legend: claude & opencode cells are in/out · codex is combined · $ = opencode cost")
+    print("  " + "-" * 66)
+    print(f"  {'date':<11} {'claude(in/out)':>16} {'codex':>8} "
+          f"{'opencode(in/out)':>18} {'$':>6}")
+    print("  " + "-" * 66)
+    if not dates:
+        print("  (no usage recorded in range)")
+        print()
+        return
+
+    tc_in = tc_out = tx = to_in = to_out = 0
+    t_cost = 0.0
+    for d in dates:
+        a = days[d]
+        cl = f"{hn(a['claude']['in'])}/{hn(a['claude']['out'])}"
+        cx = hn(a["codex"]["used"])
+        oc = f"{hn(a['opencode']['in'])}/{hn(a['opencode']['out'])}"
+        cost = a["opencode"]["cost"]
+        print(f"  {d:<11} {cl:>16} {cx:>8} {oc:>18} {cost:>6.2f}")
+        tc_in += a["claude"]["in"]; tc_out += a["claude"]["out"]
+        tx += a["codex"]["used"]
+        to_in += a["opencode"]["in"]; to_out += a["opencode"]["out"]
+        t_cost += cost
+    print("  " + "-" * 66)
+    tcl = f"{hn(tc_in)}/{hn(tc_out)}"
+    toc = f"{hn(to_in)}/{hn(to_out)}"
+    print(f"  {'TOTAL':<11} {tcl:>16} {hn(tx):>8} {toc:>18} {t_cost:>6.2f}")
+    print()
+    if not one_day and dates:
+        span = (datetime.fromisoformat(dates[-1]) -
+                datetime.fromisoformat(dates[0])).days + 1
+        print(f"  {len(dates)} active day(s) of {span} in range · "
+              f"claude out {hn(tc_out)} · codex {hn(tx)} · opencode out {hn(to_out)}")
+        print("  (agy/gemini has no local usage log — Google quota is server-side.)")
+        print()
 
 
 def view_daily(by_day, since, cao_only, one_day=None):
@@ -352,7 +469,8 @@ def view_heatmap(by_day, since, cao_only):
 
 KNOWN_FLAGS = {
     "--json", "--cao-only", "--since", "--day", "--extended", "-x",
-    "--all-time", "-a", "--heatmap", "--daily", "-h", "--help",
+    "--all-time", "--all", "-a", "--heatmap", "--daily", "--claude",
+    "-h", "--help",
 }
 
 
@@ -380,57 +498,77 @@ def main():
 
     as_json = "--json" in args
     cao_only = "--cao-only" in args
+    claude_view = "--claude" in args   # per-day CLAUDE only (needed for heatmap)
     since = None
     one_day = None
     if "--since" in args:
         since = args[args.index("--since") + 1]
     if "--day" in args:
         one_day = args[args.index("--day") + 1]
+
+    # DEFAULT window is the last 7 days. --since overrides it; --all / -a and a
+    # single --day ignore the window. cao_only forces claude-only (only claude
+    # sessions carry the cao marker).
+    extended = "--extended" in args or "-x" in args
+    all_time = "--all-time" in args or "--all" in args or "-a" in args
+    heatmap_only = "--heatmap" in args and not extended
+    if cao_only:
+        claude_view = True
+
+    if since is None and not all_time and one_day is None:
+        since = "7d"     # the requested default: max ~1 week
     cutoff = cutoff_ts(since)
 
     # --- mode selection -----------------------------------------------------
-    # Default is the per-day view (the number people actually want to watch).
-    #   (no flag)        -> daily table
-    #   --extended / -x  -> daily table + heatmap + per-engine lifetime table
-    #   --all-time / -a  -> per-engine lifetime table only (the old default)
-    #   --day DATE       -> a single day (implies daily)
-    #   --heatmap        -> heatmap only  (kept as an explicit alias)
-    #   --daily          -> daily only    (kept; it's already the default)
-    extended = "--extended" in args or "-x" in args
-    all_time = "--all-time" in args or "-a" in args
-    heatmap_only = "--heatmap" in args and not extended
-    # daily is the default unless the user asked for all-time-only
-    want_daily = one_day is not None or "--daily" in args or extended or \
-        (not all_time and not heatmap_only)
+    #   (no flag)   -> per-day table across ALL engines, last 7 days
+    #   --claude    -> per-day CLAUDE-only table (in/out/cache); needed for cao-only
+    #   --heatmap   -> claude output heatmap
+    #   --extended  -> heatmap + claude daily + per-engine lifetime table
+    #   --all-time  -> per-engine lifetime table only
+    #   --day DATE  -> a single day
+    #   --since N   -> override the 7-day window (24h/7d/2w)
+    claude_daily = claude_view or extended or heatmap_only
 
-    # Day-resolved views only need claude (codex/opencode have no per-day store).
-    if want_daily or heatmap_only or extended:
+    if claude_daily:
         _, by_day = _scan_claude(cutoff, cao_only, per_day=True)
 
     if as_json:
-        # JSON returns whatever the selected mode is about, so scripts can pick.
-        if all_time and not (want_daily or extended):
+        if all_time:
             rows = (scrape_claude(cutoff, cao_only) +
                     scrape_codex(cutoff) + scrape_opencode(cutoff))
             print(json.dumps(rows, indent=2))
-        else:
+        elif claude_daily:
             print(json.dumps({d: by_day[d] for d in sorted(by_day)}, indent=2))
+        else:
+            days = scan_all_daily(cutoff, cao_only)
+            print(json.dumps({d: days[d] for d in sorted(days)}, indent=2))
         return
 
     if heatmap_only:
         view_heatmap(by_day, since, cao_only)
         return
 
-    # Render in reading order: heatmap (overview) then daily (detail) then, in
-    # extended mode, the per-engine lifetime table (the cross-engine picture).
-    if extended:
-        view_heatmap(by_day, since, cao_only)
-    if want_daily:
-        view_daily(by_day, since, cao_only, one_day=one_day)
-    if all_time or extended:
+    if all_time:
         rows = (scrape_claude(cutoff, cao_only) +
                 scrape_codex(cutoff) + scrape_opencode(cutoff))
         view_table(rows, since, cao_only)
+        return
+
+    if extended:
+        view_heatmap(by_day, since, cao_only)
+        view_daily(by_day, since, cao_only, one_day=one_day)
+        rows = (scrape_claude(cutoff, cao_only) +
+                scrape_codex(cutoff) + scrape_opencode(cutoff))
+        view_table(rows, since, cao_only)
+        return
+
+    if claude_view:
+        view_daily(by_day, since, cao_only, one_day=one_day)
+        return
+
+    # DEFAULT: per-day, all engines, one column each.
+    days = scan_all_daily(cutoff, cao_only)
+    view_daily_all(days, since, cao_only, one_day=one_day)
 
 
 if __name__ == "__main__":

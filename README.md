@@ -50,7 +50,7 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 |---------|--------------|
 | `cao-run` | health-check, then launch the supervisor (add `--skip-check` to skip the gate) |
 | `cao-doctor` | run the pre-flight health check on its own (toolchain, engines, logins, endpoint) |
-| `cao-tokens` | token usage **per day** by default; `-x` extended (heatmap+table), `-a` all-time, `--day DATE`, `--cao-only` |
+| `cao-tokens` | per-day usage across **all engines**, last 7 days (cells are in/out); `--since 2w`, `--all`, `--day DATE`, `--claude`, `--heatmap`, `--cao-only` |
 | `cao-stop` | end the session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
 | `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
 | `python3 3_apply/inherit_mcp.py` | copy your own Claude MCP servers into the workers (`--list`, `--dry-run`) |
@@ -181,30 +181,36 @@ cao-stop --keep-server / -k   # kill the sessions, leave the daemon running
 ```
 
 **Check usage.** `cao-tokens` scrapes each CLI's local store (`~/.claude` jsonl,
-`~/.codex` + opencode sqlite) — no billing API. Claude and Codex run on flat-rate
-subscriptions, so they show `sub` rather than a per-token dollar figure that
-wouldn't be a real bill; only opencode's metered endpoint shows `$`. The `cache`
-column counts context re-read each turn (cheap plumbing, counted repeatedly) —
-read `output` as real generation. `agy` keeps no local log (Google quota is
-server-side).
+`~/.codex` + opencode sqlite) — no billing API. By **default it shows a per-day
+table across ALL engines, for the last 7 days** — one column per engine, each
+cell `input/output` (compact: `2.2k/671.8k`):
 
-By **default `cao-tokens` shows a per-day table** — the number worth watching —
-not one lifetime lump (which was easy to mistake for a single session):
-
-```sh
-cao-tokens                # per-day table (default): active days, peak
-cao-tokens -x             # extended: heatmap + per-day + per-engine lifetime table
-cao-tokens -a             # all-time: the per-engine lifetime table only
-cao-tokens --day 2026-09-17   # what one specific day actually cost
-cao-tokens --heatmap      # GitHub-style calendar of daily output
+```
+date          claude(in/out)    codex   opencode(in/out)      $
+2026-09-17       2.2k/671.8k     2.1M         2.8M/26.6k   0.00
 ```
 
-> **The Claude figure counts EVERY Claude Code session on this machine, not just
-> cao's** — a big number is your ordinary Claude use, not "cao burning limits".
-> Add `--cao-only` (composes with any mode) to isolate cao-driven sessions.
-> `--since 7d` limits Claude rows by message time; `--json` emits whichever mode
-> is selected. Per-day views read each message's own timestamp, so they show real
-> daily usage. (codex/opencode totals stay lifetime — no reliable per-day store.)
+- `output` is real generation — the number that matters. `codex` reports one
+  combined total (no in/out split). `$` shows only for opencode (its endpoint is
+  metered); claude and codex are flat-rate subscriptions. `agy`/gemini keeps no
+  local usage log, so it can't appear (Google quota is server-side).
+
+```sh
+cao-tokens                # DEFAULT: per-day, all engines, last 7 days
+cao-tokens --since 2w     # widen the window (24h / 7d / 2w / 3d ...)
+cao-tokens --all          # lifetime per-engine table (all history)
+cao-tokens --day 2026-09-17   # one specific date
+cao-tokens --claude       # per-day CLAUDE only (input/output/cache detail)
+cao-tokens --heatmap      # GitHub-style calendar of claude output
+cao-tokens -x             # extended: heatmap + claude daily + lifetime table
+cao-tokens --cao-only     # only cao-driven claude sessions
+cao-tokens --json         # machine-readable form of the selected view
+```
+
+> The claude figure counts EVERY Claude Code session on this machine, not just
+> cao's — a big number is your ordinary Claude use, not "cao burning limits".
+> `--cao-only` isolates cao-driven sessions (claude-only, since only claude
+> sessions carry the cao marker).
 
 **Design first for big work.** For a new project or a large feature the
 supervisor acts as architect: it discusses the system with you, writes a Mermaid
