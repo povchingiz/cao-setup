@@ -27,12 +27,34 @@ for ENV_FILE in "$HOME/.config/cao/cao.env" "$HOME/cao-setup/.env"; do
   if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE" 2>/dev/null; set +a; break; fi
 done
 
+# Resolve our own real location (through any symlink) so we can tell whether the
+# cao-* tools on PATH point back at this repo or are stale copies.
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+  T="$(readlink "$SELF")"; case "$T" in /*) SELF="$T" ;; *) SELF="$(dirname "$SELF")/$T" ;; esac
+done
+RUN_DIR="$(cd "$(dirname "$SELF")" && pwd)"
+
 # --- D1: orchestrator toolchain ---------------------------------------------
 hdr "D1 — Orchestrator toolchain"
 for bin in cao cao-server; do
   if command -v "$bin" >/dev/null 2>&1; then ok "$bin on PATH"; else bad "$bin missing (run bootstrap.sh)"; fi
 done
 command -v tmux >/dev/null 2>&1 && ok "tmux present" || bad "tmux missing (CAO's terminal backend)"
+
+# The cao-* tools on PATH should be THIS repo's scripts (bootstrap symlinks them).
+# A stale copy (from an older `cp`-based install) silently runs old behavior —
+# catch that here instead of leaving you puzzled why a new flag "doesn't work".
+for tool in cao-run cao-doctor cao-stop cao-tokens; do
+  onpath="$(command -v "$tool" 2>/dev/null)" || { wrn "$tool not on PATH (run bootstrap.sh)"; continue; }
+  if [ "$onpath" -ef "$RUN_DIR/$tool" ]; then
+    :  # same file (symlink or direct) — fresh
+  elif diff -q "$onpath" "$RUN_DIR/$tool" >/dev/null 2>&1; then
+    :  # identical content — fine
+  else
+    wrn "$tool on PATH is STALE (a copy differing from run/$tool) — re-run bootstrap.sh to relink"
+  fi
+done
 CAO_PY="$HOME/.local/share/uv/tools/cli-agent-orchestrator/bin/python"
 if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
   ok "CAO Python has tomllib"

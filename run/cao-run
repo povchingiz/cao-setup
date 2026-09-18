@@ -19,7 +19,14 @@ set -euo pipefail
 SERVER_PORT=9889
 LOG_DIR="$HOME/.cao/logs"
 LOG_FILE="$LOG_DIR/server.log"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve through a symlink so we find sibling scripts (cao-doctor) in the repo,
+# not wherever the symlink lives (e.g. ~/.local/bin).
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+  TARGET="$(readlink "$SELF")"
+  case "$TARGET" in /*) SELF="$TARGET" ;; *) SELF="$(dirname "$SELF")/$TARGET" ;; esac
+done
+HERE="$(cd "$(dirname "$SELF")" && pwd)"
 
 # Parse our own flags; collect the rest to pass through to `cao launch`.
 # --skip-check works in ANY position, not just first.

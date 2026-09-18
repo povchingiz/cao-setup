@@ -138,12 +138,33 @@ mkdir -p "$HOME/.aws/cli-agent-orchestrator/agent_store"
 
 log "Installing cao-run launcher + cao-doctor + cao-stop + cao-tokens..."
 mkdir -p "$HOME/.local/bin"
-cp "$REPO/run/cao-run"    "$HOME/.local/bin/cao-run"
-cp "$REPO/run/cao-doctor" "$HOME/.local/bin/cao-doctor"
-cp "$REPO/run/cao-stop"   "$HOME/.local/bin/cao-stop"
-cp "$REPO/run/cao-tokens" "$HOME/.local/bin/cao-tokens"
-chmod +x "$HOME/.local/bin/cao-run" "$HOME/.local/bin/cao-doctor" \
-         "$HOME/.local/bin/cao-stop" "$HOME/.local/bin/cao-tokens"
+# SYMLINK (not copy) so edits to run/*.sh in this repo take effect immediately —
+# a copy goes stale the moment you change the script here. Re-running bootstrap
+# refreshes a stale copy or wrong link; `ln -sfn` replaces whatever is there.
+for tool in cao-run cao-doctor cao-stop cao-tokens; do
+  ln -sfn "$REPO/run/$tool" "$HOME/.local/bin/$tool"
+  chmod +x "$REPO/run/$tool"
+done
+
+# Persist ~/.local/bin on PATH for FUTURE shells, so the tools stay found after
+# you close this terminal (this script's own `export PATH` is session-only).
+# Idempotent: only appends if no rc file already puts ~/.local/bin on PATH.
+persist_path() {
+  local line='export PATH="$HOME/.local/bin:$PATH"'
+  local rc
+  case "${SHELL##*/}" in
+    zsh)  rc="$HOME/.zshrc" ;;
+    bash) rc="$HOME/.bashrc" ;;
+    *)    rc="$HOME/.profile" ;;
+  esac
+  # Already handled by any common rc? then do nothing.
+  for f in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zprofile"; do
+    [ -f "$f" ] && grep -q '\.local/bin' "$f" 2>/dev/null && return 0
+  done
+  printf '\n# Added by cao-setup bootstrap — cao-run/cao-tokens/etc live here\n%s\n' "$line" >> "$rc"
+  warn "Added ~/.local/bin to PATH in $rc — open a new shell or 'source $rc'."
+}
+persist_path
 
 # Persist LOCAL_API_KEY where cao-run always looks.
 if [ -n "${LOCAL_API_KEY:-}" ]; then
