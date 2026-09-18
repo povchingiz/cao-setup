@@ -128,26 +128,53 @@ pick_fallback() {
 #    named after the profile (e.g. coder_worker-xxxx), which stays readable.
 #    ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"} safely expands an empty array under
 #    `set -u` (a bare "${PASSTHROUGH[@]}" would error when there are no extras).
+# A leftover supervisor session blocks a new launch with a 400 "Session
+# 'cao-supervisor' already exists" that is NOT a quota problem — switching engines
+# won't help, they'd all hit the same busy name. Catch it up front and tell the
+# user how to clear it (or just reattach) instead of a misleading quota fallback.
+if command -v tmux >/dev/null 2>&1 && tmux has-session -t cao-supervisor 2>/dev/null; then
+  echo "ℹ A supervisor session is already running (tmux: cao-supervisor)." >&2
+  echo "  Reattach:  tmux attach -t cao-supervisor" >&2
+  echo "  Or end it: cao-stop --keep-server   (then re-run cao-run)" >&2
+  exit 1
+fi
+
+# Run a launch, capturing output so we can tell WHY it failed. Returns the CLI's
+# exit code; the captured text is left in LAUNCH_OUT for the caller to inspect.
+LAUNCH_OUT=""
 launch() {  # $1 = provider; remaining args are the passthrough
   local provider="$1"; shift
   echo "▶ Supervisor provider: $provider"
-  cao launch --agents code_supervisor --provider "$provider" \
-    --session-name supervisor --auto-approve "$@"
+  # tee so the user still sees live output while we keep a copy to classify.
+  LAUNCH_OUT="$(cao launch --agents code_supervisor --provider "$provider" \
+    --session-name supervisor --auto-approve "$@" 2>&1 | tee /dev/tty)"
+  return "${PIPESTATUS[0]}"
 }
 
-# Fast path: no fallback needed if an override/hint already moved us off claude,
-# or if there's no fallback engine to try — just exec and be done.
+# Does the failure text look like a busy/duplicate session rather than quota?
+is_session_busy() {
+  printf '%s' "$LAUNCH_OUT" | grep -qiE "already exists|session .*exists|terminal .*exists"
+}
+
 FALLBACK="$(pick_fallback)"
+
+# No distinct fallback possible (already off claude, none available, or same as
+# primary): just run once and surface whatever happens.
 if [ "$SUP_PROVIDER" != "claude_code" ] || [ -z "$FALLBACK" ] || [ "$FALLBACK" = "$SUP_PROVIDER" ]; then
-  exec cao launch --agents code_supervisor --provider "$SUP_PROVIDER" \
-    --session-name supervisor --auto-approve ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}
+  launch "$SUP_PROVIDER" ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"} && exit 0
+  is_session_busy && { echo "→ That was a busy session, not a quota problem — 'cao-stop --keep-server' then retry." >&2; exit 1; }
+  exit 1
 fi
 
-# Primary is claude_code AND a distinct fallback exists: try claude, and if the
-# launch fails (quota exhausted, login expired, engine error) auto-retry once on
-# the fallback so you're never stuck the way you were when Claude ran out.
+# Primary is claude_code AND a distinct fallback exists: try claude, and only if
+# the failure looks like quota/login (NOT a busy session) auto-retry on fallback.
 if launch "$SUP_PROVIDER" ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}; then
   exit 0
+fi
+if is_session_busy; then
+  echo "→ Launch failed because a supervisor session is busy, not a quota problem." >&2
+  echo "  Clear it with 'cao-stop --keep-server' and re-run cao-run." >&2
+  exit 1
 fi
 echo "⚠ Supervisor launch on '$SUP_PROVIDER' failed — likely Claude quota/login." >&2
 echo "  Auto-retrying on fallback engine '$FALLBACK'..." >&2

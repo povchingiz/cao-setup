@@ -55,6 +55,11 @@ for tool in cao-run cao-doctor cao-stop cao-tokens; do
     wrn "$tool on PATH is STALE (a copy differing from run/$tool) — re-run bootstrap.sh to relink"
   fi
 done
+# A leftover supervisor session blocks the next cao-run with a 400 (not a quota
+# error). Flag it here so it's obvious before launch.
+if command -v tmux >/dev/null 2>&1 && tmux has-session -t cao-supervisor 2>/dev/null; then
+  wrn "a 'cao-supervisor' tmux session is already running — reattach with 'tmux attach -t cao-supervisor', or clear it with 'cao-stop --keep-server' before cao-run"
+fi
 CAO_PY="$HOME/.local/share/uv/tools/cli-agent-orchestrator/bin/python"
 if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then
   ok "CAO Python has tomllib"
