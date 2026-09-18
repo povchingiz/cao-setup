@@ -350,8 +350,34 @@ def view_heatmap(by_day, since, cao_only):
     print()
 
 
+KNOWN_FLAGS = {
+    "--json", "--cao-only", "--since", "--day", "--extended", "-x",
+    "--all-time", "-a", "--heatmap", "--daily", "-h", "--help",
+}
+
+
 def main():
     args = sys.argv[1:]
+
+    if "-h" in args or "--help" in args:
+        # The module docstring is the help text.
+        print(__doc__.rstrip())
+        return
+
+    # Validate flags early so a typo fails loudly instead of silently no-op'ing.
+    takes_value = {"--since", "--day"}
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a.startswith("-") and a not in KNOWN_FLAGS:
+            sys.exit(f"unknown flag '{a}'. Run: cao-tokens --help")
+        if a in takes_value:
+            if i + 1 >= len(args):
+                sys.exit(f"'{a}' needs a value (e.g. {a} "
+                         + ("7d" if a == "--since" else "2026-09-17") + ")")
+            i += 1
+        i += 1
+
     as_json = "--json" in args
     cao_only = "--cao-only" in args
     since = None

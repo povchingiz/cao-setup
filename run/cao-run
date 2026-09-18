@@ -1,16 +1,42 @@
 #!/usr/bin/env bash
-set -e
+# cao-run — start the CAO orchestrator: pre-flight, daemon, then the supervisor.
+#
+#   cao-run                     health-check, then launch the supervisor
+#   cao-run --skip-check        skip the cao-doctor pre-flight gate
+#   cao-run -h | --help         show this help
+#
+# Any other arguments are passed through to `cao launch` unchanged.
+#
+# Supervisor engine is chosen automatically (so a burned Claude quota never
+# leaves you stuck):
+#   CAO_SUPERVISOR_PROVIDER=<engine>  force a specific engine (highest priority)
+#   ~/.cao/supervisor_provider        fallback hint written by cao-doctor
+#   claude_code                       default
+# If claude_code is chosen but its launch fails, cao-run auto-retries once on a
+# fallback engine (CAO_FALLBACK_PROVIDER > antigravity_cli > codex).
+set -euo pipefail
 
 SERVER_PORT=9889
 LOG_DIR="$HOME/.cao/logs"
 LOG_FILE="$LOG_DIR/server.log"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Pre-flight health check (D1-D4). Skip with --skip-check. A failed REQUIRED
-# check (missing binary/toolchain) aborts before launch; warnings don't block.
-if [ "${1:-}" = "--skip-check" ]; then
+# Parse our own flags; collect the rest to pass through to `cao launch`.
+# --skip-check works in ANY position, not just first.
+SKIP_CHECK=0
+PASSTHROUGH=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --skip-check) SKIP_CHECK=1 ;;
+    -h|--help)    awk 'NR>1{ if(/^#/){sub(/^# ?/,"");print} else if(NF){exit} }' "$0"; exit 0 ;;
+    *)            PASSTHROUGH+=("$1") ;;
+  esac
   shift
-elif [ -x "$HERE/cao-doctor" ]; then
+done
+
+# Pre-flight health check (D1-D4). A failed REQUIRED check (missing
+# binary/toolchain) aborts before launch; warnings don't block.
+if [ "$SKIP_CHECK" = 0 ] && [ -x "$HERE/cao-doctor" ]; then
   "$HERE/cao-doctor" || { echo "Pre-flight failed. Fix the above or re-run with --skip-check."; exit 1; }
 fi
 
@@ -92,10 +118,13 @@ pick_fallback() {
 #    reattach with `tmux attach -t cao-supervisor` instead of hunting a uuid.
 #    (The server prepends the cao- prefix.) Workers the supervisor spawns via
 #    the assign tool still get auto uuid session names; their tmux WINDOW is
-#    named after the profile (e.g. opencode_worker-xxxx), which stays readable.
-launch() {  # $1 = provider
-  echo "▶ Supervisor provider: $1"
-  cao launch --agents code_supervisor --provider "$1" \
+#    named after the profile (e.g. coder_worker-xxxx), which stays readable.
+#    ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"} safely expands an empty array under
+#    `set -u` (a bare "${PASSTHROUGH[@]}" would error when there are no extras).
+launch() {  # $1 = provider; remaining args are the passthrough
+  local provider="$1"; shift
+  echo "▶ Supervisor provider: $provider"
+  cao launch --agents code_supervisor --provider "$provider" \
     --session-name supervisor --auto-approve "$@"
 }
 
@@ -104,17 +133,17 @@ launch() {  # $1 = provider
 FALLBACK="$(pick_fallback)"
 if [ "$SUP_PROVIDER" != "claude_code" ] || [ -z "$FALLBACK" ] || [ "$FALLBACK" = "$SUP_PROVIDER" ]; then
   exec cao launch --agents code_supervisor --provider "$SUP_PROVIDER" \
-    --session-name supervisor --auto-approve "$@"
+    --session-name supervisor --auto-approve ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}
 fi
 
 # Primary is claude_code AND a distinct fallback exists: try claude, and if the
 # launch fails (quota exhausted, login expired, engine error) auto-retry once on
 # the fallback so you're never stuck the way you were when Claude ran out.
-if launch "$SUP_PROVIDER" "$@"; then
+if launch "$SUP_PROVIDER" ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}; then
   exit 0
 fi
 echo "⚠ Supervisor launch on '$SUP_PROVIDER' failed — likely Claude quota/login." >&2
 echo "  Auto-retrying on fallback engine '$FALLBACK'..." >&2
 echo "  (Skip Claude next time with: CAO_SUPERVISOR_PROVIDER=$FALLBACK cao-run)" >&2
 exec cao launch --agents code_supervisor --provider "$FALLBACK" \
-  --session-name supervisor --auto-approve "$@"
+  --session-name supervisor --auto-approve ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}

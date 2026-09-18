@@ -35,8 +35,16 @@ CFG = CFG_LOCAL if CFG_LOCAL.exists() else CONFIGURE / "cao.config.toml"
 
 
 def load():
-    with open(CFG, "rb") as f:
-        return tomllib.load(f)
+    if not CFG.exists():
+        sys.exit(f"ERROR: config not found: {CFG}\n"
+                 "  Copy 2_configure/cao.config.toml and fill in your endpoint,\n"
+                 "  or create cao.config.local.toml. See the README.")
+    try:
+        with open(CFG, "rb") as f:
+            return tomllib.load(f)
+    except tomllib.TOMLDecodeError as e:
+        sys.exit(f"ERROR: {CFG.name} is not valid TOML:\n  {e}\n"
+                 "  Fix the syntax above and re-run ./apply.sh.")
 
 
 def render_settings(c):
@@ -211,8 +219,53 @@ def prune_stale_profiles(c):
             print(f"  {live.stem:20s} pruned (no tracked source) <- live store")
 
 
+KNOWN_PROVIDERS = {"claude_code", "opencode_cli", "codex", "antigravity_cli"}
+
+
+def validate(c):
+    """Fail early with a clear message on the config mistakes that would
+    otherwise surface as a confusing cao error at launch time."""
+    errs = []
+    for section in ("orchestrator", "endpoint", "workers", "profiles"):
+        if section not in c:
+            errs.append(f"missing [{section}] section")
+    if errs:
+        sys.exit("ERROR: config problems:\n  - " + "\n  - ".join(errs))
+
+    ep_models = set(c["endpoint"].get("models", []))
+    reg = c.get("profiles", {}).get("register", [])
+    sup = c.get("orchestrator", {}).get("default_supervisor", "code_supervisor")
+
+    for wname, w in c.get("workers", {}).items():
+        prov = w.get("provider")
+        if prov not in KNOWN_PROVIDERS:
+            errs.append(f"worker '{wname}': provider '{prov}' not one of {sorted(KNOWN_PROVIDERS)}")
+        if wname not in reg:
+            errs.append(f"worker '{wname}' is defined but not in [profiles].register")
+        m = w.get("model")
+        if m and prov == "opencode_cli":
+            bare = m.split("/", 1)[-1] if m.count("/") >= 2 else m
+            # accept both 'ns/model' and 'endpoint/ns/model'
+            if m not in ep_models and bare not in ep_models and \
+               "/".join(m.split("/")[1:]) not in ep_models:
+                errs.append(f"worker '{wname}': model '{m}' not in [endpoint].models {sorted(ep_models)}")
+    # every registered profile except the supervisor should have a prompt file
+    for p in reg:
+        if p == sup:
+            continue
+        if not (CONFIGURE / "prompts" / f"{p}.md").exists():
+            errs.append(f"registered profile '{p}' has no prompts/{p}.md")
+    if not (CONFIGURE / "prompts" / f"{sup}.md").exists():
+        errs.append(f"supervisor '{sup}' has no prompts/{sup}.md")
+
+    if errs:
+        sys.exit("ERROR: config problems:\n  - " + "\n  - ".join(errs) +
+                 "\n  Fix these in the config, then re-run ./apply.sh.")
+
+
 def main():
     c = load()
+    validate(c)
     print("Rendering cao.config.toml ->")
     render_settings(c)
     render_opencode(c)

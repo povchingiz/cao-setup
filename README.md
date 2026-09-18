@@ -1,15 +1,27 @@
 # cao-setup
 
 Set up a **CLI Agent Orchestrator (CAO)** on macOS or Linux: one Claude
-supervisor that delegates to four worker engines. This repo installs it,
-configures it, and keeps every setting in one place.
+supervisor that plans work and delegates it to a team of specialist worker
+engines — each on the CLI that's best (and cheapest) at its job. This repo
+installs it, configures it from one file, and keeps every setting in one place.
 
 ```
-cao-run  →  supervisor (Claude)  →  assign  →  ┌ claude_worker      architecture, contracts
-                                               ├ opencode_worker    bulk: schemas, CRUD (cheap model)
-                                               ├ codex_worker        frontend / UI
-                                               └ antigravity_worker  QA, tests, review
+cao-run  →  supervisor (Claude, Tech Lead)  →  assign  →
+    ┌ claude_worker       claude       architecture, contracts, hard logic
+    ├ coder_worker        opencode     implementation, schemas, CRUD (cheap model)
+    ├ analyst_worker      gemini/agy   whole-repo maps, long docs, multimodal (huge context)
+    ├ codex_worker        codex        frontend / UI
+    └ antigravity_worker  gemini/agy   QA, tests, security review
 ```
+
+**Why it saves tokens:** the expensive model (Claude) is spent only on design,
+contracts, and coordination. Reading a big repo goes to the huge-context analyst;
+the bulk of the typing goes to a cheap coding model against Claude's blueprint.
+`cao-tokens` shows you exactly where the tokens went (per day, or cao-only).
+
+**Fault-tolerant by default:** if Claude's quota or login is down, the supervisor
+falls back to another engine automatically — `cao-run` never dead-ends (see
+*Supervisor fallback*).
 
 Roles above are the **defaults** — every one is editable (see *Configure*).
 
@@ -29,6 +41,23 @@ run/           cao-run · cao-doctor · cao-stop · cao-tokens     ← launch ·
 
 Edit only in `2_configure/`. Everything else is machinery. Never edit the live
 files under `~/.aws` or `~/.config` directly — they are generated.
+
+## Command cheatsheet
+
+Every command takes `-h`/`--help`. Nothing here needs arguments to start.
+
+| Command | What it does |
+|---------|--------------|
+| `cao-run` | health-check, then launch the supervisor (add `--skip-check` to skip the gate) |
+| `cao-doctor` | run the pre-flight health check on its own (toolchain, engines, logins, endpoint) |
+| `cao-tokens` | token usage **per day** by default; `-x` extended (heatmap+table), `-a` all-time, `--day DATE`, `--cao-only` |
+| `cao-stop` | end the session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
+| `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
+| `python3 3_apply/inherit_mcp.py` | copy your own Claude MCP servers into the workers (`--list`, `--dry-run`) |
+
+Environment knobs (all optional): `CAO_SUPERVISOR_PROVIDER` forces the supervisor
+engine · `CAO_FALLBACK_PROVIDER` sets the auto-retry engine · `LOCAL_API_KEY`
+(in `.env`) authenticates the coding-worker endpoint.
 
 ## 1. Install (once)
 
@@ -68,12 +97,12 @@ Edit `2_configure/cao.config.toml`, then `./3_apply/apply.sh`. That's the loop.
 `~/.aws/opencode/opencode.json`, and each worker's frontmatter, re-registers
 them, and offers to restart the server.
 
-**Bulk worker model.** The bulk role runs the cheap, high-volume half of the
-work through `opencode` against any OpenAI-compatible endpoint — set `[endpoint]`
-`base_url` to OpenRouter or another gateway and pick a low-cost model. If you'd
-rather not run a separate cheap endpoint, set `workers.opencode_worker.provider`
-to `claude_code`, `codex`, or `antigravity_cli` and the bulk role runs on that
-engine instead — no external key needed.
+**Coding worker model.** The coding role (`coder_worker`) runs the cheap,
+high-volume half of the work through `opencode` against any OpenAI-compatible
+endpoint — set `[endpoint]` `base_url` to OpenRouter or another gateway and pick
+a low-cost model. If you'd rather not run a separate cheap endpoint, set
+`workers.coder_worker.provider` to `claude_code`, `codex`, or `antigravity_cli`
+and the coding role runs on that engine instead — no external key needed.
 
 ## 3. Roles — who does what, from one place
 
