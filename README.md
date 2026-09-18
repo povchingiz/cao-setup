@@ -95,7 +95,8 @@ Edit `2_configure/cao.config.toml`, then `./3_apply/apply.sh`. That's the loop.
 
 `apply.sh` renders the toml into `~/.config/cao/settings.json`,
 `~/.aws/opencode/opencode.json`, and each worker's frontmatter, re-registers
-them, and offers to restart the server.
+them, and offers to restart the server. Renaming a worker is safe: `apply.sh`
+prunes the old profile from every store cao uses, so no ghost is left behind.
 
 **Coding worker model.** The coding role (`coder_worker`) runs the cheap,
 high-volume half of the work through `opencode` against any OpenAI-compatible

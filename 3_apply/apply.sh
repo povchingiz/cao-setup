@@ -47,6 +47,41 @@ for p in $PROFILES; do
   cao install "$STORE/$p.md" >/dev/null 2>&1 && ok "registered $p" || warn "failed: $p"
 done
 
+# Reconcile: remove GHOST profiles left over from a rename/removal. A profile is
+# a ghost when cao still lists it (local/installed) but we neither register it nor
+# have a prompt for it — e.g. the old opencode_worker after it became coder_worker.
+#
+# NOTE: `cao profile remove` only deletes from agent-store and leaves the copies
+# in agent-context + ~/.aws/opencode/agents, so `cao profile list` keeps showing
+# the ghost. We therefore delete the profile file from EVERY location cao install
+# writes to. Built-in profiles and anything we still manage are never touched.
+if command -v cao >/dev/null 2>&1; then
+  CAO_ROOT="$HOME/.aws/cli-agent-orchestrator"
+  STORE_DIRS=(
+    "$CAO_ROOT/agent-store"    # canonical (dash)
+    "$CAO_ROOT/agent_store"    # our staging (underscore)
+    "$CAO_ROOT/agent-context"  # what `profile list` reads
+    "$HOME/.aws/opencode/agents"
+  )
+  KEEP=" $PROFILES "                                   # registered names
+  for src in "$CONFIGURE/prompts"/*.md; do             # + names we still have a prompt for
+    KEEP="$KEEP $(basename "$src" .md) "
+  done
+  while read -r name; do
+    [ -z "$name" ] && continue
+    case "$KEEP" in
+      *" $name "*) continue ;;                         # still managed — keep
+    esac
+    removed=0
+    for d in "${STORE_DIRS[@]}"; do
+      [ -f "$d/$name.md" ] && { rm -f "$d/$name.md"; removed=1; }
+    done
+    # Best-effort registry remove too (harmless if already gone).
+    cao profile remove "$name" -y >/dev/null 2>&1 || true
+    [ "$removed" = 1 ] && warn "pruned ghost profile '$name' (renamed/removed, no prompt source)"
+  done < <(cao profile list 2>/dev/null | awk 'NR>2 && ($2=="local" || $2=="installed") && $1!="" {print $1}')
+fi
+
 # Offer server restart so opencode.json / settings changes are picked up.
 if nc -z 127.0.0.1 9889 >/dev/null 2>&1; then
   printf '\n'
