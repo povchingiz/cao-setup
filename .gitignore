@@ -9,3 +9,7 @@ cao.config.local.toml
 .generated/
 # Local progress snapshot — not committed.
 NOW.md
+
+# Python bytecode cache
+__pycache__/
+*.pyc
