@@ -50,7 +50,7 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 |---------|--------------|
 | `cao-run` | health-check, then launch the supervisor (add `--skip-check` to skip the gate) |
 | `cao-doctor` | run the pre-flight health check on its own (toolchain, engines, logins, endpoint) |
-| `cao-tokens` | per-day usage across **all engines**, last 7 days (cells are in/out); `--since 2w`, `--all`, `--day DATE`, `--claude`, `--heatmap`, `--cao-only` |
+| `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out); `--since 2w`, `--lifetime`, `--day YYYY-MM-DD`, `--claude`, `--all-sessions` |
 | `cao-stop` | end the session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
 | `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
 | `python3 3_apply/inherit_mcp.py` | copy your own Claude MCP servers into the workers (`--list`, `--dry-run`) |
@@ -181,36 +181,35 @@ cao-stop --keep-server / -k   # kill the sessions, leave the daemon running
 ```
 
 **Check usage.** `cao-tokens` scrapes each CLI's local store (`~/.claude` jsonl,
-`~/.codex` + opencode sqlite) — no billing API. By **default it shows a per-day
-table across ALL engines, for the last 7 days** — one column per engine, each
-cell `input/output` (compact: `2.2k/671.8k`):
+`~/.codex` + opencode sqlite) — no billing API. By **default it shows a claude
+heatmap plus a per-day table across all engines, last 7 days, cao-only** — one
+column per engine, each cell `input/output` (compact: `2.2k/670.5k`):
 
 ```
-date          claude(in/out)    codex   opencode(in/out)      $
-2026-09-17       2.2k/671.8k     2.1M         2.8M/26.6k   0.00
+date          claude(in/out)   ~codex  ~opencode(in/out)      $
+2026-09-17       2.2k/670.5k     2.1M         2.8M/26.6k   0.00
 ```
 
+- **cao-only is the default.** For claude it counts only sessions that loaded
+  cao's MCP server (a reliable marker). codex and opencode keep no such marker
+  locally, so their columns are marked `~` and show *all* of that engine's use —
+  in practice you rarely run them outside cao. A precise per-engine split would
+  need request tracing (e.g. langfuse). `--all-sessions` drops the claude filter.
 - `output` is real generation — the number that matters. `codex` reports one
-  combined total (no in/out split). `$` shows only for opencode (its endpoint is
-  metered); claude and codex are flat-rate subscriptions. `agy`/gemini keeps no
-  local usage log, so it can't appear (Google quota is server-side).
+  combined total (no in/out split). `$` shows only for opencode (metered); claude
+  and codex are flat-rate. `agy`/gemini keeps no local log (Google server-side).
 
 ```sh
-cao-tokens                # DEFAULT: per-day, all engines, last 7 days
+cao-tokens                # DEFAULT: heatmap + per-day, all engines, 7 days, cao-only
 cao-tokens --since 2w     # widen the window (24h / 7d / 2w / 3d ...)
-cao-tokens --all          # lifetime per-engine table (all history)
-cao-tokens --day 2026-09-17   # one specific date
+cao-tokens --lifetime     # lifetime per-engine table (all history)
+cao-tokens --day 2026-09-17   # one specific date (YYYY-MM-DD)
 cao-tokens --claude       # per-day CLAUDE only (input/output/cache detail)
-cao-tokens --heatmap      # GitHub-style calendar of claude output
+cao-tokens --heatmap      # claude output heatmap only
 cao-tokens -x             # extended: heatmap + claude daily + lifetime table
-cao-tokens --cao-only     # only cao-driven claude sessions
+cao-tokens --all-sessions # include non-cao claude sessions too
 cao-tokens --json         # machine-readable form of the selected view
 ```
-
-> The claude figure counts EVERY Claude Code session on this machine, not just
-> cao's — a big number is your ordinary Claude use, not "cao burning limits".
-> `--cao-only` isolates cao-driven sessions (claude-only, since only claude
-> sessions carry the cao marker).
 
 **Design first for big work.** For a new project or a large feature the
 supervisor acts as architect: it discusses the system with you, writes a Mermaid

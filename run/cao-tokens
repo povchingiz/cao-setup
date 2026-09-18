@@ -29,21 +29,26 @@ lifetime lump. (codex & opencode totals stay lifetime — their local stores hav
 no reliable per-day timeline here.)
 
 Usage:
-  cao-tokens                 DEFAULT: per-day table, ALL engines, last 7 days.
-                             One column per engine; claude & opencode cells are
-                             in/out, codex is a combined total, plus opencode $.
+  cao-tokens                 DEFAULT: claude heatmap + per-day table (all engines),
+                             last 7 days, CAO-ONLY. One column per engine; claude &
+                             opencode cells are in/out, codex is a combined total.
   cao-tokens --since 2w      widen the window (24h / 7d / 2w / 3d ...)
-  cao-tokens --all  / -a     lifetime per-engine table (all history, no window)
-  cao-tokens --day DATE      just one date, e.g. --day 2026-09-17
+  cao-tokens --lifetime / -a per-engine lifetime table (all history, no window)
+  cao-tokens --day YYYY-MM-DD  just one date, e.g. --day 2026-09-17
   cao-tokens --claude        per-day CLAUDE only (input/output/cache detail)
-  cao-tokens --heatmap       GitHub-style calendar of claude output
+  cao-tokens --heatmap       claude output heatmap only
   cao-tokens --extended / -x heatmap + claude daily + lifetime table
-  cao-tokens --cao-only      only cao-driven sessions (claude-only; composes)
+  cao-tokens --all-sessions  include NON-cao claude sessions too (off by default)
   cao-tokens --json          machine-readable form of the selected view
 
 Notes:
-  * "in/out" = input tokens / output tokens. Output is real generation — the
-    number that matters. codex reports one combined total (no in/out split).
+  * CAO-ONLY is the default: claude counts only sessions that loaded cao's MCP
+    server (a reliable marker). codex/opencode keep no such marker locally, so
+    their columns are marked ~ and show ALL of that engine's use — in practice
+    you rarely run them outside cao. A precise per-engine split would need
+    request tracing (e.g. langfuse). Use --all-sessions to drop the claude filter.
+  * "in/out" = input / output tokens. Output is real generation — the number
+    that matters. codex reports one combined total (no in/out split).
   * $ appears only for opencode (its endpoint is metered); claude & codex are
     flat-rate subscriptions, so no per-token dollar figure is shown.
   * agy/gemini keeps no local usage log — its quota is server-side (dashboard),
@@ -333,17 +338,23 @@ def view_daily_all(days, since, cao_only, one_day=None):
     codex reports a single combined total (no in/out split) -> shown as one
     number. opencode also gets a $ column (its endpoint is the only metered one).
     agy/gemini has no local log, so it isn't shown."""
-    scope = "cao-only (claude)" if cao_only else "all engines"
+    scope = "cao-only" if cao_only else "all sessions"
     dates = sorted(days)
     if one_day:
         dates = [d for d in dates if d == one_day]
 
     print()
     print(f"  cao-tokens — tokens per day  [{scope}]")
+    if cao_only:
+        print("  claude = cao sessions only · codex/opencode = ~all "
+              "(no local cao marker — can't split)")
     print("  legend: claude & opencode cells are in/out · codex is combined · $ = opencode cost")
+    # ~ marks the columns that can't be filtered to cao (codex/opencode).
+    codex_h = "~codex" if cao_only else "codex"
+    oc_h = "~opencode(in/out)" if cao_only else "opencode(in/out)"
     print("  " + "-" * 66)
-    print(f"  {'date':<11} {'claude(in/out)':>16} {'codex':>8} "
-          f"{'opencode(in/out)':>18} {'$':>6}")
+    print(f"  {'date':<11} {'claude(in/out)':>16} {codex_h:>8} "
+          f"{oc_h:>18} {'$':>6}")
     print("  " + "-" * 66)
     if not dates:
         print("  (no usage recorded in range)")
@@ -468,10 +479,18 @@ def view_heatmap(by_day, since, cao_only):
 
 
 KNOWN_FLAGS = {
-    "--json", "--cao-only", "--since", "--day", "--extended", "-x",
-    "--all-time", "--all", "-a", "--heatmap", "--daily", "--claude",
-    "-h", "--help",
+    "--json", "--all-sessions", "--since", "--day", "--extended", "-x",
+    "--lifetime", "-a", "--heatmap", "--claude", "-h", "--help",
 }
+
+
+def valid_date(s):
+    """True if s is YYYY-MM-DD."""
+    try:
+        datetime.strptime(s, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
 
 
 def main():
@@ -493,11 +512,14 @@ def main():
             if i + 1 >= len(args):
                 sys.exit(f"'{a}' needs a value (e.g. {a} "
                          + ("7d" if a == "--since" else "2026-09-17") + ")")
+            val = args[i + 1]
+            if a == "--day" and not valid_date(val):
+                sys.exit(f"--day expects a date as YYYY-MM-DD "
+                         f"(e.g. --day 2026-09-17), got '{val}'")
             i += 1
         i += 1
 
     as_json = "--json" in args
-    cao_only = "--cao-only" in args
     claude_view = "--claude" in args   # per-day CLAUDE only (needed for heatmap)
     since = None
     one_day = None
@@ -506,34 +528,40 @@ def main():
     if "--day" in args:
         one_day = args[args.index("--day") + 1]
 
-    # DEFAULT window is the last 7 days. --since overrides it; --all / -a and a
-    # single --day ignore the window. cao_only forces claude-only (only claude
-    # sessions carry the cao marker).
-    extended = "--extended" in args or "-x" in args
-    all_time = "--all-time" in args or "--all" in args or "-a" in args
-    heatmap_only = "--heatmap" in args and not extended
-    if cao_only:
-        claude_view = True
+    # cao-only is the DEFAULT: for claude we count only sessions that loaded cao's
+    # MCP server (a reliable marker). codex/opencode keep no such marker locally,
+    # so their per-day totals are ALL of that engine's use — labeled ~all. In
+    # practice you rarely run codex/opencode outside cao, so this is close enough
+    # (a precise per-engine split would need request tracing, e.g. langfuse).
+    # --all-sessions turns the claude filter off (count every Claude Code session).
+    cao_only = "--all-sessions" not in args
 
-    if since is None and not all_time and one_day is None:
+    # DEFAULT window is the last 7 days. --since overrides it; --lifetime and a
+    # single --day ignore the window.
+    extended = "--extended" in args or "-x" in args
+    lifetime = "--lifetime" in args or "-a" in args
+    heatmap_only = "--heatmap" in args and not extended
+
+    if since is None and not lifetime and one_day is None:
         since = "7d"     # the requested default: max ~1 week
     cutoff = cutoff_ts(since)
 
     # --- mode selection -----------------------------------------------------
-    #   (no flag)   -> per-day table across ALL engines, last 7 days
-    #   --claude    -> per-day CLAUDE-only table (in/out/cache); needed for cao-only
-    #   --heatmap   -> claude output heatmap
-    #   --extended  -> heatmap + claude daily + per-engine lifetime table
-    #   --all-time  -> per-engine lifetime table only
-    #   --day DATE  -> a single day
-    #   --since N   -> override the 7-day window (24h/7d/2w)
+    #   (no flag)      -> claude heatmap + per-day table across ALL engines, 7 days
+    #   --claude       -> per-day CLAUDE-only table (in/out/cache)
+    #   --heatmap      -> claude output heatmap only
+    #   --extended     -> heatmap + claude daily + per-engine lifetime table
+    #   --lifetime/-a  -> per-engine lifetime table only
+    #   --day DATE     -> a single day
+    #   --since N      -> override the 7-day window (24h/7d/2w)
+    #   --all-sessions -> include non-cao claude sessions too
     claude_daily = claude_view or extended or heatmap_only
 
     if claude_daily:
         _, by_day = _scan_claude(cutoff, cao_only, per_day=True)
 
     if as_json:
-        if all_time:
+        if lifetime:
             rows = (scrape_claude(cutoff, cao_only) +
                     scrape_codex(cutoff) + scrape_opencode(cutoff))
             print(json.dumps(rows, indent=2))
@@ -548,7 +576,7 @@ def main():
         view_heatmap(by_day, since, cao_only)
         return
 
-    if all_time:
+    if lifetime:
         rows = (scrape_claude(cutoff, cao_only) +
                 scrape_codex(cutoff) + scrape_opencode(cutoff))
         view_table(rows, since, cao_only)
@@ -566,7 +594,11 @@ def main():
         view_daily(by_day, since, cao_only, one_day=one_day)
         return
 
-    # DEFAULT: per-day, all engines, one column each.
+    # DEFAULT: claude heatmap (quick 7-day overview) + per-day all-engine table.
+    # A single --day skips the heatmap (one bar is pointless).
+    if one_day is None:
+        _, cl_by_day = _scan_claude(cutoff, cao_only, per_day=True)
+        view_heatmap(cl_by_day, since, cao_only)
     days = scan_all_daily(cutoff, cao_only)
     view_daily_all(days, since, cao_only, one_day=one_day)
 
