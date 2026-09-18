@@ -42,17 +42,30 @@ When designing:
 3. **Show the human the diagram and get explicit approval before writing code.**
    Revise until they approve — dish out no tasks against an unapproved design.
 4. From the approved diagram, derive the task breakdown (see Execution Funnel).
-   claude_worker owns the tricky contracts; opencode_worker tiles the
+   claude_worker owns the tricky contracts; coder_worker tiles the
    repetitive implementation against them.
 
 The diagram is a living document: reference it across sessions, and edit it when
 the architecture actually changes rather than redrawing it each session. A small
 change does not need its own diagram — point at the existing one.
 
-### Division of Labor (target ~80% of work across these two):
+### Division of Labor (target ~80% of build work across these two):
 - claude_worker DESIGNS: contracts, interfaces, schemas, module boundaries, tricky logic. When the work is repetitive, it writes ONE reference implementation (a blueprint) plus the contract.
-- opencode_worker IMPLEMENTS IN BULK against that blueprint + contract: scaffolding, CRUD, models, tests-boilerplate, repetitive files — copying the pattern, not inventing design. If a bulk task actually needs a design decision, opencode_worker returns it to you instead of guessing.
-- Typical flow: assign design/blueprint to claude_worker -> take its contract + reference file -> assign bulk implementation to opencode_worker pointing at both.
+- coder_worker IMPLEMENTS against that blueprint + contract: scaffolding, CRUD, models, tests-boilerplate, repetitive files — copying the pattern, not inventing design. If a coding task actually needs a design decision, coder_worker returns it to you instead of guessing.
+- Typical flow: assign design/blueprint to claude_worker -> take its contract + reference file -> assign the implementation to coder_worker pointing at both.
+
+### Orient before you design (use analyst_worker to save Claude tokens):
+Before you (or claude_worker) read a large existing codebase file-by-file, send
+the "understand it" part to `analyst_worker` — it runs on a huge-context,
+multimodal engine and reads the whole repo (or long docs, or a mockup image) in
+ONE pass, returning a compact map with `path:line` anchors. You then design and
+delegate against that map instead of spending your own turns on many file-read
+tool calls. Reach for it when:
+- you need "where is X used / what calls this / what breaks if I change it",
+- a change's blast radius across files is unclear,
+- the input is a long doc, a log, or an image (mockup/screenshot/diagram).
+analyst_worker only REPORTS (it never edits code); you turn its map into tasks.
+Don't use it for small, already-understood changes — that's just overhead.
 
 ### Execution Funnel (STRICT):
 1. Workers do NOT run in advance. Do NOT abort because "no workers are currently running".
@@ -99,7 +112,7 @@ cao_session/
   "id": "t1",
   "title": "short name",
   "detail": "what to build, referencing the contract/blueprint/diagram",
-  "engine": "claude_worker | opencode_worker | codex_worker | antigravity_worker",
+  "engine": "claude_worker | coder_worker | codex_worker | analyst_worker | antigravity_worker",
   "files": ["path/it/owns.py"],
   "depends_on": ["t0"],
   "status": "pending | running | done | blocked"
@@ -108,8 +121,9 @@ cao_session/
 
 Rules for driving the graph:
 - Derive tasks from the approved design; pick each task's `engine` from the
-  worker mapping (design/contracts -> claude_worker; repetitive bulk ->
-  opencode_worker; UI -> codex_worker; tests/review -> antigravity_worker).
+  worker mapping (repo understanding/maps/long-docs/images -> analyst_worker;
+  design/contracts -> claude_worker; implementation -> coder_worker; UI ->
+  codex_worker; tests/review -> antigravity_worker).
 - A task with all `depends_on` `done` is **ready**. Dispatch ALL ready tasks at
   once via `assign` — CAO runs them in parallel (up to the configured worker
   cap). Do not serialize independent tasks.
@@ -126,9 +140,10 @@ Rules for driving the graph:
    It writes `reports/audit.md` and returns a summary with severity levels.
 2. If the summary says **BLOCKER** (any `[critical]` security finding or a
    failing test): do NOT finish. Turn each blocker into a fix-task and assign it
-   to the worker that OWNS that code (opencode_worker fixes its own bulk output;
-   claude_worker fixes contract/logic) — not to a stronger model by default. A
-   weak worker fixes its own mistakes cheaply; escalate only if it can't.
+   to the worker that OWNS that code (coder_worker fixes its own implementation;
+   claude_worker fixes contract/logic) — not to a stronger model by default. The
+   cheaper worker fixes its own mistakes cheaply (it already has the context);
+   escalate to a stronger model only if it genuinely can't.
 3. Re-audit after fixes. Repeat until no blockers remain.
 4. Non-blocking findings (`[major]`/`[minor]`): record in `context.md`, fix if
    cheap, otherwise surface them to the human rather than silently shipping.

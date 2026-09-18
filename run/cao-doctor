@@ -61,8 +61,45 @@ if [ -f "$ONB" ] && grep -q '"onboardingComplete": true' "$ONB" 2>/dev/null; the
 else
   wrn "antigravity onboarding not marked complete — bootstrap sets this; else run: agy"
 fi
-# Claude has no scriptable login-status check; note it.
-command -v claude >/dev/null 2>&1 && wrn "claude login can't be checked here — if unused it prompts on first launch (claude → /login)"
+# Claude: no clean scriptable quota check, so this is best-effort. The supervisor
+# defaults to claude_code, so when Claude looks unavailable we write a fallback
+# hint that cao-run reads to auto-switch the supervisor to another engine.
+#   Fallback order: env CAO_FALLBACK_PROVIDER > antigravity_cli > codex.
+HINT_FILE="$HOME/.cao/supervisor_provider"
+pick_fallback() {
+  if [ -n "${CAO_FALLBACK_PROVIDER:-}" ]; then echo "$CAO_FALLBACK_PROVIDER"
+  elif command -v agy   >/dev/null 2>&1; then echo "antigravity_cli"
+  elif command -v codex >/dev/null 2>&1; then echo "codex"
+  else echo ""; fi
+}
+claude_unavailable_reason="" # empty = looks fine
+if ! command -v claude >/dev/null 2>&1; then
+  claude_unavailable_reason="claude binary missing"
+else
+  # `claude auth status` prints JSON with "loggedIn": true/false. It reports LOGIN
+  # state only — it does NOT expose quota, so a burned quota is invisible here and
+  # only surfaces when cao actually calls the API. We catch the login case (the
+  # common "can't launch at all") and leave true-quota fallback to launch-time.
+  probe="$(CLAUDE_NONINTERACTIVE=1 claude auth status 2>&1 || true)"
+  if echo "$probe" | grep -qiE '"loggedIn"[[:space:]]*:[[:space:]]*false|not logged in|unauthenticated'; then
+    claude_unavailable_reason="claude not logged in"
+  fi
+fi
+
+if [ -n "$claude_unavailable_reason" ]; then
+  fb="$(pick_fallback)"
+  if [ -n "$fb" ]; then
+    mkdir -p "$(dirname "$HINT_FILE")"
+    printf '%s\n' "$fb" > "$HINT_FILE"
+    wrn "$claude_unavailable_reason — supervisor will fall back to '$fb' (wrote $HINT_FILE)"
+  else
+    bad "$claude_unavailable_reason and no fallback engine (agy/codex) available"
+  fi
+else
+  # Claude looks usable — clear any stale fallback hint so we go back to it.
+  if [ -f "$HINT_FILE" ]; then rm -f "$HINT_FILE"; ok "claude logged in — cleared stale fallback hint"; else ok "claude logged in"; fi
+  wrn "claude quota isn't checkable here (auth status has no quota field) — if exhausted, cao-run catches the launch failure and auto-retries on the fallback engine"
+fi
 
 # --- D4: bulk endpoint reachability -----------------------------------------
 hdr "D4 — Bulk endpoint"

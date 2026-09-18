@@ -58,11 +58,63 @@ if [ -n "${LOCAL_API_KEY:-}" ] && command -v tmux >/dev/null 2>&1; then
   tmux setenv -g LOCAL_API_KEY "$LOCAL_API_KEY" >/dev/null 2>&1 || true
 fi
 
-# 3. Launch the Claude Code supervisor with its MCP orchestration tools.
+# 3. Pick the supervisor provider.
+#    Priority: explicit env override > doctor's fallback hint > claude_code default.
+#    This is the fix for "Claude quota ran out and I couldn't launch cao": you can
+#    now run the supervisor on ANY registered engine without editing this script.
+#      Manual switch:  CAO_SUPERVISOR_PROVIDER=antigravity_cli cao-run
+#    cao-doctor writes ~/.cao/supervisor_provider when it detects Claude is
+#    unavailable (quota/login), so an unattended cao-run auto-falls back to it.
+DEFAULT_SUPERVISOR_PROVIDER="claude_code"
+HINT_FILE="$HOME/.cao/supervisor_provider"
+if [ -n "${CAO_SUPERVISOR_PROVIDER:-}" ]; then
+  SUP_PROVIDER="$CAO_SUPERVISOR_PROVIDER"          # explicit override wins
+elif [ -f "$HINT_FILE" ] && [ -s "$HINT_FILE" ]; then
+  SUP_PROVIDER="$(tr -d '[:space:]' < "$HINT_FILE")"  # doctor's fallback hint
+  echo "ℹ Claude unavailable per cao-doctor — supervisor falling back to '$SUP_PROVIDER'."
+  echo "  (Override any time with CAO_SUPERVISOR_PROVIDER=... ; delete $HINT_FILE to reset.)"
+else
+  SUP_PROVIDER="$DEFAULT_SUPERVISOR_PROVIDER"
+fi
+
+# 4. Pick a launch-time fallback engine (used only if the primary launch fails,
+#    which is the ONLY reliable signal of a burned Claude quota — auth status
+#    can't see quota). Order: env CAO_FALLBACK_PROVIDER > antigravity_cli > codex.
+pick_fallback() {
+  if [ -n "${CAO_FALLBACK_PROVIDER:-}" ]; then echo "$CAO_FALLBACK_PROVIDER"
+  elif command -v agy   >/dev/null 2>&1; then echo "antigravity_cli"
+  elif command -v codex >/dev/null 2>&1; then echo "codex"
+  else echo ""; fi
+}
+
+# 5. Launch the supervisor with its MCP orchestration tools.
 #    --session-name gives a readable tmux session (cao-supervisor) so you can
 #    reattach with `tmux attach -t cao-supervisor` instead of hunting a uuid.
 #    (The server prepends the cao- prefix.) Workers the supervisor spawns via
 #    the assign tool still get auto uuid session names; their tmux WINDOW is
 #    named after the profile (e.g. opencode_worker-xxxx), which stays readable.
-exec cao launch --agents code_supervisor --provider claude_code \
+launch() {  # $1 = provider
+  echo "▶ Supervisor provider: $1"
+  cao launch --agents code_supervisor --provider "$1" \
+    --session-name supervisor --auto-approve "$@"
+}
+
+# Fast path: no fallback needed if an override/hint already moved us off claude,
+# or if there's no fallback engine to try — just exec and be done.
+FALLBACK="$(pick_fallback)"
+if [ "$SUP_PROVIDER" != "claude_code" ] || [ -z "$FALLBACK" ] || [ "$FALLBACK" = "$SUP_PROVIDER" ]; then
+  exec cao launch --agents code_supervisor --provider "$SUP_PROVIDER" \
+    --session-name supervisor --auto-approve "$@"
+fi
+
+# Primary is claude_code AND a distinct fallback exists: try claude, and if the
+# launch fails (quota exhausted, login expired, engine error) auto-retry once on
+# the fallback so you're never stuck the way you were when Claude ran out.
+if launch "$SUP_PROVIDER" "$@"; then
+  exit 0
+fi
+echo "⚠ Supervisor launch on '$SUP_PROVIDER' failed — likely Claude quota/login." >&2
+echo "  Auto-retrying on fallback engine '$FALLBACK'..." >&2
+echo "  (Skip Claude next time with: CAO_SUPERVISOR_PROVIDER=$FALLBACK cao-run)" >&2
+exec cao launch --agents code_supervisor --provider "$FALLBACK" \
   --session-name supervisor --auto-approve "$@"

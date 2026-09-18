@@ -41,7 +41,7 @@ REPO = HERE.parent                          # repo root
 STORE = REPO / "2_configure" / "prompts"    # worker prompts + frontmatter
 CLAUDE_JSON = Path.home() / ".claude.json"
 
-DEFAULT_WORKERS = ["claude_worker", "opencode_worker", "codex_worker", "antigravity_worker"]
+DEFAULT_WORKERS = ["claude_worker", "coder_worker", "codex_worker", "analyst_worker", "antigravity_worker"]
 SKIP = {"cao-mcp-server"}
 
 

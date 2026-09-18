@@ -196,6 +196,21 @@ def copy_remaining_profiles(c):
         print(f"  {src.stem:20s} copied -> live store")
 
 
+def prune_stale_profiles(c):
+    """Delete live-store profiles that are no longer tracked in 2_configure —
+    e.g. a worker that was renamed or removed. Without this, a renamed profile
+    (opencode_worker -> coder_worker) leaves the old .md orphaned in the live
+    store, and cao may still pick it up. Only prune files that have a tracked
+    source name; never touch unrelated files."""
+    tracked = {p.stem for p in (CONFIGURE / "prompts").glob("*.md")}
+    if not LIVE_STORE.exists():
+        return
+    for live in LIVE_STORE.glob("*.md"):
+        if live.stem not in tracked:
+            live.unlink()
+            print(f"  {live.stem:20s} pruned (no tracked source) <- live store")
+
+
 def main():
     c = load()
     print("Rendering cao.config.toml ->")
@@ -204,6 +219,7 @@ def main():
     render_workers(c)
     render_supervisor_mapping(c)
     copy_remaining_profiles(c)
+    prune_stale_profiles(c)
     print("Done. Tracked prompts untouched; live store fully rendered.")
 
 

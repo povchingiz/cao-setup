@@ -20,17 +20,32 @@ On CACHE: the cache column counts cached context RE-READ each turn, so the same
 tokens are counted many times over a long session. It is cheap plumbing, not
 fresh usage — read `output` (real generation) as the number that matters.
 
+On SCOPE: by default the claude figure is EVERY Claude Code session on this
+machine (all projects), not only the ones cao drove. That total spans many days
+of ordinary Claude use — so a big lifetime number is NOT "cao burning your
+limits". Use --cao-only to count just the sessions that loaded cao's MCP server
+(supervisor + workers), and --daily / --heatmap to see it per day instead of one
+lifetime lump. (codex & opencode totals stay lifetime — their local stores have
+no reliable per-day timeline here.)
+
 Usage:
-  cao-tokens                text table (default)
-  cao-tokens --json         machine-readable
-  cao-tokens --since 7d     claude filtered by file mtime (24h/7d/2w; codex &
-                            opencode totals are lifetime regardless)
+  cao-tokens                    per-day table (DEFAULT — the number to watch)
+  cao-tokens --extended  / -x   per-day table + heatmap + per-engine lifetime table
+  cao-tokens --all-time  / -a   per-engine lifetime table only (the pre-2026-09 default)
+  cao-tokens --day 2026-09-17   just that one date (what did "yesterday" actually cost)
+  cao-tokens --heatmap          GitHub-style calendar heatmap only
+  cao-tokens --cao-only         count only cao-driven claude sessions (composes with any mode)
+  cao-tokens --since 7d         limit to the last 24h/7d/2w by message time (claude)
+  cao-tokens --json             machine-readable (of whichever mode is selected)
+  (flags compose: `--cao-only`, `-x --since 8w`, `--day D --cao-only`, etc.)
 """
 import json
 import os
 import sqlite3
 import sys
 import time
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from glob import glob
 from pathlib import Path
 
@@ -39,6 +54,11 @@ HOME = Path.home()
 # Which engines bill per token. Only these get a $ column; the rest are flat-rate
 # subscriptions where a per-token dollar figure would be meaningless.
 METERED = {"opencode"}
+
+# Markers that identify a claude session cao actually drove (supervisor/worker).
+# cao profiles load the `cao-mcp-server` MCP server and use its `assign` tool;
+# ordinary Claude Code sessions never touch these strings.
+CAO_MARKERS = ("cao-mcp-server", "cao_", '"assign"')
 
 
 def cutoff_ts(since):
@@ -51,14 +71,48 @@ def cutoff_ts(since):
     return time.time() - n * mult
 
 
-# ---- claude ----------------------------------------------------------------
-def scrape_claude(cutoff):
+def _iter_claude_files(cutoff):
     root = HOME / ".claude" / "projects"
-    agg = {}
     if not root.exists():
-        return []
+        return
     for f in glob(str(root / "**" / "*.jsonl"), recursive=True):
+        # File-mtime prefilter is a cheap coarse gate; exact per-message time
+        # filtering happens on the timestamp inside each row.
         if cutoff and os.path.getmtime(f) < cutoff:
+            continue
+        yield f
+
+
+def _file_is_cao(path):
+    """True if this session loaded cao's MCP server / used its assign tool."""
+    try:
+        with open(path, encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                if any(m in line for m in CAO_MARKERS):
+                    return True
+    except OSError:
+        return False
+    return False
+
+
+def _day_of(ts):
+    """ISO date (UTC) from a claude timestamp like 2026-09-17T02:40:40.541Z."""
+    if not ts:
+        return None
+    try:
+        return ts[:10]
+    except Exception:
+        return None
+
+
+# ---- claude scrape (shared core) -------------------------------------------
+def _scan_claude(cutoff, cao_only, per_day):
+    """Return (by_model, by_day). by_day is {date: dict(inp,out,cache)}."""
+    by_model = {}
+    by_day = defaultdict(lambda: dict(inp=0, out=0, cache=0))
+    cutoff_dt = cutoff or 0
+    for f in _iter_claude_files(cutoff):
+        if cao_only and not _file_is_cao(f):
             continue
         try:
             fh = open(f, encoding="utf-8", errors="ignore")
@@ -66,6 +120,8 @@ def scrape_claude(cutoff):
             continue
         with fh:
             for line in fh:
+                if '"output_tokens"' not in line and '"input_tokens"' not in line:
+                    continue
                 try:
                     o = json.loads(line)
                 except Exception:
@@ -74,14 +130,36 @@ def scrape_claude(cutoff):
                 u = msg.get("usage") or o.get("usage")
                 if not u:
                     continue
+                ts = o.get("timestamp")
+                # Exact per-message time filter when --since is set.
+                if cutoff_dt:
+                    try:
+                        mt = datetime.fromisoformat(
+                            ts.replace("Z", "+00:00")).timestamp()
+                        if mt < cutoff_dt:
+                            continue
+                    except Exception:
+                        pass
                 model = msg.get("model") or o.get("model") or "claude-unknown"
-                a = agg.setdefault(model, dict(inp=0, out=0, cache=0))
-                a["inp"] += u.get("input_tokens", 0)
-                a["out"] += u.get("output_tokens", 0)
-                a["cache"] += u.get("cache_read_input_tokens", 0) + \
+                inp = u.get("input_tokens", 0)
+                out = u.get("output_tokens", 0)
+                cache = u.get("cache_read_input_tokens", 0) + \
                     u.get("cache_creation_input_tokens", 0)
+                a = by_model.setdefault(model, dict(inp=0, out=0, cache=0))
+                a["inp"] += inp; a["out"] += out; a["cache"] += cache
+                if per_day:
+                    d = _day_of(ts)
+                    if d:
+                        by_day[d]["inp"] += inp
+                        by_day[d]["out"] += out
+                        by_day[d]["cache"] += cache
+    return by_model, by_day
+
+
+def scrape_claude(cutoff, cao_only=False):
+    by_model, _ = _scan_claude(cutoff, cao_only, per_day=False)
     rows = []
-    for model, a in agg.items():
+    for model, a in by_model.items():
         if model in ("<synthetic>",) or a["inp"] + a["out"] + a["cache"] == 0:
             continue
         rows.append(dict(engine="claude", model=model, input=a["inp"],
@@ -150,23 +228,13 @@ def cost_cell(r):
     return f"{r['cost']:.2f}" if r["cost"] else "0.00"
 
 
-def main():
-    args = sys.argv[1:]
-    as_json = "--json" in args
-    since = None
-    if "--since" in args:
-        since = args[args.index("--since") + 1]
-    cutoff = cutoff_ts(since)
-
-    rows = scrape_claude(cutoff) + scrape_codex(cutoff) + scrape_opencode(cutoff)
-
-    if as_json:
-        print(json.dumps(rows, indent=2))
-        return
-
+# ---- views -----------------------------------------------------------------
+def view_table(rows, since, cao_only):
+    scope = "cao-only" if cao_only else "all claude sessions"
     print()
     print("  cao-tokens — local token counts" +
-          (f"  (claude since {since})" if since else "  (lifetime)"))
+          (f"  (claude since {since})" if since else "  (lifetime)") +
+          f"  [{scope}]")
     print("  " + "-" * 82)
     print(f"  {'engine':<9} {'model':<26} {'input':>12} {'output':>10} {'cache':>12} {'$':>6}")
     print("  " + "-" * 82)
@@ -187,7 +255,156 @@ def main():
     print("  cache = context re-read each turn (same tokens counted repeatedly);")
     print("          it's cheap plumbing, not fresh usage. Read 'output' as spend.")
     print("  agy (gemini): no local usage log — quota is server-side (dashboard).")
+    print("  scope: default counts ALL Claude Code sessions on this box; add")
+    print("         --cao-only for just cao-driven ones, --daily/--heatmap per day.")
     print()
+
+
+def view_daily(by_day, since, cao_only, one_day=None):
+    scope = "cao-only" if cao_only else "all claude"
+    print()
+    if one_day:
+        title = f"cao-tokens — claude output on {one_day}"
+    else:
+        title = "cao-tokens — claude output per day (LeetCode-style)"
+    print(f"  {title}  [{scope}]")
+    print("  " + "-" * 58)
+    print(f"  {'date':<12} {'input':>12} {'output':>12} {'cache':>14}")
+    print("  " + "-" * 58)
+    days = sorted(by_day)
+    if one_day:
+        days = [d for d in days if d == one_day]
+        if not days:
+            print(f"  (no claude usage recorded on {one_day})")
+            print()
+            return
+    t_in = t_out = t_cache = 0
+    for d in days:
+        a = by_day[d]
+        # tiny inline bar scaled to the day's output within this window
+        print(f"  {d:<12} {fmt(a['inp']):>12} {fmt(a['out']):>12} {fmt(a['cache']):>14}")
+        t_in += a["inp"]; t_out += a["out"]; t_cache += a["cache"]
+    print("  " + "-" * 58)
+    print(f"  {'TOTAL':<12} {fmt(t_in):>12} {fmt(t_out):>12} {fmt(t_cache):>14}")
+    if not one_day and days:
+        # streak + peak, LeetCode/GitHub flavour
+        peak = max(days, key=lambda d: by_day[d]["out"])
+        active = len(days)
+        span = (datetime.fromisoformat(days[-1]) -
+                datetime.fromisoformat(days[0])).days + 1
+        print()
+        print(f"  active days: {active} of {span} in range · "
+              f"peak {peak} ({fmt(by_day[peak]['out'])} output)")
+    print()
+
+
+HEAT_CHARS = " ░▒▓█"  # 5 levels, empty -> full
+
+
+def view_heatmap(by_day, since, cao_only):
+    scope = "cao-only" if cao_only else "all claude"
+    days = sorted(by_day)
+    print()
+    print(f"  cao-tokens — claude output heatmap (GitHub-style)  [{scope}]")
+    if not days:
+        print("  (no claude usage in range)")
+        print()
+        return
+    start = datetime.fromisoformat(days[0]).date()
+    end = datetime.fromisoformat(days[-1]).date()
+    # Align start to Monday so rows are clean weeks.
+    start -= timedelta(days=start.weekday())
+    maxv = max(by_day[d]["out"] for d in days) or 1
+
+    def level(v):
+        if v <= 0:
+            return 0
+        # log-ish buckets so a couple of huge days don't flatten the rest
+        frac = v / maxv
+        return 1 + min(3, int(frac * 4))
+
+    # Build week columns; each column is Mon..Sun.
+    weeks = []
+    cur = start
+    while cur <= end:
+        col = []
+        for _ in range(7):
+            key = cur.isoformat()
+            v = by_day.get(key, {}).get("out", 0) if key in by_day else 0
+            col.append((cur, v))
+            cur += timedelta(days=1)
+        weeks.append(col)
+
+    labels = ["Mon", "   ", "Wed", "   ", "Fri", "   ", "Sun"]
+    for row in range(7):
+        line = "  " + labels[row] + " "
+        for col in weeks:
+            _, v = col[row]
+            line += HEAT_CHARS[level(v)]
+        print(line)
+    print()
+    print(f"  span {days[0]} → {days[-1]} · "
+          f"less {HEAT_CHARS[1]}{HEAT_CHARS[2]}{HEAT_CHARS[3]}{HEAT_CHARS[4]} more "
+          f"· peak/day {fmt(maxv)} output")
+    print("  (each column = one week, Mon top → Sun bottom; shade = output tokens)")
+    print()
+
+
+def main():
+    args = sys.argv[1:]
+    as_json = "--json" in args
+    cao_only = "--cao-only" in args
+    since = None
+    one_day = None
+    if "--since" in args:
+        since = args[args.index("--since") + 1]
+    if "--day" in args:
+        one_day = args[args.index("--day") + 1]
+    cutoff = cutoff_ts(since)
+
+    # --- mode selection -----------------------------------------------------
+    # Default is the per-day view (the number people actually want to watch).
+    #   (no flag)        -> daily table
+    #   --extended / -x  -> daily table + heatmap + per-engine lifetime table
+    #   --all-time / -a  -> per-engine lifetime table only (the old default)
+    #   --day DATE       -> a single day (implies daily)
+    #   --heatmap        -> heatmap only  (kept as an explicit alias)
+    #   --daily          -> daily only    (kept; it's already the default)
+    extended = "--extended" in args or "-x" in args
+    all_time = "--all-time" in args or "-a" in args
+    heatmap_only = "--heatmap" in args and not extended
+    # daily is the default unless the user asked for all-time-only
+    want_daily = one_day is not None or "--daily" in args or extended or \
+        (not all_time and not heatmap_only)
+
+    # Day-resolved views only need claude (codex/opencode have no per-day store).
+    if want_daily or heatmap_only or extended:
+        _, by_day = _scan_claude(cutoff, cao_only, per_day=True)
+
+    if as_json:
+        # JSON returns whatever the selected mode is about, so scripts can pick.
+        if all_time and not (want_daily or extended):
+            rows = (scrape_claude(cutoff, cao_only) +
+                    scrape_codex(cutoff) + scrape_opencode(cutoff))
+            print(json.dumps(rows, indent=2))
+        else:
+            print(json.dumps({d: by_day[d] for d in sorted(by_day)}, indent=2))
+        return
+
+    if heatmap_only:
+        view_heatmap(by_day, since, cao_only)
+        return
+
+    # Render in reading order: heatmap (overview) then daily (detail) then, in
+    # extended mode, the per-engine lifetime table (the cross-engine picture).
+    if extended:
+        view_heatmap(by_day, since, cao_only)
+    if want_daily:
+        view_daily(by_day, since, cao_only, one_day=one_day)
+    if all_time or extended:
+        rows = (scrape_claude(cutoff, cao_only) +
+                scrape_codex(cutoff) + scrape_opencode(cutoff))
+        view_table(rows, since, cao_only)
 
 
 if __name__ == "__main__":

@@ -121,6 +121,26 @@ terminal. Reattach with `tmux attach -t cao-supervisor`.
 > falls back to hand-holding you through manual edits. A plain terminal keeps
 > full tools. (Workers run in the daemon and are unaffected either way.)
 
+### Supervisor fallback (when Claude's quota runs out)
+
+The supervisor defaults to `claude_code`. If your Claude quota is exhausted or
+your login expires, `cao-run` no longer dead-ends — it picks the supervisor
+engine in this priority:
+
+1. **`CAO_SUPERVISOR_PROVIDER`** env var — explicit override, always wins:
+   ```sh
+   CAO_SUPERVISOR_PROVIDER=antigravity_cli cao-run
+   ```
+2. **Fallback hint** — `cao-doctor` writes `~/.cao/supervisor_provider` when it
+   sees Claude logged out, and clears it when Claude works again.
+3. **`claude_code`** default.
+
+On top of that, when the primary is `claude_code`, `cao-run` **auto-retries once
+on a fallback engine if the launch itself fails** — this catches a burned quota,
+which isn't visible any earlier (`claude auth status` reports login, not quota).
+Fallback order: `CAO_FALLBACK_PROVIDER` env > `antigravity_cli` (if `agy`
+present) > `codex`. Any registered worker engine works as the value.
+
 **Stop when done.** Nothing auto-stops — workers survive detach by design, so
 you shut down explicitly:
 
@@ -130,14 +150,31 @@ cao-stop --workers    # kill workers only, keep the supervisor + daemon up
 cao-stop --keep-server / -k   # kill the sessions, leave the daemon running
 ```
 
-**Check usage.** `cao-tokens` shows lifetime token counts per engine, scraped
-from each CLI's local store (`~/.claude` jsonl, `~/.codex` + opencode sqlite) —
-no billing API. Claude and Codex run on flat-rate subscriptions, so they show
-`sub` rather than a per-token dollar figure that wouldn't be a real bill; only
-opencode's metered endpoint shows `$`. The `cache` column counts context
-re-read each turn (cheap plumbing, counted repeatedly) — read `output` as real
-generation. `--since 7d` narrows the Claude figures; `--json` for scripts. `agy`
-keeps no local log (Google quota is server-side).
+**Check usage.** `cao-tokens` scrapes each CLI's local store (`~/.claude` jsonl,
+`~/.codex` + opencode sqlite) — no billing API. Claude and Codex run on flat-rate
+subscriptions, so they show `sub` rather than a per-token dollar figure that
+wouldn't be a real bill; only opencode's metered endpoint shows `$`. The `cache`
+column counts context re-read each turn (cheap plumbing, counted repeatedly) —
+read `output` as real generation. `agy` keeps no local log (Google quota is
+server-side).
+
+By **default `cao-tokens` shows a per-day table** — the number worth watching —
+not one lifetime lump (which was easy to mistake for a single session):
+
+```sh
+cao-tokens                # per-day table (default): active days, peak
+cao-tokens -x             # extended: heatmap + per-day + per-engine lifetime table
+cao-tokens -a             # all-time: the per-engine lifetime table only
+cao-tokens --day 2026-09-17   # what one specific day actually cost
+cao-tokens --heatmap      # GitHub-style calendar of daily output
+```
+
+> **The Claude figure counts EVERY Claude Code session on this machine, not just
+> cao's** — a big number is your ordinary Claude use, not "cao burning limits".
+> Add `--cao-only` (composes with any mode) to isolate cao-driven sessions.
+> `--since 7d` limits Claude rows by message time; `--json` emits whichever mode
+> is selected. Per-day views read each message's own timestamp, so they show real
+> daily usage. (codex/opencode totals stay lifetime — no reliable per-day store.)
 
 **Design first for big work.** For a new project or a large feature the
 supervisor acts as architect: it discusses the system with you, writes a Mermaid
@@ -181,6 +218,28 @@ Skills (e.g. superpowers) are Claude-only markdown, not MCP, and can't be
 inherited this way. Source is `~/.claude.json` global `mcpServers` only. A
 server carrying a token in its `env` lands in the profile file — the script
 warns; review before committing.
+
+### Don't have any yet? Context MCP servers worth adding
+
+`inherit_mcp.py` only copies servers you **already** have. If your `--list` is
+empty, these two give the workers a big context/token win before you inherit —
+they let a worker read, search, and map the repo compactly instead of pulling
+whole files into its context:
+
+- **lean-ctx** — cached, compressed file reads + git/grep output. Cuts the tokens
+  a worker spends just to look at code.
+- **symdex** — symbol index: "who calls X", file/repo outlines, dependency maps.
+  This is exactly what `analyst_worker` leans on.
+
+Add them to your **own** Claude first (they live in `~/.claude.json` global
+`mcpServers`), confirm with `python3 3_apply/inherit_mcp.py --list`, then run the
+inherit + apply steps above to push them to every worker. They're independent,
+optional tools — CAO works without them; they only make each worker cheaper.
+
+Skills like **superpowers** (brainstorming, systematic-debugging) are Claude
+Code-only and can't reach codex/opencode/antigravity workers. Install them in
+your own Claude if you want them on the **supervisor** (which runs on Claude);
+the non-Claude workers won't see them either way.
 
 ## Secrets
 
