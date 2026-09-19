@@ -3,7 +3,7 @@ name: coder_worker
 description: "High-throughput coding worker on a low-cost model."
 provider: "opencode_cli"
 role: developer
-model: "nitec/deepseek-ai/DeepSeek-V4-Pro"
+model: "<endpoint>/<cheap-model>"
 mcpServers:
   cao-mcp-server:
     type: stdio

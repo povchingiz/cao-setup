@@ -142,10 +142,17 @@ def render_workers(c):
             edits["provider"] = w["provider"]
         if w.get("model"):
             model = w["model"]
-            if "/" not in model:
-                model = f"{endpoint}/{model}"
-            elif not model.startswith(f"{endpoint}/"):
-                model = f"{endpoint}/{model.split('/', 1)[-1]}" if model.count("/") >= 2 else f"{endpoint}/{model}"
+            # The `<endpoint>/…` prefix is ONLY for the opencode bulk endpoint
+            # (opencode resolves a model as "<provider>/<id>"). Every other engine
+            # (codex, antigravity/gemini, copilot) names its models directly, so
+            # writing a "nitec/…" prefix there would be a broken id. Prefix only
+            # for opencode_cli, and don't double-prefix one already qualified.
+            if w.get("provider") == "opencode_cli":
+                if "/" not in model:
+                    model = f"{endpoint}/{model}"
+                elif not model.startswith(f"{endpoint}/"):
+                    model = (f"{endpoint}/{model.split('/', 1)[-1]}"
+                             if model.count("/") >= 2 else f"{endpoint}/{model}")
             edits["model"] = model
         (LIVE_STORE / f"{wname}.md").write_text(_apply_frontmatter(src.read_text(), edits))
         print(f"  {wname:20s} provider={w.get('provider','-')} model={w.get('model','-')} -> live store")

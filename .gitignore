@@ -16,3 +16,8 @@ __pycache__/
 
 # opencode local project artifact
 .opencode/
+
+# Local plans / scratch — never commit
+19sep.md
+/*-plan.md
+NOW.md
