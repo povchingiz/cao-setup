@@ -11,7 +11,8 @@ cao-run  →  supervisor (Claude, Tech Lead)  →  assign  →
     ├ coder_worker        opencode     implementation, schemas, CRUD (cheap model)
     ├ analyst_worker      gemini/agy   whole-repo maps, long docs, multimodal (huge context)
     ├ codex_worker        codex        frontend / UI
-    └ antigravity_worker  gemini/agy   QA, tests, security review
+    ├ antigravity_worker  gemini/agy   QA, tests, security review
+    └ copilot_worker      copilot      general coding hand (role TBD)
 ```
 
 **Why it saves tokens:** the expensive model (Claude) is spent only on design,
@@ -34,7 +35,7 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 ```
 1_install/     bootstrap.sh · bootstrap.ps1 · patch_pyte.py     ← run once
 2_configure/   cao.config.toml · prompts/*.md                   ← edit these
-3_apply/       apply.sh · render_config.py · inherit_mcp.py     ← push edits live
+3_apply/       apply.sh · render_config.py · inherit_mcp.py · inherit_all.py   ← push edits · share MCP
 run/           cao-run · cao-doctor · cao-stop · cao-tokens     ← launch · check · stop · usage
 .generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
 ```
@@ -53,7 +54,8 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 | `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out); `--since 2w`, `--lifetime`, `--day YYYY-MM-DD`, `--claude`, `--all-sessions` |
 | `cao-stop` | end the session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
 | `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
-| `python3 3_apply/inherit_mcp.py` | copy your own Claude MCP servers into the workers (`--list`, `--dry-run`) |
+| `python3 3_apply/inherit_mcp.py` | copy your Claude MCP servers into worker profiles (`--list`, `--dry-run`) |
+| `python3 3_apply/inherit_all.py` | register those MCP servers with every engine's own CLI (codex/opencode/agy/copilot) |
 
 Environment knobs (all optional): `CAO_SUPERVISOR_PROVIDER` forces the supervisor
 engine · `CAO_FALLBACK_PROVIDER` sets the auto-retry engine · `LOCAL_API_KEY`
@@ -236,23 +238,41 @@ re-audits, and repeats until clean. Only then is the session reported complete �
 and you still run your own acceptance pass. If dev-kodeks is installed, the
 auditor uses its code/security criteria as the rubric.
 
-## Inherit your existing MCP servers
+## Share your MCP servers with every engine
 
-Whatever MCP servers you already use in Claude (`~/.claude.json`) can be handed
-to the workers — CAO writes each into the target engine's native config, so it
-reaches every worker, not just the Claude one.
+MCP is a cross-engine protocol — codex, opencode, antigravity (agy), and copilot
+each have their own `mcp add`, so an MCP tool you use in Claude (lean-ctx,
+symdex, …) can reach all of them. Two scripts, two levels:
 
 ```sh
+# 1. Into cao WORKER PROFILES (cao writes them into each engine's config at install):
 python3 3_apply/inherit_mcp.py --list      # what you have
-python3 3_apply/inherit_mcp.py --dry-run   # plan only
-python3 3_apply/inherit_mcp.py             # add to all workers
+python3 3_apply/inherit_mcp.py             # add to all worker profiles
 ./3_apply/apply.sh                         # push live
+
+# 2. Directly into every ENGINE's own CLI config (works outside cao too):
+python3 3_apply/inherit_all.py --list      # per-engine plan
+python3 3_apply/inherit_all.py --dry-run   # print the mcp-add commands
+python3 3_apply/inherit_all.py             # register with codex/opencode/agy/copilot
 ```
 
-Skills (e.g. superpowers) are Claude-only markdown, not MCP, and can't be
-inherited this way. Source is `~/.claude.json` global `mcpServers` only. A
-server carrying a token in its `env` lands in the profile file — the script
-warns; review before committing.
+Both read `~/.claude.json` global `mcpServers` (skipping cao's own server). A
+server carrying a token in its `env` is copied verbatim — the scripts warn so you
+can review. `bootstrap.sh --inherit-mcp` runs both automatically.
+
+### Skills & plugins are NOT MCP
+
+Skills and plugins are per-CLI instruction folders, not a shared protocol:
+
+- **Claude Code** and **Copilot** read `.claude/skills/` (Copilot natively), so
+  they see your skills directly.
+- **codex** / **opencode** read `AGENTS.md`; **gemini** reads `GEMINI.md`. They
+  have no "skills" mechanism — a plugin reaches them only as instruction text in
+  those files.
+
+So MCP broadcasts cleanly to every engine; skills reach only claude + copilot as
+real skills. (A future step can concatenate skill text into AGENTS.md/GEMINI.md
+for the others — not done yet.)
 
 ### Don't have any yet? Context MCP servers worth adding
 

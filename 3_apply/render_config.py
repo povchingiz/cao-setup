@@ -219,7 +219,7 @@ def prune_stale_profiles(c):
             print(f"  {live.stem:20s} pruned (no tracked source) <- live store")
 
 
-KNOWN_PROVIDERS = {"claude_code", "opencode_cli", "codex", "antigravity_cli"}
+KNOWN_PROVIDERS = {"claude_code", "opencode_cli", "codex", "antigravity_cli", "copilot_cli"}
 
 
 def validate(c):

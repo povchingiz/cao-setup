@@ -114,9 +114,12 @@ hash -r || true
 # --- 4. Render config into the live store ------------------------------------
 mkdir -p "$HOME/.config/cao" "$HOME/.aws/opencode"
 CAO_PY="$HOME/.local/share/uv/tools/cli-agent-orchestrator/bin/python"
+# Pick a tomllib-capable interpreter once, reuse it (also usable with a heredoc).
+if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then PY="$CAO_PY"
+elif python3 -c 'import tomllib' 2>/dev/null; then PY="python3"
+else PY=""; fi
 py_run() {  # run a repo python script with a tomllib-capable interpreter
-  if [ -x "$CAO_PY" ] && "$CAO_PY" -c 'import tomllib' 2>/dev/null; then "$CAO_PY" "$1"
-  elif python3 -c 'import tomllib' 2>/dev/null; then python3 "$1"
+  if [ -n "$PY" ]; then "$PY" "$@"
   else
     warn "No Python with tomllib (3.11+) — cannot render. CAO ships 3.14; its install above must have failed."
     exit 1
@@ -130,6 +133,10 @@ if [ "$INHERIT_MCP" = "1" ]; then
   warn "Copies ~/.claude.json global mcpServers into worker profiles. Review any"
   warn "server carrying a token in its env before committing the profiles."
   py_run "$APPLY/inherit_mcp.py"
+  # Also register the same MCP servers directly with every engine's own CLI
+  # (codex/opencode/agy/copilot), so the shared tools reach all of them.
+  log "Broadcasting MCP servers to every engine (codex/opencode/agy/copilot)..."
+  py_run "$APPLY/inherit_all.py" || warn "inherit_all had issues — check output above"
 fi
 
 log "Rendering settings + opencode + profiles from cao.config.toml..."
@@ -176,7 +183,15 @@ fi
 
 log "Initializing CAO database + registering profiles..."
 cao init >/dev/null 2>&1 || true
-for p in code_supervisor claude_worker opencode_worker codex_worker antigravity_worker; do
+# Register exactly the profiles the config lists (single source of truth), so a
+# renamed/added worker doesn't need this line edited.
+CFG="$REPO/2_configure/cao.config.local.toml"; [ -f "$CFG" ] || CFG="$REPO/2_configure/cao.config.toml"
+PROFILES="$("$PY" - "$CFG" <<'PYEOF'
+import sys, tomllib
+print(" ".join(tomllib.load(open(sys.argv[1],"rb")).get("profiles",{}).get("register",[])))
+PYEOF
+)"
+for p in $PROFILES; do
   cao install "$HOME/.aws/cli-agent-orchestrator/agent_store/$p.md" >/dev/null 2>&1 \
     && ok "registered $p" || warn "failed to register $p"
 done
