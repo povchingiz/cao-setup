@@ -2,18 +2,20 @@
 # cao-run — start the CAO orchestrator: pre-flight, daemon, then the supervisor.
 #
 #   cao-run                     health-check, then launch the supervisor
+#   cao-run --provider <engine> select supervisor engine (claude_code, antigravity_cli, etc)
+#   cao-run --model <model>     select specific model (e.g. gemini-3.8-flash-high)
 #   cao-run --skip-check        skip the cao-doctor pre-flight gate
 #   cao-run -h | --help         show this help
 #
 # Any other arguments are passed through to `cao launch` unchanged.
 #
-# Supervisor engine is chosen automatically (so a burned Claude quota never
-# leaves you stuck):
+# Supervisor engine and model can also be set via environment:
 #   CAO_SUPERVISOR_PROVIDER=<engine>  force a specific engine (highest priority)
+#   CAO_SUPERVISOR_MODEL=<model>      force a specific model for the engine
 #   ~/.cao/supervisor_provider        fallback hint written by cao-doctor
-#   claude_code                       default
+#   claude_code                       default engine
 # If claude_code is chosen but its launch fails, cao-run auto-retries once on a
-# fallback engine (CAO_FALLBACK_PROVIDER > antigravity_cli > codex).
+# fallback engine (CAO_FALLBACK_PROVIDER > antigravity_cli > opencode_cli > codex).
 set -euo pipefail
 
 SERVER_PORT=9889
@@ -35,6 +37,8 @@ PASSTHROUGH=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --skip-check) SKIP_CHECK=1 ;;
+    --provider)   CAO_SUPERVISOR_PROVIDER="$2"; shift ;;
+    --model)      CAO_SUPERVISOR_MODEL="$2"; shift ;;
     -h|--help)    awk 'NR>1{ if(/^#/){sub(/^# ?/,"");print} else if(NF){exit} }' "$0"; exit 0 ;;
     *)            PASSTHROUGH+=("$1") ;;
   esac
@@ -112,11 +116,12 @@ fi
 
 # 4. Pick a launch-time fallback engine (used only if the primary launch fails,
 #    which is the ONLY reliable signal of a burned Claude quota — auth status
-#    can't see quota). Order: env CAO_FALLBACK_PROVIDER > antigravity_cli > codex.
+#    can't see quota). Order: env CAO_FALLBACK_PROVIDER > antigravity_cli > opencode_cli > codex.
 pick_fallback() {
   if [ -n "${CAO_FALLBACK_PROVIDER:-}" ]; then echo "$CAO_FALLBACK_PROVIDER"
-  elif command -v agy   >/dev/null 2>&1; then echo "antigravity_cli"
-  elif command -v codex >/dev/null 2>&1; then echo "codex"
+  elif command -v agy      >/dev/null 2>&1; then echo "antigravity_cli"
+  elif command -v opencode >/dev/null 2>&1; then echo "opencode_cli"
+  elif command -v codex    >/dev/null 2>&1; then echo "codex"
   else echo ""; fi
 }
 
@@ -144,9 +149,16 @@ fi
 LAUNCH_OUT=""
 launch() {  # $1 = provider; remaining args are the passthrough
   local provider="$1"; shift
-  echo "▶ Supervisor provider: $provider"
+  local model_args=()
+  if [ -n "${CAO_SUPERVISOR_MODEL:-}" ]; then
+    model_args=(--model "$CAO_SUPERVISOR_MODEL")
+    echo "▶ Supervisor provider: $provider (model: $CAO_SUPERVISOR_MODEL)"
+  else
+    echo "▶ Supervisor provider: $provider"
+  fi
   # tee so the user still sees live output while we keep a copy to classify.
   LAUNCH_OUT="$(cao launch --agents code_supervisor --provider "$provider" \
+    ${model_args[@]+"${model_args[@]}"} \
     --session-name supervisor --auto-approve "$@" 2>&1 | tee /dev/tty)"
   return "${PIPESTATUS[0]}"
 }
@@ -179,5 +191,10 @@ fi
 echo "⚠ Supervisor launch on '$SUP_PROVIDER' failed — likely Claude quota/login." >&2
 echo "  Auto-retrying on fallback engine '$FALLBACK'..." >&2
 echo "  (Skip Claude next time with: CAO_SUPERVISOR_PROVIDER=$FALLBACK cao-run)" >&2
+FALLBACK_MODEL_ARGS=()
+if [ -n "${CAO_SUPERVISOR_MODEL:-}" ]; then
+  FALLBACK_MODEL_ARGS=(--model "$CAO_SUPERVISOR_MODEL")
+fi
 exec cao launch --agents code_supervisor --provider "$FALLBACK" \
+  ${FALLBACK_MODEL_ARGS[@]+"${FALLBACK_MODEL_ARGS[@]}"} \
   --session-name supervisor --auto-approve ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}

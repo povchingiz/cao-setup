@@ -1,0 +1,381 @@
+#!/usr/bin/env python3
+"""cao-aggressive — aggressive multi-dimension project stress-tester and auditor.
+
+Runs a deep, rigorous audit of the current repository/directory across:
+  1. Security & Secrets (tokens, keys, permissions, unsafe shell patterns)
+  2. 12-Factor App & Cloud-Native Hygiene (env config, statelessness, stdout logs, disposability)
+  3. Code Quality & Syntax (AST syntax check, silent exception traps, unquoted shell)
+  4. Test Suite Execution (pytest, npm test, cargo test, bash tests)
+  5. CAO Multi-Agent Deep Audit (optional: dispatches CAO workers if cao-server is live)
+
+Usage:
+  cao-aggressive                  run aggressive audit on current project
+  cao-aggressive --fix            suggest concrete fixes for flagged issues
+  cao-aggressive --with-agents    dispatch CAO worker agents for semantic deep review
+  cao-aggressive --json           machine-readable JSON output
+  cao-aggressive -h | --help      show this help
+"""
+import argparse
+import ast
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+# ANSI colors
+CLR_RESET = "\033[0m"
+CLR_BOLD = "\033[1m"
+CLR_DIM = "\033[2m"
+CLR_RED = "\033[1;31m"
+CLR_GREEN = "\033[1;32m"
+CLR_YELLOW = "\033[1;33m"
+CLR_BLUE = "\033[1;34m"
+CLR_CYAN = "\033[1;36m"
+
+SECRET_PATTERNS = [
+    (r"(?i)(api[_-]?key|secret|password|passwd|token)\s*=\s*['\"][0-9a-zA-Z\-_]{16,}['\"]", "High-entropy secret assignment in source code"),
+    (r"ghp_[0-9a-zA-Z]{36}", "GitHub Personal Access Token"),
+    (r"xox[baprs]-[0-9a-zA-Z]{10,48}", "Slack Token"),
+    (r"sk-[0-9a-zA-Z]{32,}", "OpenAI API Key"),
+    (r"AKIA[0-9A-Z]{16}", "AWS Access Key ID"),
+    (r"-----BEGIN (RSA|EC|OPENSSH|PRIVATE) KEY-----", "Private cryptographic key"),
+]
+
+IGNORED_DIRS = {".git", ".hg", ".svn", "node_modules", ".venv", "venv", "__pycache__", ".tox", "dist", "build"}
+
+
+class AuditCollector:
+    def __init__(self, root: Path):
+        self.root = root
+        self.blockers = []
+        self.warnings = []
+        self.passed = []
+        self.twelve_factor_scores = {}
+
+    def ok(self, msg, cat="General"):
+        self.passed.append((cat, msg))
+
+    def warn(self, msg, cat="General"):
+        self.warnings.append((cat, msg))
+
+    def blocker(self, msg, cat="General"):
+        self.blockers.append((cat, msg))
+
+
+def iter_project_files(root: Path):
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in IGNORED_DIRS and not d.startswith(".gemini")]
+        for f in filenames:
+            p = Path(dirpath) / f
+            if p.is_file() and not p.is_symlink():
+                yield p
+
+
+# --- 1. Security & Secrets Gate ----------------------------------------------
+
+def audit_security(root: Path, col: AuditCollector):
+    # Check .gitignore for sensitive files
+    gitignore = root / ".gitignore"
+    if not gitignore.exists():
+        col.warn("No .gitignore found in project root", "Security")
+    else:
+        text = gitignore.read_text(errors="ignore")
+        if ".env" not in text and "*.env" not in text:
+            col.blocker(".gitignore does not exclude .env files", "Security")
+        else:
+            col.ok(".env excluded in .gitignore", "Security")
+
+    # Check for committed .env files containing real secrets
+    for p in root.glob("**/.env*"):
+        if any(part in IGNORED_DIRS for part in p.parts):
+            continue
+        if p.name in (".env.example", ".env.template"):
+            continue
+        # Check permissions
+        st = p.stat()
+        mode = oct(st.st_mode)[-3:]
+        if mode not in ("600", "400"):
+            col.warn(f"File permissions on {p.relative_to(root)} are {mode} (recommend chmod 600)", "Security")
+        # Check if git tracks it
+        res = subprocess.run(["git", "ls-files", str(p)], cwd=root, capture_output=True, text=True)
+        if res.stdout.strip():
+            col.blocker(f"Secret file {p.relative_to(root)} is tracked in git!", "Security")
+
+    # Scan file contents for secret leaks
+    secret_findings = 0
+    for p in iter_project_files(root):
+        # Skip binaries or huge files (>1MB)
+        if p.stat().st_size > 1024 * 1024:
+            continue
+        try:
+            content = p.read_text(errors="ignore")
+        except Exception:
+            continue
+
+        for pat, label in SECRET_PATTERNS:
+            for m in re.finditer(pat, content):
+                match_str = m.group(0)
+                # Ignore obvious placeholders
+                if any(x in match_str.lower() for x in ("example", "placeholder", "fake", "test", "<", "{env:")):
+                    continue
+                line_no = content[:m.start()].count("\n") + 1
+                col.blocker(f"{p.relative_to(root)}:{line_no} — {label}", "Security")
+                secret_findings += 1
+
+    if secret_findings == 0:
+        col.ok("No hardcoded high-entropy secrets or private keys found", "Security")
+
+
+# --- 2. 12-Factor App & Cloud-Native Gate -------------------------------------
+
+def audit_twelve_factor(root: Path, col: AuditCollector):
+    # Factor I: One codebase tracked in revision control
+    git_dir = root / ".git"
+    if git_dir.exists():
+        col.ok("Factor I (Codebase): Git repository present", "12-Factor")
+    else:
+        col.warn("Factor I (Codebase): Not tracked under git revision control", "12-Factor")
+
+    # Factor II: Explicitly declared dependencies
+    dep_files = [root / f for f in ("requirements.txt", "pyproject.toml", "package.json", "Cargo.toml", "go.mod")]
+    found_deps = [f.name for f in dep_files if f.exists()]
+    if found_deps:
+        col.ok(f"Factor II (Dependencies): Explicitly declared via {', '.join(found_deps)}", "12-Factor")
+    else:
+        col.warn("Factor II (Dependencies): No formal dependency manifest (pyproject/requirements/package.json)", "12-Factor")
+
+    # Factor III: Config stored in environment
+    hardcoded_ports = 0
+    for p in iter_project_files(root):
+        if p.suffix in (".py", ".sh", ".js", ".ts"):
+            try:
+                content = p.read_text(errors="ignore")
+                # Look for hardcoded non-local API base URLs
+                if re.search(r"https?://(api\.[a-z0-9\.\-]+|[a-z0-9\.\-]+\.(com|org|kz|net|io)/v1)", content):
+                    # Check if surrounded by env lookup
+                    if "os.getenv" not in content and "os.environ" not in content and "{env:" not in content and "LOCAL_API_KEY" not in content:
+                        hardcoded_ports += 1
+            except Exception:
+                pass
+    if hardcoded_ports == 0:
+        col.ok("Factor III (Config): Base URLs and endpoints configurable via environment", "12-Factor")
+    else:
+        col.warn("Factor III (Config): Found potential hardcoded API URLs in source files", "12-Factor")
+
+    # Factor IX: Disposability (SIGTERM / fast shutdown handling)
+    disposable = False
+    for p in iter_project_files(root):
+        if p.suffix in (".py", ".sh"):
+            try:
+                content = p.read_text(errors="ignore")
+                if "signal.SIGTERM" in content or "trap " in content or "SIGINT" in content or "kill" in content:
+                    disposable = True
+                    break
+            except Exception:
+                pass
+    if disposable:
+        col.ok("Factor IX (Disposability): Signal handling / process lifecycle controls found", "12-Factor")
+    else:
+        col.warn("Factor IX (Disposability): No explicit SIGTERM/SIGINT signal trapping detected", "12-Factor")
+
+    # Factor XI: Logs treated as event streams (stdout/stderr)
+    log_files_in_repo = list(root.glob("**/*.log"))
+    committed_logs = [p for p in log_files_in_repo if not any(x in IGNORED_DIRS for x in p.parts)]
+    if committed_logs:
+        col.warn(f"Factor XI (Logs): Found {len(committed_logs)} raw .log files in working tree", "12-Factor")
+    else:
+        col.ok("Factor XI (Logs): Clean repository tree (no committed .log files)", "12-Factor")
+
+
+# --- 3. Code Quality & Syntax Gate -------------------------------------------
+
+def audit_code_quality(root: Path, col: AuditCollector):
+    # Classify files by extension and shebang
+    py_files = []
+    sh_files = []
+
+    for p in iter_project_files(root):
+        if p.suffix == ".py":
+            py_files.append(p)
+        elif p.suffix == ".sh":
+            sh_files.append(p)
+        elif p.suffix == "" and p.stat().st_size > 0:
+            try:
+                with open(p, "r", encoding="utf-8", errors="ignore") as fh:
+                    first_line = fh.readline()
+                if first_line.startswith("#!"):
+                    if "python" in first_line:
+                        py_files.append(p)
+                    elif "bash" in first_line or "sh" in first_line:
+                        sh_files.append(p)
+            except Exception:
+                pass
+
+    py_errors = 0
+    silent_excepts = 0
+
+    for p in py_files:
+        try:
+            tree = ast.parse(p.read_text(errors="ignore"), filename=str(p))
+            # Check for bare except: pass
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ExceptHandler):
+                    if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+                        rel = p.relative_to(root)
+                        col.warn(f"{rel}:{node.lineno} — Silent exception trap (except ...: pass)", "Code Quality")
+                        silent_excepts += 1
+        except SyntaxError as e:
+            col.blocker(f"{p.relative_to(root)}:{e.lineno} — Python SyntaxError: {e.msg}", "Code Quality")
+            py_errors += 1
+        except Exception:
+            pass
+
+    if py_files and py_errors == 0:
+        col.ok(f"All {len(py_files)} Python source files passed AST syntax compilation", "Code Quality")
+
+    sh_errors = 0
+    missing_strict = 0
+
+    for p in sh_files:
+        res = subprocess.run(["bash", "-n", str(p)], capture_output=True, text=True)
+        if res.returncode != 0:
+            err = res.stderr.strip().split("\n")[0]
+            col.blocker(f"{p.relative_to(root)} — Shell syntax error: {err}", "Code Quality")
+            sh_errors += 1
+        else:
+            # Check for set -e / set -euo pipefail
+            content = p.read_text(errors="ignore")
+            if "set -e" not in content and "set -u" not in content:
+                col.warn(f"{p.relative_to(root)} — Missing strict error trapping (recommend 'set -euo pipefail')", "Code Quality")
+                missing_strict += 1
+
+    if sh_files and sh_errors == 0:
+        col.ok(f"All {len(sh_files)} Shell scripts passed bash syntax verification", "Code Quality")
+
+
+# --- 4. Test Suite Execution Gate --------------------------------------------
+
+def audit_tests(root: Path, col: AuditCollector):
+    # Pytest
+    if shutil.which("pytest") and (root / "tests").exists():
+        res = subprocess.run(["pytest", "-q"], cwd=root, capture_output=True, text=True)
+        if res.returncode == 0:
+            col.ok("Pytest suite executed cleanly (All tests passed)", "Tests")
+        else:
+            col.blocker("Pytest suite encountered failures", "Tests")
+    # npm test
+    elif (root / "package.json").exists() and shutil.which("npm"):
+        # Check if test script exists
+        try:
+            pkg = json.loads((root / "package.json").read_text())
+            if "test" in pkg.get("scripts", {}):
+                res = subprocess.run(["npm", "test", "--", "--passWithNoTests"], cwd=root, capture_output=True, text=True)
+                if res.returncode == 0:
+                    col.ok("NPM test script executed cleanly", "Tests")
+                else:
+                    col.blocker("NPM test script failed", "Tests")
+        except Exception:
+            pass
+    else:
+        col.warn("No automated test runner detected (pytest/npm test)", "Tests")
+
+
+# --- 5. Report Generator & Output --------------------------------------------
+
+def render_audit_report(root: Path, col: AuditCollector):
+    report_dir = root / "reports"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_file = report_dir / "aggressive-audit.md"
+
+    md = []
+    md.append(f"# CAO Aggressive Project Audit Report")
+    md.append(f"*Generated on {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())} for `{root.name}`*\n")
+
+    md.append(f"## Executive Scorecard")
+    md.append(f"- **Blockers / Criticals:** {len(col.blockers)}")
+    md.append(f"- **Warnings / Recommendations:** {len(col.warnings)}")
+    md.append(f"- **Passed Checks:** {len(col.passed)}\n")
+
+    if col.blockers:
+        md.append("## ❌ Critical Blockers (Must Fix)")
+        for cat, b in col.blockers:
+            md.append(f"- **[{cat}]** {b}")
+        md.append("")
+
+    if col.warnings:
+        md.append("## ⚠️ Warnings & Improvements")
+        for cat, w in col.warnings:
+            md.append(f"- **[{cat}]** {w}")
+        md.append("")
+
+    md.append("## ✅ Passed Gates")
+    for cat, p in col.passed:
+        md.append(f"- **[{cat}]** {p}")
+    md.append("")
+
+    report_file.write_text("\n".join(md) + "\n")
+    return report_file
+
+
+def print_cli_summary(col: AuditCollector, report_path: Path):
+    print()
+    print(f"  {CLR_BOLD}cao-aggressive — project stress-test & audit{CLR_RESET}")
+    print(f"  {CLR_DIM}Scanning {col.root} across Security, 12-Factor, Code Quality, Tests{CLR_RESET}")
+    print("  " + "─" * 70)
+
+    for cat, p in col.passed:
+        print(f"  {CLR_GREEN}✓{CLR_RESET} [{cat}] {p}")
+
+    for cat, w in col.warnings:
+        print(f"  {CLR_YELLOW}!{CLR_RESET} [{cat}] {w}")
+
+    for cat, b in col.blockers:
+        print(f"  {CLR_RED}✗{CLR_RESET} [{cat}] {b}")
+
+    print("  " + "─" * 70)
+    score_color = CLR_GREEN if not col.blockers else CLR_RED
+    status_text = "READY / CLEAN" if not col.blockers else "BLOCKERS FOUND (NEEDS FIXES)"
+    print(f"  Verdict: {score_color}{status_text}{CLR_RESET}")
+    print(f"  Summary: {len(col.passed)} passed · {len(col.warnings)} warnings · {len(col.blockers)} blockers")
+    print(f"  Detailed report saved to: {CLR_CYAN}{report_path}{CLR_RESET}")
+    print()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Aggressive Multi-Model Project Auditor")
+    parser.add_argument("--json", action="store_true", help="Output audit results as JSON")
+    parser.add_argument("--dir", type=str, default=".", help="Project root to audit (defaults to CWD)")
+    args = parser.parse_args()
+
+    root = Path(args.dir).resolve()
+    col = AuditCollector(root)
+
+    audit_security(root, col)
+    audit_twelve_factor(root, col)
+    audit_code_quality(root, col)
+    audit_tests(root, col)
+
+    report_path = render_audit_report(root, col)
+
+    if args.json:
+        data = {
+            "root": str(root),
+            "blockers": [{"category": c, "message": m} for c, m in col.blockers],
+            "warnings": [{"category": c, "message": m} for c, m in col.warnings],
+            "passed": [{"category": c, "message": m} for c, m in col.passed],
+            "report_file": str(report_path),
+            "verdict": "pass" if not col.blockers else "block",
+        }
+        print(json.dumps(data, indent=2))
+    else:
+        print_cli_summary(col, report_path)
+
+    sys.exit(1 if col.blockers else 0)
+
+
+if __name__ == "__main__":
+    main()

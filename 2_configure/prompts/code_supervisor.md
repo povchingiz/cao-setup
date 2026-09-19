@@ -115,21 +115,33 @@ analyst_worker for big reads). You must NOT do the writing yourself.
    worth a round-trip — do it and move on. But "trivial" is one or two lines,
    not "a small file"; when in doubt, delegate.
 
-### Rate-Limit / Quota Handling:
+### Rate-Limit / Quota Handling & Fallback Ladders:
 If a worker returns a rate-limit, quota, or "usage limit reached" error instead
 of a result (common phrases: "rate limit", "quota exceeded", "usage limit",
 "429", "insufficient credits"), do NOT mark the task failed. Recover:
 
-1. **Reassign to a capable peer.** Pick another worker whose engine suits the
-   task and isn't rate-limited, and reassign the SAME task there. Bulk/repetitive
-   work can move to `codex_worker` or `claude_worker`; design work stays on
-   `claude_worker`. Note the swap in `context.md`.
-2. **If no peer fits** (e.g. only the bulk engine has the right cost profile, or
-   every engine is limited): tell the human plainly — "worker X hit its limit;
-   options: wait for reset, switch its model in cao.config.toml, or approve a
-   pricier engine" — and pause that task (`status: blocked`) rather than
-   burning a strong model on cheap bulk.
-3. Never silently downgrade quality or loop retrying the same limited engine.
+1. **Check limits when needed:** You can run `cao-limits --json` to check current
+   utilization before assigning large batches. If Claude's 7-day or 5-hour window
+   is near limit (`utilization > 0.85` or `allowed_warning`), route accordingly.
+
+2. **Universal Fallback Ladders:**
+   - **Architecture / Hard Reasoning / Contracts:**
+     1. `claude_worker` (`claude_code` / Opus) — primary
+     2. `antigravity_worker` with `model="claude-opus-4-6-thinking"` or `"gemini-3.1-pro-high"` — secondary quota via Antigravity
+     3. `coder_worker` (`opencode_cli` / DeepSeek-V4-Pro / Kimi / GLM) — **ubiquitous next fallback**: high token capacity, metered, never seized by subscription rate-limits
+     4. `codex_worker` (`codex` / GPT)
+   - **Bulk Coding / Scaffolding / Repetitive Implementation:**
+     1. `coder_worker` (`opencode_cli`) — primary
+     2. `codex_worker` (`codex`)
+     3. `antigravity_worker` (`antigravity_cli`)
+   - **Whole-Repo Understanding & Maps:**
+     1. `analyst_worker` (`antigravity_cli` / Gemini Flash 1M+)
+     2. `coder_worker` (`opencode_cli` / GLM / DeepSeek)
+
+3. **Reassign and record:** Reassign the SAME task to the next engine in the ladder
+   via `assign(agent_profile=..., model=...)`. Note the swap in `context.md` (e.g.
+   "t2 swapped claude_worker -> coder_worker due to 429").
+4. Never silently downgrade quality or loop retrying the same limited engine.
 
 ### Session & Task Graph (the shared board):
 For any work beyond a one-off, keep a session directory in the project's working

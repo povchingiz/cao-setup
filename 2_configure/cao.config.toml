@@ -47,28 +47,40 @@ provider = "claude_code"
 aliases  = ["claude", "architect"]
 focus    = "architecture, domain logic, API contracts, DDD boundaries, refactoring, hard reasoning"
 
-[workers.opencode_worker]
+[workers.coder_worker]
 provider = "opencode_cli"
 model    = "<provider>/<cheap-model>"   # or drop + switch provider to run bulk on another engine
-aliases  = ["opencode", "bulk"]
-focus    = "cheap high-throughput model: boilerplate, DB schemas, migrations, repetitive utilities, bulk code"
+aliases  = ["coder", "code", "bulk"]
+focus    = "cheap high-throughput coding model: boilerplate, DB schemas, migrations, repetitive utilities, implementing against a contract/blueprint"
 
 [workers.codex_worker]
 provider = "codex"
 aliases  = ["codex", "frontend", "ui"]
 focus    = "React/Vue/Svelte, CSS, templates, UI components"
 
+[workers.analyst_worker]
+provider = "antigravity_cli"
+aliases  = ["analyst", "context", "research", "map"]
+focus    = "whole-repo understanding on a huge-context engine: dependency maps, 'where is X used', cross-file impact, reading long docs, and multimodal"
+
 [workers.antigravity_worker]
 provider = "antigravity_cli"
-aliases  = ["antigravity", "gemini", "qa", "tests"]
-focus    = "integration tests, edge cases, security review"
+aliases  = ["qa", "tests", "review", "audit"]
+focus    = "QA / audit only: run tests, security review, edge cases (see analyst_worker for codebase understanding)"
+
+[workers.copilot_worker]
+provider = "copilot_cli"
+aliases  = ["copilot"]
+focus    = "general coding worker (role TBD)"
 
 # Profiles registered with CAO (order = install order). Supervisor first.
 [profiles]
 register = [
   "code_supervisor",
   "claude_worker",
-  "opencode_worker",
+  "coder_worker",
   "codex_worker",
+  "analyst_worker",
   "antigravity_worker",
+  "copilot_worker",
 ]

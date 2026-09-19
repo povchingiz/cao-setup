@@ -23,3 +23,6 @@ NOW.md
 # Session reports & local plans (folder tracked via .gitkeep, contents ignored)
 plans/*
 !plans/README.md
+
+# Audit reports generated locally by cao-aggressive
+reports/
