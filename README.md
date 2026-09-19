@@ -36,7 +36,7 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 1_install/     bootstrap.sh · bootstrap.ps1 · patch_pyte.py     ← run once
 2_configure/   cao.config.toml · prompts/*.md                   ← edit these
 3_apply/       apply.sh · render_config.py · inherit_mcp.py · inherit_all.py   ← push edits · share MCP
-run/           cao-run · cao-doctor · cao-stop · cao-tokens     ← launch · check · stop · usage
+run/           cao-run · cao-doctor · cao-stop · cao-tokens · cao-plugins   ← launch · check · stop · usage · share
 .generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
 ```
 
@@ -52,6 +52,7 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 | `cao-run` | health-check, then launch the supervisor (add `--skip-check` to skip the gate) |
 | `cao-doctor` | run the pre-flight health check on its own (toolchain, engines, logins, endpoint) |
 | `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out); `--since 2w`, `--lifetime`, `--day YYYY-MM-DD`, `--claude`, `--all-sessions` |
+| `cao-plugins` | share Claude MCP + plugins/skills with every engine (`list`, `broadcast --dry-run`) |
 | `cao-stop` | end the session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
 | `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
 | `python3 3_apply/inherit_mcp.py` | copy your Claude MCP servers into worker profiles (`--list`, `--dry-run`) |
@@ -260,19 +261,35 @@ Both read `~/.claude.json` global `mcpServers` (skipping cao's own server). A
 server carrying a token in its `env` is copied verbatim — the scripts warn so you
 can review. `bootstrap.sh --inherit-mcp` runs both automatically.
 
-### Skills & plugins are NOT MCP
+### Plugins & skills — `cao-plugins`
 
-Skills and plugins are per-CLI instruction folders, not a shared protocol:
+Plugins (caveman, karpathy, superpowers, …) are git repos / folders that ship a
+manifest per engine, so each engine takes them its own way. `cao-plugins` reads
+what Claude has and pushes MCP + plugins out to every engine:
 
-- **Claude Code** and **Copilot** read `.claude/skills/` (Copilot natively), so
-  they see your skills directly.
-- **codex** / **opencode** read `AGENTS.md`; **gemini** reads `GEMINI.md`. They
-  have no "skills" mechanism — a plugin reaches them only as instruction text in
-  those files.
+```sh
+cao-plugins list                     # what each engine currently has
+cao-plugins broadcast --dry-run      # show the plan, run nothing
+cao-plugins broadcast                # push all Claude MCP + plugins everywhere
+cao-plugins broadcast --mcp          # MCP only
+cao-plugins broadcast --plugins      # plugins/skills only
+cao-plugins broadcast --only=caveman # just one plugin
+cao-plugins broadcast --to=codex,agy # just these engines
+```
 
-So MCP broadcasts cleanly to every engine; skills reach only claude + copilot as
-real skills. (A future step can concatenate skill text into AGENTS.md/GEMINI.md
-for the others — not done yet.)
+How each engine receives a plugin:
+
+| Engine | Plugin path |
+|--------|-------------|
+| claude | native (already installed) |
+| codex  | `plugin marketplace add owner/repo` + `plugin add p@mp` (git) |
+| agy    | `plugin install <plugin-dir>` (local folder) |
+| copilot | `skill add <plugin-dir>`; also reads `.claude/skills` natively |
+| opencode | no git/dir plugin path — gets a **compact skill index** (name + one line each) appended to `~/.config/opencode/AGENTS.md`, which it reads as instructions |
+
+So MCP and real plugins reach claude/codex/agy/copilot; opencode gets the skills
+as a lightweight text index (one line per skill, not full bodies — to avoid
+bloating every opencode run). Nothing is ever uninstalled.
 
 ### Don't have any yet? Context MCP servers worth adding
 

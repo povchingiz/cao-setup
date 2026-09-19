@@ -1,0 +1,300 @@
+#!/usr/bin/env python3
+"""cao-plugins — share your Claude MCP servers, plugins and skills with every
+engine cao drives (codex, opencode, antigravity/agy, copilot).
+
+Claude is where you install things; the other engines each have their own way to
+take them. This tool reads what Claude has and pushes it out, per engine:
+
+  MCP servers  every engine has an `mcp add` -> broadcast cleanly to all.
+  Plugins      a plugin is a git repo / local folder that ships a manifest per
+               engine (.claude-plugin, .codex, gemini-extension.json, .skill):
+                 codex    `plugin marketplace add owner/repo` + `plugin add p@mp`
+                 agy      `plugin install <plugin-dir>`
+                 copilot  `skill add <plugin-dir>`
+                 opencode has NO git/dir plugin path (npm modules only), so a
+                          plugin can only reach it as instruction TEXT appended
+                          to ~/.config/opencode/AGENTS.md.
+
+So MCP reaches all five; plugins reach claude/codex/agy/copilot as real plugins
+and opencode as text. Nothing here uninstalls anything.
+
+Usage:
+  cao-plugins list                       what each engine currently has
+  cao-plugins broadcast                  push all Claude MCP + plugins everywhere
+  cao-plugins broadcast --mcp            only the MCP servers
+  cao-plugins broadcast --plugins        only the plugins/skills
+  cao-plugins broadcast --to codex,agy   only these engines (default: all)
+  cao-plugins broadcast --only caveman   only this plugin (repeatable via commas)
+  cao-plugins broadcast --dry-run        print what it would do, run nothing
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+H = Path.home()
+CLAUDE_JSON = H / ".claude.json"
+PLUGINS_JSON = H / ".claude" / "plugins" / "installed_plugins.json"
+MARKETS_JSON = H / ".claude" / "plugins" / "known_marketplaces.json"
+SKIP_MCP = {"cao-mcp-server"}
+
+ENGINE_BINS = {"codex": "codex", "opencode": "opencode",
+               "antigravity": "agy", "copilot": "copilot"}
+
+
+def run(argv):
+    return subprocess.run(argv, capture_output=True, text=True)
+
+
+def have(binname):
+    return shutil.which(binname) is not None
+
+
+# ---- sources ---------------------------------------------------------------
+def source_mcp():
+    if not CLAUDE_JSON.exists():
+        return {}
+    try:
+        d = json.load(open(CLAUDE_JSON))
+    except Exception:
+        return {}
+    return {k: v for k, v in (d.get("mcpServers") or {}).items() if k not in SKIP_MCP}
+
+
+def source_plugins():
+    """[{key, name, marketplace, repo, path}] for each installed Claude plugin."""
+    if not PLUGINS_JSON.exists():
+        return []
+    plugins = json.load(open(PLUGINS_JSON)).get("plugins", {})
+    repos = {}
+    if MARKETS_JSON.exists():
+        for mname, cfg in json.load(open(MARKETS_JSON)).items():
+            repos[mname] = (cfg.get("source", {}) or {}).get("repo")
+    out = []
+    for key, insts in plugins.items():
+        name, _, market = key.partition("@")
+        for i in insts:
+            out.append({"key": key, "name": name, "marketplace": market,
+                        "repo": repos.get(market), "path": i.get("installPath")})
+    return out
+
+
+# ---- MCP broadcast (per engine add syntax) ---------------------------------
+def mcp_add_argv(engine, name, cmd, args):
+    if engine == "antigravity":
+        return ["agy", "mcp", "add", name, cmd, *args]          # no `--`
+    binname = ENGINE_BINS[engine]
+    return [binname, "mcp", "add", name, "--", cmd, *args]      # codex/opencode/copilot
+
+
+def broadcast_mcp(engines, dry):
+    servers = source_mcp()
+    if not servers:
+        print("  (no MCP servers in ~/.claude.json)")
+        return
+    for engine in engines:
+        binname = ENGINE_BINS[engine]
+        if not have(binname):
+            print(f"[{engine}] {binname} missing — skipped"); continue
+        for name, cfg in servers.items():
+            cmd = cfg.get("command")
+            if not cmd:
+                continue
+            argv = mcp_add_argv(engine, name, cmd, cfg.get("args", []) or [])
+            if dry:
+                print("  " + " ".join(argv)); continue
+            r = run(argv)
+            blob = (r.stdout + r.stderr).lower()
+            ok = r.returncode == 0 or "already" in blob or "exists" in blob
+            print(f"[{engine}] mcp {name}: {'ok' if ok else 'FAILED: '+r.stderr.strip()[:80]}")
+
+
+# ---- plugin broadcast (per engine) -----------------------------------------
+def broadcast_plugins(engines, only, dry):
+    plugs = source_plugins()
+    if only:
+        plugs = [p for p in plugs if p["name"] in only or p["key"] in only]
+    if not plugs:
+        print("  (no matching Claude plugins)")
+        return
+
+    for engine in engines:
+        binname = ENGINE_BINS[engine]
+        if not have(binname):
+            print(f"[{engine}] {binname} missing — skipped"); continue
+
+        for p in plugs:
+            name, repo, path = p["name"], p["repo"], p["path"]
+            if engine == "codex":
+                # git marketplace add + plugin add name@marketplace
+                if not repo:
+                    print(f"[codex] {name}: no git repo known — skipped"); continue
+                cmds = [["codex", "plugin", "marketplace", "add", repo],
+                        ["codex", "plugin", "add", f"{name}@{p['marketplace']}"]]
+            elif engine == "antigravity":
+                cmds = [["agy", "plugin", "install", path]]
+            elif engine == "copilot":
+                cmds = [["copilot", "skill", "add", path]]
+            elif engine == "opencode":
+                # no dir/git plugin path — fall through to AGENTS.md text below.
+                cmds = None
+            else:
+                cmds = None
+
+            if cmds is None:
+                if engine == "opencode":
+                    _opencode_text(name, path, dry)
+                continue
+
+            ok = True
+            for c in cmds:
+                if dry:
+                    print("  " + " ".join(str(x) for x in c)); continue
+                r = run(c)
+                blob = (r.stdout + r.stderr).lower()
+                if not (r.returncode == 0 or "already" in blob or "exists" in blob):
+                    ok = False
+                    print(f"[{engine}] {name}: FAILED: {r.stderr.strip()[:80]}")
+                    break
+            if not dry and ok:
+                print(f"[{engine}] plugin {name}: ok")
+
+
+def _skill_oneline(skill_md):
+    """A skill's name + its one-line description from SKILL.md frontmatter."""
+    name = skill_md.parent.name
+    desc = ""
+    try:
+        lines = skill_md.read_text().splitlines()
+        for i, line in enumerate(lines):
+            s = line.strip()
+            if s.lower().startswith("description:"):
+                val = s.split(":", 1)[1].strip().strip('"').strip("'")
+                # YAML folded/literal scalar (description: > or |): take next
+                # indented line(s) until a blank or a new key.
+                if val in (">", "|", ">-", "|-"):
+                    coll = []
+                    for nxt in lines[i + 1:]:
+                        if not nxt.strip() or (nxt[:1] not in (" ", "\t")):
+                            break
+                        coll.append(nxt.strip())
+                    val = " ".join(coll)
+                desc = val
+                break
+    except OSError:
+        pass
+    # keep it to one line
+    return name, (desc[:140] + "…" if len(desc) > 140 else desc)
+
+
+def _opencode_text(name, path, dry):
+    """opencode takes no git/dir plugin — so we make it AWARE of the plugin's
+    skills by appending a COMPACT index (skill name + one-line description) to
+    ~/.config/opencode/AGENTS.md, which opencode reads as instructions. We keep
+    it to one line per skill on purpose: dumping full SKILL.md bodies would bloat
+    every opencode run's context. The worker can open a skill's file if needed."""
+    agents = H / ".config" / "opencode" / "AGENTS.md"
+    marker = f"<!-- cao-plugins: {name} -->"
+    base = Path(path) if path else None
+    all_skills = sorted(base.rglob("SKILL.md")) if base else []
+    # A plugin ships the same skill under several IDE mirror dirs
+    # (.cursor/.windsurf/.claude-plugin/…) INSIDE the plugin. Dedupe by skill
+    # name, skipping those mirrors — but only look at parts RELATIVE to the
+    # plugin root (the absolute path itself lives under ~/.claude, which starts
+    # with a dot and must not disqualify everything).
+    seen = {}
+    for s in all_skills:
+        rel_parts = s.relative_to(base).parts
+        if any(p.startswith(".") for p in rel_parts):
+            continue
+        seen.setdefault(s.parent.name, s)
+    # fallback: if every copy was under a mirror dir, keep one per name anyway.
+    if not seen:
+        for s in all_skills:
+            seen.setdefault(s.parent.name, s)
+    skills = list(seen.values())
+    if not skills:
+        print(f"[opencode] {name}: no SKILL.md found — skipped"); return
+    if dry:
+        print(f"  index {len(skills)} skill(s) of '{name}' into "
+              f"{str(agents).replace(str(H), '~')} (one line each)")
+        return
+    existing = agents.read_text() if agents.exists() else ""
+    if marker in existing:
+        print(f"[opencode] {name}: already indexed — skipped"); return
+    lines = [f"\n{marker}",
+             f"## Plugin `{name}` — available skills (full text in each SKILL.md):"]
+    for s in skills:
+        sname, desc = _skill_oneline(s)
+        loc = str(s).replace(str(H), "~")
+        lines.append(f"- **{sname}** — {desc}  ({loc})" if desc
+                     else f"- **{sname}**  ({loc})")
+    agents.parent.mkdir(parents=True, exist_ok=True)
+    agents.write_text(existing + "\n".join(lines) + "\n")
+    print(f"[opencode] {name}: indexed {len(skills)} skill(s) (one line each) in AGENTS.md")
+
+
+# ---- list ------------------------------------------------------------------
+def cmd_list():
+    print("\nClaude (source):")
+    for name in source_mcp():
+        print(f"  mcp: {name}")
+    for p in source_plugins():
+        print(f"  plugin: {p['name']} (marketplace {p['marketplace']})")
+    for engine, binname in ENGINE_BINS.items():
+        print(f"\n{engine}:", "" if have(binname) else "(binary missing)")
+        if not have(binname):
+            continue
+        if engine == "antigravity":
+            r = run(["agy", "mcp", "list"]); print("  mcp:", _count(r.stdout, ("lean-ctx", "symdex")))
+            r = run(["agy", "plugin", "list"]); print("  plugins:", "some" if "name" in r.stdout else "none")
+        elif engine == "copilot":
+            r = run(["copilot", "mcp", "list"]); print("  mcp:", _count(r.stdout, ("lean-ctx", "symdex")))
+            r = run(["copilot", "skill", "list"]); print("  skills:", r.stdout.count("-"))
+        else:
+            r = run([binname, "mcp", "list"]); print("  mcp:", _count(r.stdout, ("lean-ctx", "symdex")))
+            r = run([binname, "plugin", "list"]); print("  plugins listed:", "yes" if r.returncode == 0 else "n/a")
+    print()
+
+
+def _count(text, needles):
+    return sum(1 for n in needles if n in text)
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.rstrip()); return 0
+    cmd = argv[0]
+    flags = [a for a in argv[1:] if a.startswith("--")]
+    dry = "--dry-run" in flags
+    do_mcp = "--mcp" in flags or not ("--plugins" in flags)
+    do_plug = "--plugins" in flags or not ("--mcp" in flags)
+
+    def flag_val(name):
+        for a in argv[1:]:
+            if a.startswith(name + "="):
+                return a.split("=", 1)[1]
+        return None
+    to = flag_val("--to")
+    only = flag_val("--only")
+    engines = to.split(",") if to else list(ENGINE_BINS.keys())
+    engines = [e for e in engines if e in ENGINE_BINS]
+    only_set = set(only.split(",")) if only else None
+
+    if cmd == "list":
+        cmd_list(); return 0
+    if cmd == "broadcast":
+        if do_mcp:
+            print("== MCP =="); broadcast_mcp(engines, dry)
+        if do_plug:
+            print("== plugins/skills =="); broadcast_plugins(engines, only_set, dry)
+        if not dry:
+            print("\nDone. Each engine keeps what it already had; nothing removed.")
+        return 0
+    sys.exit(f"unknown command '{cmd}'. Run: cao-plugins --help")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

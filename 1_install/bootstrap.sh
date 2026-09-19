@@ -148,7 +148,7 @@ mkdir -p "$HOME/.local/bin"
 # SYMLINK (not copy) so edits to run/*.sh in this repo take effect immediately —
 # a copy goes stale the moment you change the script here. Re-running bootstrap
 # refreshes a stale copy or wrong link; `ln -sfn` replaces whatever is there.
-for tool in cao-run cao-doctor cao-stop cao-tokens; do
+for tool in cao-run cao-doctor cao-stop cao-tokens cao-plugins; do
   ln -sfn "$REPO/run/$tool" "$HOME/.local/bin/$tool"
   chmod +x "$REPO/run/$tool"
 done

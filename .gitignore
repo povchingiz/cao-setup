@@ -13,3 +13,6 @@ NOW.md
 # Python bytecode cache
 __pycache__/
 *.pyc
+
+# opencode local project artifact
+.opencode/

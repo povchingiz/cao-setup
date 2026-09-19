@@ -45,7 +45,7 @@ command -v tmux >/dev/null 2>&1 && ok "tmux present" || bad "tmux missing (CAO's
 # The cao-* tools on PATH should be THIS repo's scripts (bootstrap symlinks them).
 # A stale copy (from an older `cp`-based install) silently runs old behavior —
 # catch that here instead of leaving you puzzled why a new flag "doesn't work".
-for tool in cao-run cao-doctor cao-stop cao-tokens; do
+for tool in cao-run cao-doctor cao-stop cao-tokens cao-plugins; do
   onpath="$(command -v "$tool" 2>/dev/null)" || { wrn "$tool not on PATH (run bootstrap.sh)"; continue; }
   if [ "$onpath" -ef "$RUN_DIR/$tool" ]; then
     :  # same file (symlink or direct) — fresh
@@ -79,6 +79,7 @@ check_engine "claude_code"     claude
 check_engine "opencode_cli"    opencode
 check_engine "codex"           codex
 check_engine "antigravity_cli" agy
+command -v copilot >/dev/null 2>&1 && ok "copilot_cli: 'copilot' present" || wrn "copilot_cli: 'copilot' missing (copilot_worker won't launch)"
 
 # --- D3: auth / logins (best-effort; some CLIs have no clean status) --------
 hdr "D3 — Logins"
