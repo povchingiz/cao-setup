@@ -157,30 +157,46 @@ cao_session/
     context.md          running log across iterations: what's done, what failed
 ```
 
-**tasks.json** is an array; each task:
+**tasks.json** is an array of tasks (the live unit of delegation, watched by `cao-monitor`):
 ```json
-{
-  "id": "t1",
-  "title": "short name",
-  "detail": "what to build, referencing the contract/blueprint/diagram",
-  "engine": "claude_worker | coder_worker | codex_worker | analyst_worker | antigravity_worker",
-  "files": ["path/it/owns.py"],
-  "depends_on": ["t0"],
-  "status": "pending | running | done | blocked"
-}
+[
+  {
+    "id": "t1",
+    "title": "short descriptive name",
+    "detail": "what to build, referencing contracts/blueprints/diagrams",
+    "role": "architect | bulk | frontend | analyst | qa | github",
+    "engine": "claude_worker | coder_worker | codex_worker | analyst_worker | antigravity_worker | copilot_worker",
+    "model": "model identifier (e.g. claude-opus-4-8, deepseek-ai/DeepSeek-V4-Pro, gemini-3.8-flash-high)",
+    "files": ["path/file_it_owns.py"],
+    "depends_on": ["t0"],
+    "status": "pending | running | done | blocked",
+    "created_at": "2026-09-20T00:00:00Z",
+    "started_at": "2026-09-20T00:01:00Z",
+    "done_at": "2026-09-20T00:05:00Z",
+    "comments": [
+      {"by": "claude_worker", "at": "2026-09-20T00:04:30Z", "text": "reference contract implemented"}
+    ],
+    "qa": {
+      "verdict": "pass | warn | block",
+      "by": "antigravity_worker",
+      "at": "2026-09-20T00:06:00Z",
+      "notes": "no blockers, test suite passing"
+    }
+  }
+]
 ```
 
 Rules for driving the graph:
-- Derive tasks from the approved design; pick each task's `engine` from the
-  worker mapping (repo understanding/maps/long-docs/images -> analyst_worker;
-  design/contracts -> claude_worker; implementation -> coder_worker; UI ->
-  codex_worker; tests/review -> antigravity_worker).
+- **Plan up front:** Write all tasks into `cao_session/session_NNN/tasks.json` with
+  `status: "pending"`, `created_at`, `role`, and assigned `engine`/`model` before dispatching.
+- **Update in place as work happens:**
+  - When assigning a task: set `status: "running"` and record `started_at`.
+  - When worker reports back: set `status: "done"`, record `done_at`, and append any summary to `comments`.
+  - If a worker encounters an issue or 429: set `status: "blocked"` (or record swap in `comments` and reassign).
+  - During Audit Gate: record `qa: {verdict, by, at, notes}` directly into the audited task.
 - A task with all `depends_on` `done` is **ready**. Dispatch ALL ready tasks at
   once via `assign` — CAO runs them in parallel (up to the configured worker
   cap). Do not serialize independent tasks.
-- Set `status` to `running` when you assign, `done` when the worker reports
-  success, `blocked` if it returns a question or fails; write a one-line note to
-  `context.md` each time.
 - A task must not touch files another task owns. If two tasks need the same
   file, add a `depends_on` edge so they don't run concurrently.
 - When every task is `done`, the session's implementation phase is complete —
