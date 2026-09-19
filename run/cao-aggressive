@@ -159,8 +159,8 @@ def audit_twelve_factor(root: Path, col: AuditCollector):
                     # Check if surrounded by env lookup
                     if "os.getenv" not in content and "os.environ" not in content and "{env:" not in content and "LOCAL_API_KEY" not in content:
                         hardcoded_ports += 1
-            except Exception:
-                pass
+            except OSError:
+                continue
     if hardcoded_ports == 0:
         col.ok("Factor III (Config): Base URLs and endpoints configurable via environment", "12-Factor")
     else:
@@ -175,8 +175,8 @@ def audit_twelve_factor(root: Path, col: AuditCollector):
                 if "signal.SIGTERM" in content or "trap " in content or "SIGINT" in content or "kill" in content:
                     disposable = True
                     break
-            except Exception:
-                pass
+            except OSError:
+                continue
     if disposable:
         col.ok("Factor IX (Disposability): Signal handling / process lifecycle controls found", "12-Factor")
     else:
@@ -212,8 +212,8 @@ def audit_code_quality(root: Path, col: AuditCollector):
                         py_files.append(p)
                     elif "bash" in first_line or "sh" in first_line:
                         sh_files.append(p)
-            except Exception:
-                pass
+            except OSError:
+                continue
 
     py_errors = 0
     silent_excepts = 0
@@ -221,18 +221,22 @@ def audit_code_quality(root: Path, col: AuditCollector):
     for p in py_files:
         try:
             tree = ast.parse(p.read_text(errors="ignore"), filename=str(p))
-            # Check for bare except: pass
+            # Check for bare except: pass or except Exception: pass
             for node in ast.walk(tree):
                 if isinstance(node, ast.ExceptHandler):
                     if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
-                        rel = p.relative_to(root)
-                        col.warn(f"{rel}:{node.lineno} — Silent exception trap (except ...: pass)", "Code Quality")
-                        silent_excepts += 1
+                        # Flag only if broad catch (None, Exception, BaseException)
+                        is_broad = node.type is None or (isinstance(node.type, ast.Name) and node.type.id in ("Exception", "BaseException"))
+                        if is_broad:
+                            name_str = getattr(node.type, 'id', '') or 'bare'
+                            rel = p.relative_to(root)
+                            col.warn(f"{rel}:{node.lineno} — Silent broad exception trap (except {name_str}: pass)", "Code Quality")
+                            silent_excepts += 1
         except SyntaxError as e:
             col.blocker(f"{p.relative_to(root)}:{e.lineno} — Python SyntaxError: {e.msg}", "Code Quality")
             py_errors += 1
-        except Exception:
-            pass
+        except OSError:
+            continue
 
     if py_files and py_errors == 0:
         col.ok(f"All {len(py_files)} Python source files passed AST syntax compilation", "Code Quality")
@@ -260,16 +264,22 @@ def audit_code_quality(root: Path, col: AuditCollector):
 # --- 4. Test Suite Execution Gate --------------------------------------------
 
 def audit_tests(root: Path, col: AuditCollector):
-    # Pytest
-    if shutil.which("pytest") and (root / "tests").exists():
-        res = subprocess.run(["pytest", "-q"], cwd=root, capture_output=True, text=True)
-        if res.returncode == 0:
-            col.ok("Pytest suite executed cleanly (All tests passed)", "Tests")
+    # Python Test Suites (pytest or standard unittest)
+    if (root / "tests").exists():
+        if shutil.which("pytest"):
+            res = subprocess.run(["pytest", "-q"], cwd=root, capture_output=True, text=True)
+            if res.returncode == 0:
+                col.ok("Pytest suite executed cleanly (All tests passed)", "Tests")
+            else:
+                col.blocker("Pytest suite encountered failures", "Tests")
         else:
-            col.blocker("Pytest suite encountered failures", "Tests")
+            res = subprocess.run([sys.executable, "-m", "unittest", "discover", "tests"], cwd=root, capture_output=True, text=True)
+            if res.returncode == 0:
+                col.ok("Python unittest suite executed cleanly (All tests passed)", "Tests")
+            else:
+                col.blocker("Python unittest suite encountered failures", "Tests")
     # npm test
     elif (root / "package.json").exists() and shutil.which("npm"):
-        # Check if test script exists
         try:
             pkg = json.loads((root / "package.json").read_text())
             if "test" in pkg.get("scripts", {}):
@@ -278,10 +288,16 @@ def audit_tests(root: Path, col: AuditCollector):
                     col.ok("NPM test script executed cleanly", "Tests")
                 else:
                     col.blocker("NPM test script failed", "Tests")
-        except Exception:
+        except (OSError, json.JSONDecodeError):
             pass
+    elif (root / "cao_session" / "audit" / "stress-test.sh").exists():
+        res = subprocess.run([str(root / "cao_session" / "audit" / "stress-test.sh")], cwd=root, capture_output=True, text=True)
+        if res.returncode == 0:
+            col.ok("Project stress-test harness executed cleanly (All assertions passed)", "Tests")
+        else:
+            col.blocker("Project stress-test harness encountered failures", "Tests")
     else:
-        col.warn("No automated test runner detected (pytest/npm test)", "Tests")
+        col.warn("No automated test runner detected (pytest/unittest/npm test)", "Tests")
 
 
 # --- 5. Artifact & Report Generation ------------------------------------------

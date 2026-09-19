@@ -182,9 +182,8 @@ def _skill_oneline(skill_md):
                         coll.append(nxt.strip())
                     val = " ".join(coll)
                 desc = val
-                break
-    except OSError:
-        pass
+    except (OSError, UnicodeDecodeError):
+        desc = "(unreadable skill description)"
     # keep it to one line
     return name, (desc[:140] + "…" if len(desc) > 140 else desc)
 

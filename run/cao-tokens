@@ -117,8 +117,8 @@ def _scan_claude(cutoff, cao_only, per_day):
                             ts.replace("Z", "+00:00")).timestamp()
                         if mt < cutoff_dt:
                             continue
-                    except Exception:
-                        pass
+                    except (ValueError, TypeError, AttributeError):
+                        continue
                 model = msg.get("model") or o.get("model") or "claude-unknown"
                 inp = u.get("input_tokens", 0)
                 out = u.get("output_tokens", 0)
@@ -180,8 +180,8 @@ def scrape_opencode(cutoff):
         if model and model.startswith("{"):  # opencode stores model as JSON blob
             try:
                 model = json.loads(model).get("id", model)
-            except Exception:
-                pass
+            except (json.JSONDecodeError, AttributeError):
+                model = model.strip("{}")
         out.append(dict(engine="opencode", model=model, input=ti, output=to,
                         cache=tc, cost=round(cost, 4)))
     return out
