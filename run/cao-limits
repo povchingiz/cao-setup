@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+"""cao-limits — engine quota status from on-disk data.
+
+No API calls. Reads Claude rate-limit events from session logs and spend
+totals for codex/opencode from their SQLite databases.
+
+Usage:
+  cao-limits              show quota status for all engines
+  cao-limits --claude     Claude limits only (detailed)
+  cao-limits --json       machine-readable JSON
+  cao-limits --all-sessions  include non-CAO claude sessions (default: CAO-only)
+  cao-limits -h | --help  show this help
+"""
+import json
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+# Add run dir to path so imports work when run from anywhere
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from cao_lib import hn
+from cao_limits import get_limits
+
+
+# ---- visual bar ------------------------------------------------------------
+
+BAR_CHARS = "░▓"  # empty, filled
+BAR_WIDTH = 10
+
+
+def bar(utilization):
+    """Render a visual utilization bar like ░░░░░░░▓▓▓"""
+    filled = max(0, min(BAR_WIDTH, int(utilization * BAR_WIDTH + 0.5)))
+    return BAR_CHARS[1] * filled + BAR_CHARS[0] * (BAR_WIDTH - filled)
+
+
+def status_label(status, blocked=False):
+    if blocked:
+        return "\033[1;31m✗ BLOCKED\033[0m"
+    if status == "allowed_warning":
+        return "\033[1;33m⚠ warning\033[0m"
+    if status == "rejected":
+        return "\033[1;31m✗ rejected\033[0m"
+    return "allowed"
+
+
+def fmt_resets(unix_ts):
+    if not unix_ts:
+        return ""
+    dt = datetime.fromtimestamp(unix_ts, tz=timezone.utc)
+    return dt.strftime("%Y-%m-%d %H:%M UTC")
+
+
+def fmt_stale(seconds):
+    if seconds < 60:
+        return f"{seconds}s ago"
+    if seconds < 3600:
+        return f"{seconds // 60}m ago"
+    if seconds < 86400:
+        return f"{seconds // 3600}h ago"
+    return f"{seconds // 86400}d ago"
+
+
+# ---- views -----------------------------------------------------------------
+
+def view_human(report):
+    print()
+    print("  cao-limits — engine quota status")
+    print()
+
+    # Claude
+    cl = report.claude
+    if cl is None:
+        print("  CLAUDE")
+        print("  └─ (no rate-limit data found in session logs)")
+    else:
+        stale = fmt_stale(cl.stale_seconds)
+        print(f"  CLAUDE (data from {stale})")
+        if cl.blocked:
+            resets = fmt_resets(cl.blocked_resets_at)
+            remaining = cl.blocked_resets_at - int(time.time())
+            remaining_str = fmt_stale(-remaining).replace(" ago", "") if remaining > 0 else "now"
+            print(f"  ├─ {status_label('', blocked=True)}  "
+                  f"window: {cl.blocked_window}  "
+                  f"resets: {resets} (in {remaining_str})")
+        if cl.five_hour:
+            w = cl.five_hour
+            print(f"  ├─ 5-hour:  {bar(w.utilization)}  "
+                  f"utilization {w.utilization:.0%}  "
+                  f"{status_label(w.status)}  "
+                  f"resets {fmt_resets(w.resets_at)}")
+        if cl.seven_day:
+            w = cl.seven_day
+            connector = "└─"
+            print(f"  {connector} 7-day:   {bar(w.utilization)}  "
+                  f"utilization {w.utilization:.0%}  "
+                  f"{status_label(w.status)}  "
+                  f"resets {fmt_resets(w.resets_at)}")
+        if not cl.five_hour and not cl.seven_day and not cl.blocked:
+            print("  └─ (rate_limit_event found but no window data)")
+    print()
+
+    # Codex
+    cx = report.codex
+    print("  CODEX")
+    if cx is None:
+        print("  └─ (no usage data)")
+    else:
+        print(f"  └─ spend: {hn(cx.tokens_combined)} tokens (no local ceiling data)")
+    print()
+
+    # Opencode
+    oc = report.opencode
+    print("  OPENCODE")
+    if oc is None:
+        print("  └─ (no usage data)")
+    else:
+        total = oc.tokens_in + oc.tokens_out
+        cost_str = f"  ${oc.cost:.2f}" if oc.cost else ""
+        print(f"  └─ spend: {hn(total)} tokens (in {hn(oc.tokens_in)} / "
+              f"out {hn(oc.tokens_out)}){cost_str} (no local ceiling data)")
+    print()
+
+    # Agy
+    print("  AGY / GEMINI")
+    print("  └─ (no local usage log — quota is server-side)")
+    print()
+
+
+def view_json(report):
+    out = {}
+
+    if report.claude:
+        cl = report.claude
+        out["claude"] = {
+            "stale_seconds": cl.stale_seconds,
+            "blocked": cl.blocked,
+        }
+        if cl.blocked:
+            out["claude"]["blocked_window"] = cl.blocked_window
+            out["claude"]["blocked_resets_at"] = cl.blocked_resets_at
+        if cl.five_hour:
+            out["claude"]["five_hour"] = {
+                "utilization": cl.five_hour.utilization,
+                "status": cl.five_hour.status,
+                "resets_at": cl.five_hour.resets_at,
+            }
+        if cl.seven_day:
+            out["claude"]["seven_day"] = {
+                "utilization": cl.seven_day.utilization,
+                "status": cl.seven_day.status,
+                "resets_at": cl.seven_day.resets_at,
+            }
+    else:
+        out["claude"] = None
+
+    if report.codex:
+        out["codex"] = {"tokens_used": report.codex.tokens_combined}
+    else:
+        out["codex"] = None
+
+    if report.opencode:
+        out["opencode"] = {
+            "tokens_in": report.opencode.tokens_in,
+            "tokens_out": report.opencode.tokens_out,
+            "cost": report.opencode.cost,
+        }
+    else:
+        out["opencode"] = None
+
+    out["agy"] = None
+    print(json.dumps(out, indent=2))
+
+
+# ---- main ------------------------------------------------------------------
+
+KNOWN_FLAGS = {"--json", "--claude", "--all-sessions", "-h", "--help"}
+
+
+def main():
+    args = sys.argv[1:]
+
+    if "-h" in args or "--help" in args:
+        print(__doc__.rstrip())
+        return
+
+    for a in args:
+        if a.startswith("-") and a not in KNOWN_FLAGS:
+            sys.exit(f"unknown flag '{a}'. Run: cao-limits --help")
+
+    as_json = "--json" in args
+    cao_only = "--all-sessions" not in args
+
+    report = get_limits(cao_only=cao_only)
+
+    if as_json:
+        view_json(report)
+    else:
+        view_human(report)
+
+
+if __name__ == "__main__":
+    main()

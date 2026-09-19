@@ -55,59 +55,23 @@ Notes:
     so it can't appear in these tables.
 """
 import json
-import os
-import sqlite3
 import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from glob import glob
 from pathlib import Path
 
-HOME = Path.home()
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from cao_lib import HOME, CAO_MARKERS, cutoff_ts, _iter_claude_files, _file_is_cao, _q, hn
 
 # Which engines bill per token. Only these get a $ column; the rest are flat-rate
 # subscriptions where a per-token dollar figure would be meaningless.
 METERED = {"opencode"}
 
-# Markers that identify a claude session cao actually drove (supervisor/worker).
-# cao profiles load the `cao-mcp-server` MCP server and use its `assign` tool;
-# ordinary Claude Code sessions never touch these strings.
-CAO_MARKERS = ("cao-mcp-server", "cao_", '"assign"')
 
-
-def cutoff_ts(since):
-    if not since:
-        return 0.0
-    n, unit = float(since[:-1]), since[-1]
-    mult = {"h": 3600, "d": 86400, "w": 604800}.get(unit)
-    if not mult:
-        sys.exit(f"bad --since '{since}': use e.g. 24h, 7d, 2w")
-    return time.time() - n * mult
-
-
-def _iter_claude_files(cutoff):
-    root = HOME / ".claude" / "projects"
-    if not root.exists():
-        return
-    for f in glob(str(root / "**" / "*.jsonl"), recursive=True):
-        # File-mtime prefilter is a cheap coarse gate; exact per-message time
-        # filtering happens on the timestamp inside each row.
-        if cutoff and os.path.getmtime(f) < cutoff:
-            continue
-        yield f
-
-
-def _file_is_cao(path):
-    """True if this session loaded cao's MCP server / used its assign tool."""
-    try:
-        with open(path, encoding="utf-8", errors="ignore") as fh:
-            for line in fh:
-                if any(m in line for m in CAO_MARKERS):
-                    return True
-    except OSError:
-        return False
-    return False
 
 
 def _day_of(ts):
@@ -183,16 +147,6 @@ def scrape_claude(cutoff, cao_only=False):
 
 
 # ---- sqlite helpers --------------------------------------------------------
-def _q(db, sql):
-    if not Path(db).exists():
-        return None
-    try:
-        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
-        out = con.execute(sql).fetchall()
-        con.close()
-        return out
-    except sqlite3.Error:
-        return None
 
 
 def scrape_codex(cutoff):
@@ -279,16 +233,6 @@ def scan_all_daily(cutoff, cao_only):
     return days
 
 
-def hn(n):
-    """Human-compact number: 1234 -> 1.2k, 2_500_000 -> 2.5M, 0 -> 0."""
-    n = int(n)
-    if n == 0:
-        return "0"
-    if abs(n) >= 1_000_000:
-        return f"{n/1_000_000:.1f}M"
-    if abs(n) >= 1_000:
-        return f"{n/1_000:.1f}k"
-    return str(n)
 
 
 def fmt(n):
