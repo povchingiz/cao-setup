@@ -38,6 +38,7 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 3_apply/       apply.sh · render_config.py · inherit_mcp.py · inherit_all.py   ← push edits · share MCP
 run/           cao-run · cao-doctor · cao-stop · cao-tokens · cao-plugins   ← launch · check · stop · usage · share
 .generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
+plans/         session reports · local plans   ← yours; contents gitignored (README tracked)
 ```
 
 Edit only in `2_configure/`. Everything else is machinery. Never edit the live
