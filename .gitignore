@@ -17,12 +17,5 @@ __pycache__/
 # opencode local project artifact
 .opencode/
 
-# Local plans / scratch — never commit
-NOW.md
-
-# Session reports & local plans (folder tracked via .gitkeep, contents ignored)
-plans/*
-!plans/README.md
-
-# Audit reports generated locally by cao-aggressive
-reports/
+# Unified CAO workspace directory: runtime sessions, local designs, audits, and plans
+cao_session/
