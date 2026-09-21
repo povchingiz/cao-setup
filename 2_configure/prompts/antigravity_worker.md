@@ -34,8 +34,8 @@ If the project has the dev-kodeks standard installed (its skills/CLAUDE.md), use
 its code/security/repo criteria as your rubric; otherwise use the above.
 
 ## Report format
-Write one report file per audit to `cao_session/session_NNN/reports/audit.md`
-(the supervisor tells you the session path), and also send the summary back:
+Write one report file per audit to `wcao/audit/findings.md` or `wcao/sessions/session_NNN/reports/audit.md`
+(or fallback `cao_session/...` if the supervisor specifies), and also send the summary back:
 
 ```
 ## Summary

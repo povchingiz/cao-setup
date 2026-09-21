@@ -36,18 +36,24 @@ CLR_CYAN = "\033[1;36m"
 def find_sessions(root_dir: Path):
     """Locate all session directories containing tasks.json."""
     candidates = []
-    session_dir = root_dir / "cao_session"
-    if session_dir.exists():
-        # 1. Search ./cao_session/session_*
-        for d in sorted(session_dir.glob("session_*")):
-            if d.is_dir() and (d / "tasks.json").exists():
-                candidates.append(d)
-        # 2. Search ./cao_session/sessions/session_*
-        sessions_subdir = session_dir / "sessions"
-        if sessions_subdir.exists():
-            for d in sorted(sessions_subdir.glob("session_*")):
+    for s_name in ["wcao", "cao_session"]:
+        session_dir = root_dir / s_name
+        if session_dir.exists():
+            # 1. Search session_*
+            for d in sorted(session_dir.glob("session_*")):
                 if d.is_dir() and (d / "tasks.json").exists():
                     candidates.append(d)
+            # 2. Search sessions/session_*
+            sessions_subdir = session_dir / "sessions"
+            if sessions_subdir.exists():
+                for d in sorted(sessions_subdir.glob("session_*")):
+                    if d.is_dir() and (d / "tasks.json").exists():
+                        candidates.append(d)
+            # 3. Direct tasks.json in directory
+            if (session_dir / "tasks.json").exists():
+                candidates.append(session_dir)
+        if candidates:
+            break
     return candidates
 
 

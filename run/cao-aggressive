@@ -290,8 +290,9 @@ def audit_tests(root: Path, col: AuditCollector):
                     col.blocker("NPM test script failed", "Tests")
         except (OSError, json.JSONDecodeError):
             pass
-    elif (root / "cao_session" / "audit" / "stress-test.sh").exists():
-        res = subprocess.run([str(root / "cao_session" / "audit" / "stress-test.sh")], cwd=root, capture_output=True, text=True)
+    elif ((root / "wcao" / "audit" / "stress-test.sh").exists() or (root / "cao_session" / "audit" / "stress-test.sh").exists()):
+        script = (root / "wcao" / "audit" / "stress-test.sh") if (root / "wcao" / "audit" / "stress-test.sh").exists() else (root / "cao_session" / "audit" / "stress-test.sh")
+        res = subprocess.run([str(script)], cwd=root, capture_output=True, text=True)
         if res.returncode == 0:
             col.ok("Project stress-test harness executed cleanly (All assertions passed)", "Tests")
         else:
@@ -303,7 +304,7 @@ def audit_tests(root: Path, col: AuditCollector):
 # --- 5. Artifact & Report Generation ------------------------------------------
 
 def generate_project_artifacts(root: Path, col: AuditCollector):
-    audit_dir = root / "cao_session" / "audit"
+    audit_dir = root / "wcao" / "audit" if (root / "wcao").exists() else root / "cao_session" / "audit"
     audit_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. real-sequence-diagram.mmd

@@ -22,21 +22,23 @@ from run.cao_telegram import notify_telegram
 
 
 def find_latest_session(root_dir: Path) -> Path:
-    session_dir = root_dir / "cao_session"
-    if not session_dir.exists():
-        sys.exit(f"ERROR: No cao_session/ directory found in {root_dir}")
-    sessions = [
-        d for d in session_dir.glob("session_*") if d.is_dir() and (d / "tasks.json").exists()
-    ]
-    sessions_subdir = session_dir / "sessions"
-    if sessions_subdir.exists():
-        sessions.extend(
-            [d for d in sessions_subdir.glob("session_*") if d.is_dir() and (d / "tasks.json").exists()]
-        )
-    if not sessions:
-        sys.exit(f"ERROR: No sessions with tasks.json found in {session_dir}")
-    sessions.sort()
-    return sessions[-1]
+    for s_name in ["wcao", "cao_session"]:
+        session_dir = root_dir / s_name
+        if session_dir.exists():
+            sessions = [
+                d for d in session_dir.glob("session_*") if d.is_dir() and (d / "tasks.json").exists()
+            ]
+            sessions_subdir = session_dir / "sessions"
+            if sessions_subdir.exists():
+                sessions.extend(
+                    [d for d in sessions_subdir.glob("session_*") if d.is_dir() and (d / "tasks.json").exists()]
+                )
+            if (session_dir / "tasks.json").exists():
+                sessions.append(session_dir)
+            if sessions:
+                sessions.sort()
+                return sessions[-1]
+    sys.exit(f"ERROR: No wcao/ or cao_session/ directories with tasks.json found in {root_dir}")
 
 
 def main():

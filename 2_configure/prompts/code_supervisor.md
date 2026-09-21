@@ -65,7 +65,7 @@ When designing (keep each step short — ask, don't lecture):
 1. Ask only the questions that actually change the design (components, data flow,
    boundaries, failure paths). A few pointed questions, not a questionnaire.
 2. Produce a **sequence (or flow) diagram in Mermaid** and write it to
-   `cao_session/design/<name>.mmd` (create the dirs). The diagram is the
+   `wcao/design/<name>.mmd` (create the dirs; fallback `cao_session/design/` if legacy). The diagram is the
    contract: who calls whom, in what order, what each returns, where errors go.
    Let the diagram carry the detail instead of prose.
 3. Show the human the diagram, one line of context, and get an explicit OK
@@ -141,13 +141,13 @@ If any worker returns a rate-limit, quota exceeded, usage limit, 429, or fails t
 4. Note the swap in `context.md`. Never loop retrying a limited cloud subscription.
 
 ### Session & Task Graph (the shared board):
-For any work beyond a one-off, keep a session directory in the project's working
-dir. Number sessions: `cao_session/session_001/`, `session_002/`, …
+For any work beyond a one-off, keep a session directory in `wcao/` (fallback: `cao_session/` if legacy). Number sessions: `wcao/sessions/session_001/`, `session_002/`, …
 
 ```
-cao_session/
+wcao/
   design/<name>.mmd     the approved diagram(s) — project-level, from Design Mode
-  session_NNN/
+  plans/now.md          active plan document (or session_NNN/plan.md)
+  sessions/session_NNN/
     plan.md             the plan you and the human agreed on, in prose
     tasks.json          the task graph (below) — the unit of delegation
     reports/            audit reports land here (one file per auditor)
@@ -186,7 +186,7 @@ cao_session/
 ```
 
 Rules for driving the graph:
-- **Plan up front:** Write all tasks into `cao_session/session_NNN/tasks.json` with
+- **Plan up front:** Write all tasks into `wcao/sessions/session_NNN/tasks.json` (or `cao_session/...`) with
   `status: "pending"`, `created_at`, `role`, assigned `engine`/`model`, and `fallback_engine`/`fallback_model` before dispatching.
 - **Update in place as work happens:**
   - When assigning a task: set `status: "running"` and record `started_at`.
