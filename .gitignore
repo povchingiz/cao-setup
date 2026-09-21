@@ -1,14 +1,10 @@
 .env
 *.bak
 cao.env
-# Per-run session working files (plan/tasks/reports/context) — local only.
-cao_session/
 # Your real endpoint/models — private, overrides the template for render/apply.
 cao.config.local.toml
 # Generated build artifacts (machine-specific, may contain your endpoint).
 .generated/
-# Local progress snapshot — not committed.
-NOW.md
 
 # Python bytecode cache
 __pycache__/
@@ -16,6 +12,3 @@ __pycache__/
 
 # opencode local project artifact
 .opencode/
-
-# Unified CAO workspace directory: runtime sessions, local designs, audits, and plans
-cao_session/

@@ -1,0 +1,40 @@
+sequenceDiagram
+    autonumber
+    actor Caller as User / Automation Client
+    participant CLI as CLI / Entrypoint Layer
+    participant Daemon as Daemon / Core Orchestrator
+    participant Worker as Worker Agents / Subprocesses
+    participant DB as SQLite / Local Store
+    participant LLM as External LLM Gateways / APIs
+
+    Caller->>CLI: Invokes command (flags + args)
+    activate CLI
+    CLI->>CLI: Pre-flight checks & env validation
+    alt Pre-flight check fails
+        CLI-->>Caller: 14 passed · ✗ Critical Failure
+    else Pre-flight ready
+        CLI->>Daemon: Send command / connect session
+        activate Daemon
+        Daemon->>DB: Load active profiles & session state
+        DB-->>Daemon: State loaded
+        Daemon->>Worker: Spawn worker terminal (tmux)
+        activate Worker
+        Worker->>LLM: Dispatch turn (stream-json / prompt)
+        activate LLM
+        alt Quota Exceeded / 429 Rate Limit
+            LLM-->>Worker: 429 Too Many Requests
+            Worker-->>Daemon: Quota Exceeded Event
+            Daemon->>Daemon: Execute Universal Fallback Ladder
+            Daemon->>Worker: Reassign task to peer engine
+        else Turn Success
+            LLM-->>Worker: Generation response
+        end
+        deactivate LLM
+        Worker->>DB: Record tokens & task updates
+        Worker-->>Daemon: Task complete / report ready
+        deactivate Worker
+        Daemon-->>CLI: Return execution status
+        deactivate Daemon
+        CLI-->>Caller: Output rendered results / exit 0
+    end
+    deactivate CLI

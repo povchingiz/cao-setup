@@ -1,0 +1,95 @@
+%% CAO — full system sequence diagram
+%% Three phases: INSTALL (once) -> APPLY (after every config/prompt edit) -> RUNTIME (each cao-run).
+%% This is the contract map: who calls whom, what file each step reads/writes, where quota/fallback branches.
+
+sequenceDiagram
+    autonumber
+    actor U as You (human)
+    participant BS as bootstrap.sh<br/>(1_install)
+    participant CFG as cao.config.local.toml<br/>(2_configure, gitignored)
+    participant PR as prompts/.md files<br/>(2_configure)
+    participant RC as render_config.py<br/>(3_apply)
+    participant AP as apply.sh<br/>(3_apply)
+    participant STG as agent_store (_)<br/>STAGING
+    participant CAO as cao CLI + DB<br/>agent-store (-) CANONICAL
+    participant OCJ as opencode.json<br/>(~/.aws/opencode)
+    participant DR as cao-doctor<br/>(run)
+    participant RUN as cao-run<br/>(run)
+    participant SRV as cao-server<br/>(daemon :9889)
+    participant TMUX as tmux sessions
+    participant SUP as supervisor<br/>(claude, Tech Lead)
+    participant W as workers<br/>(coder/analyst/codex/qa/claude)
+    participant EP as nitec endpoint<br/>llm.nitec.kz/v1
+    participant TOK as cao-tokens<br/>(run)
+
+    Note over U,CAO: ===== PHASE 1 — INSTALL (once, idempotent) =====
+    U->>BS: ./bootstrap.sh (--inherit-mcp) (--with-kodeks)
+    BS->>BS: install prereqs (uv, tmux, node), CAO, worker CLIs (claude/codex/opencode/agy)
+    BS->>STG: mkdir agent_store, copy prompts .md files
+    BS->>CAO: cao install staging .md files  (registers into canonical agent-store + DB)
+    BS->>BS: patch pyte (agy ANSI fix) · skip agy onboarding · neutralize codex hooks
+    BS-->>U: prints INTERACTIVE login steps (claude /login, codex login, agy)
+
+    Note over U,OCJ: ===== PHASE 2 — APPLY (after editing config or prompts) =====
+    U->>CFG: edit workers/roles/models (single source of truth)
+    U->>PR: edit prompt bodies (execution rules)
+    U->>AP: ./apply.sh
+    AP->>RC: render_config.py
+    RC->>CFG: read (local overrides template)
+    RC->>OCJ: write provider=nitec + models(deepseek,kimi,glm) + default
+    RC->>STG: write each worker .md (provider/model into frontmatter)
+    RC->>STG: regen supervisor AUTO-MAPPING from aliases+focus
+    RC->>STG: prune_stale_profiles — delete staging .md with no tracked source
+    Note right of RC: GAP: prune cleans STAGING only,<br/>not canonical agent-store (-).<br/>Rename also needs `cao profile remove`.
+    AP->>CAO: cao install staging «p».md  for each registered profile
+    CAO->>CAO: copy STAGING → canonical agent-store (-) + update DB
+    AP-->>U: offer cao-server restart (picks up new configs)
+
+    Note over U,EP: ===== PHASE 3 — RUNTIME (each cao-run) =====
+    U->>RUN: cao-run
+    RUN->>DR: pre-flight (unless --skip-check)
+    DR->>DR: D1 toolchain, D2 engines, D3 logins, D4 endpoint reachable
+    DR->>EP: GET /models (auth LOCAL_API_KEY) → 200?
+    alt claude logged out / unavailable
+        DR->>DR: write ~/.cao/supervisor_provider = fallback (antigravity_cli)
+    else claude ok
+        DR->>DR: clear stale ~/.cao/supervisor_provider
+    end
+    DR-->>RUN: exit 0 (ready) or non-zero (abort)
+    RUN->>RUN: pick supervisor provider:<br/>env CAO_SUPERVISOR_PROVIDER, then hint file, then claude_code
+    RUN->>SRV: start cao-server if :9889 not listening (passes LOCAL_API_KEY)
+    RUN->>TMUX: tmux setenv -g LOCAL_API_KEY (so opencode panes inherit)
+    RUN->>CAO: cao launch --agents code_supervisor --provider «chosen» --auto-approve
+    alt primary=claude_code AND launch fails (quota burned)
+        RUN->>CAO: auto-retry once on fallback (antigravity_cli / codex)
+    end
+    CAO->>TMUX: spawn supervisor session (cao-supervisor)
+    TMUX->>SUP: boot claude with cao-mcp-server MCP (assign, send_message tools)
+
+    Note over SUP,W: ---- supervisor orchestration loop ----
+    U->>SUP: describe task
+    SUP->>SUP: size it (small change → delegate · big → design first)
+    opt big feature / new project
+        SUP->>W: assign analyst_worker (Gemini): map repo / read long docs / images
+        W-->>SUP: compact map with path:line anchors
+        SUP->>SUP: design + write Mermaid to cao_session/design/, get human approval
+        SUP->>SUP: derive tasks.json (engine per task from mapping)
+    end
+    SUP->>W: assign ready tasks in parallel (assign MCP tool, up to max_concurrent_workers)
+    CAO->>TMUX: spawn worker panes per profile
+    W->>EP: coder_worker → nitec/deepseek (bulk impl)
+    W->>W: codex_worker → UI · claude_worker → contracts/hard logic
+    W-->>SUP: send_message result back (via caller terminal_id)
+    SUP->>W: audit gate: assign antigravity_worker (QA)
+    W-->>SUP: reports/audit.md + BLOCKER? summary
+    alt blockers
+        SUP->>W: fix-task to OWNER (coder fixes own · claude fixes contract)
+        SUP->>W: re-audit until clean
+    end
+    SUP-->>U: session complete · you run acceptance pass
+
+    Note over U,TOK: ===== OBSERVABILITY (any time) =====
+    U->>TOK: cao-tokens (--daily|--heatmap|--cao-only|--day)
+    TOK->>TOK: scrape ~/.claude jsonl + codex/opencode sqlite (local, no billing API)
+    TOK-->>U: per-engine / per-day / heatmap · --cao-only isolates cao from all-claude
+    U->>RUN: cao-stop (shutdown) when done — workers survive detach otherwise
