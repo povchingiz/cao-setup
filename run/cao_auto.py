@@ -22,6 +22,7 @@ from typing import Dict, List, Optional, Set, Tuple
 from run.cao_fallback import is_quota_error, apply_fallback
 from run.cao_telegram import notify_telegram
 from run.cao_compactor import ContextCompactor
+from run.cao_token_master import TokenMaster
 
 DEFAULT_SERVER_PORT = 9889
 
@@ -157,6 +158,7 @@ class AutonomousRunner:
         self.self_heal = self_heal
         self.max_heal_attempts = max_heal_attempts
         self.compactor = ContextCompactor()
+        self.token_master = TokenMaster()
         self.recent_worker_outputs: List[str] = []
         # Map: task_id -> {terminal_id, started_monotonic}
         self.active_workers: Dict[str, dict] = {}
@@ -299,7 +301,26 @@ class AutonomousRunner:
         tid = task["id"]
         engine = task.get("engine", "coder_worker")
         model = task.get("model")
+
+        # TokenMaster Evaluation Gate: Proactive Quota & Context Sizing
+        decision = self.token_master.evaluate_task(task, repo_root=self.repo_root)
+        if decision.swapped:
+            task["engine"] = decision.selected_engine
+            task["model"] = decision.selected_model
+            task["proactive_swap"] = True
+            task["swap_reason"] = decision.reason
+            engine = decision.selected_engine
+            model = decision.selected_model
+            notify_telegram(
+                f"Task {tid}: TokenMaster proactive swap: {decision.original_engine} -> {decision.selected_engine} ({decision.reason})",
+                level="warn",
+            )
+
         payload = f"Task {tid}: {task.get('title')}\n\n{task.get('detail')}"
+        if decision.notices:
+            task["token_notices"] = decision.notices
+            notice_block = "\n".join(f"[{n}]" for n in decision.notices)
+            payload = f"{notice_block}\n\n{payload}"
 
         # Hermes Pre-Task Recall Gate: Query memory for relevant past lessons
         query_text = f"{task.get('title', '')} {' '.join(task.get('files', []))} {task.get('detail', '')}".strip()

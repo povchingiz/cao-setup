@@ -22,7 +22,10 @@ from datetime import datetime, timezone
 from glob import glob
 from typing import Optional
 
-from cao_lib import HOME, _file_is_cao, _iter_claude_files, _q
+try:
+    from cao_lib import HOME, _file_is_cao, _iter_claude_files, _q
+except ImportError:
+    from run.cao_lib import HOME, _file_is_cao, _iter_claude_files, _q
 
 # Windows Claude reports in `unifiedWindows`, in the order we display them.
 WINDOWS = ("five_hour", "seven_day")
@@ -366,15 +369,14 @@ def _scan_opencode():
 # --------------------------------------------------------------------------
 
 def get_limits(cao_only: bool = True) -> LimitReport:
-    """Gather quota/limit state for every engine that publishes one locally.
-
-    `cao_only` applies the same session filter as cao-tokens: only Claude
-    sessions CAO actually drove are counted. Engines without local ceiling
-    data report spend; agy is always None.
-    """
+    """Read limits from all engines. Never raises; missing engines report None."""
     return LimitReport(
         claude=_scan_claude(cao_only=cao_only),
         codex=_scan_codex(),
         opencode=_scan_opencode(),
-        agy=None,
     )
+
+
+def get_claude_limits(cao_only: bool = True) -> Optional[ClaudeLimits]:
+    """Public helper returning current ClaudeLimits or None."""
+    return _scan_claude(cao_only=cao_only)

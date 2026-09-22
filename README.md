@@ -29,7 +29,7 @@
 | Capability | How CAO Delivers It |
 |---|---|
 | **Multi-Engine Swarm** | Unifies Claude, Codex, OpenCode, Antigravity, Copilot, and Hermes into one orchestrated pipeline. |
-| **Token-Aware Efficiency** | Frontier models design contracts; cheap models write boilerplate; huge-context models read the repo. |
+| **Token-Aware Efficiency** | Proactive TokenMaster quota monitoring, automatic high-utilization model swaps, context-size advisories, and 50% window compaction. |
 | **Zero-Collision Concurrency** | Task DAG scheduler evaluates dependencies and locks files dynamically across parallel workers. |
 | **Autonomous Self-Healing** | Postflight AST checks, security audits, and test suites trigger automatic remediation loops when regressions occur. |
 | **Persistent Project Brain (`wcao/`)** | Single source of truth for architectural diagrams (`design/*.mmd`), active plans (`now.md`), and reusable skills (`skills/`). |
@@ -275,9 +275,10 @@ python run/cao_auto.py --tasks wcao/tasks.json --max-workers 4
 ```
 
 1. **DAG Scheduling & File Locks**: Evaluates `depends_on` relationships and prevents concurrent workers from touching overlapping `files`, ensuring zero merge conflicts or race conditions.
-2. **Quota Failover**: Catches 429 quota exhaustion or provider errors in real time and automatically fails over to alternative engines (e.g. `coder_worker` on OpenCode / DeepSeek).
-3. **Aggressive Postflight Audit Gate (`cao-aggressive`)**: Runs automated AST validation, security scans, and test suite executions upon task completion.
-4. **Autonomous Self-Healing**: If the audit gate catches test failures or regressions, `cao_auto` automatically creates and dispatches remediation tasks (up to 3 attempts) to fix the code, verifying each attempt.
+2. **Proactive TokenMaster Quota Control**: Reads Claude live window utilization via `cao_limits`. If quota exceeds the 80% watermark or is blocked, it proactively reassigns tasks to `hermes_worker` or `coder_worker` before hitting rate limits. Detects large multi-file contexts (>5 files) and advises routing to `analyst_worker` (Gemini 1M+ context).
+3. **Quota Failover**: Catches 429 quota exhaustion or provider errors in real time and automatically fails over to alternative engines (e.g. `coder_worker` on OpenCode / DeepSeek).
+4. **Aggressive Postflight Audit Gate (`cao-aggressive`)**: Runs automated AST validation, security scans, and test suite executions upon task completion.
+5. **Autonomous Self-Healing**: If the audit gate catches test failures or regressions, `cao_auto` automatically creates and dispatches remediation tasks (up to 3 attempts) to fix the code, verifying each attempt.
 
 ## Hermes Learning & Memory System
 

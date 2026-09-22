@@ -27,7 +27,11 @@
 - [x] **Engine Expansion & Conformance Hardening (P3)**:
   - [x] Added `hermes_cli` and `hermes_worker` in [`3_apply/render_config.py`](../../3_apply/render_config.py), [`run/cao-doctor`](../../run/cao-doctor), [`2_configure/cao.config.toml`](../../2_configure/cao.config.toml), and prompts ([`hermes_worker.md`](../../2_configure/prompts/hermes_worker.md)).
   - [x] Added HarnessRouter-inspired crash recovery and mid-DAG 429 failover test suite in [`tests/test_conformance.py`](../../tests/test_conformance.py).
-  - [x] All 34/34 tests passing cleanly.
+- [x] **Proactive Token-Master Loop (P4)**:
+  - [x] Implemented `TokenMaster` in [`run/cao_token_master.py`](../../run/cao_token_master.py) reading live Claude quota window utilization via `cao_limits`.
+  - [x] Wired proactive model swapping (>=80% utilization or blocked) to `hermes_worker` / `coder_worker` before hitting rate limits.
+  - [x] Added large context & multi-file advisory routing in `_dispatch_task` in [`run/cao_auto.py`](../../run/cao_auto.py).
+  - [x] Verified with 6 unit/integration tests in [`tests/test_token_master.py`](../../tests/test_token_master.py) (41/41 test suite passing).
 
 ---
 
