@@ -2,13 +2,21 @@
 
 > **Orchestrate your frontier AI coding CLI engines into a cohesive, self-learning engineering squad.**
 
-[![Interactive Presentation Deck](https://img.shields.io/badge/Interactive%20Deck-16%20Slides%20(RU%2FEN)-6366f1?style=for-the-badge&logo=googleslides&logoColor=white)](https://povchingiz.github.io/cao-setup/)
-[![Sequence Diagram](https://img.shields.io/badge/Architecture-Sequence%20Diagram-06b6d4?style=for-the-badge&logo=diagramsdotnet&logoColor=white)](https://povchingiz.github.io/cao-setup/#16)
-[![Python Version](https://img.shields.io/badge/Python-%3E%3D3.11-3776ab?style=for-the-badge&logo=python&logoColor=white)](pyproject.toml)
-[![Architecture](https://img.shields.io/badge/Architecture-Multi--Engine%20DAG-10b981?style=for-the-badge&logo=git&logoColor=white)](#the-solution-a-unified-engineering-squad)
+[![Interactive Deck](https://img.shields.io/badge/Presentation%20Deck-16%20Slides-6366f1?style=flat-square&logo=googleslides&logoColor=white)](https://povchingiz.github.io/cao-setup/)
+[![Sequence Diagram](https://img.shields.io/badge/Architecture-Sequence%20Diagram-06b6d4?style=flat-square&logo=diagramsdotnet&logoColor=white)](https://povchingiz.github.io/cao-setup/#16)
 
-> 🌐 **Interactive Pitch Deck**: [**povchingiz.github.io/cao-setup**](https://povchingiz.github.io/cao-setup/) *(16 Slides · Dual Dark/Light Mode · RU/EN Localization · Native Sequence Diagram · Rival Matrices)*  
-> 🔍 **Direct Architecture Trace**: Jump straight to the [**End-to-End Sequence Diagram (Slide 16)**](https://povchingiz.github.io/cao-setup/#16)
+---
+
+### Quick Navigation
+* 🌐 **[Interactive Pitch Deck](https://povchingiz.github.io/cao-setup/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
+* 🔄 **[Execution Sequence Diagram](https://povchingiz.github.io/cao-setup/#16)** — native visual trace from North Star goal to verified commit
+* ⚠️ **[The Problem](#the-problem)** — 6 fatal flaws of single-agent and uncoordinated coding
+* 🧩 **[The Solution](#the-solution-a-unified-engineering-squad)** — specialist workforce, economic asymmetry, and DAG execution
+* ⚡ **[Core Capabilities](#core-capabilities-at-a-glance)** — multi-engine swarm, 50% context compactor, TokenMaster quota sensors
+* 📋 **[Command Cheatsheet](#command-cheatsheet)** — quick reference for `cao-run`, `cao-plan`, `cao-auto`, `cao-limits`
+* 🚀 **[Installation & Setup](#1-install-once)** — 5-minute bootstrap and configuration
+* 🧠 **[Hermes Learning & Memory](#hermes-learning--memory-system)** — SQLite FTS5 episodic storage and now.md checkpoints
+* 🛡️ **[Autonomous Self-Healing](#autonomous-execution--self-healing-cao_auto)** — AST anti-tampering, 5-vector audit gate, and L2 escalation
 
 > [!NOTE]
 > **Origins & Lineage:** This project originated as an automated setup and configuration harness for AWS Labs' open-source [`cli-agent-orchestrator`](https://github.com/awslabs/cli-agent-orchestrator) (CAO). It has since expanded significantly beyond the original launcher into an autonomous multi-engine platform—adding the **`wcao/` project standard**, **Hermes episodic & procedural memory**, **proactive TokenMaster quota intelligence**, **headless DAG execution (`cao_auto`)**, and **anti-tamper self-healing audit gates**.
