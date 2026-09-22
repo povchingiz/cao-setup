@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,6 +43,10 @@
       --key-pill-color: #cbd5e1;
       --highlight-card-bg: rgba(99, 102, 241, 0.08);
       --orb-opacity: 0.15;
+      --diagram-bg: rgba(0, 0, 0, 0.35);
+      --diagram-actor-bg: rgba(255, 255, 255, 0.06);
+      --diagram-line: rgba(255, 255, 255, 0.15);
+      --diagram-box-alt: rgba(245, 158, 11, 0.08);
     }
 
     [data-theme="light"] {
@@ -80,6 +84,30 @@
       --key-pill-color: #334155;
       --highlight-card-bg: rgba(99, 102, 241, 0.06);
       --orb-opacity: 0.1;
+      --diagram-bg: #ffffff;
+      --diagram-actor-bg: #f1f5f9;
+      --diagram-line: rgba(15, 23, 42, 0.15);
+      --diagram-box-alt: rgba(217, 119, 6, 0.08);
+    }
+
+    /* Language Switcher Display Logic */
+    html[lang="en"] .t-ru,
+    html:not([lang="ru"]) .t-ru {
+      display: none !important;
+    }
+
+    html[lang="ru"] .t-en {
+      display: none !important;
+    }
+
+    /* In SVG text elements */
+    html[lang="en"] text tspan.t-ru,
+    html:not([lang="ru"]) text tspan.t-ru {
+      display: none !important;
+    }
+
+    html[lang="ru"] text tspan.t-en {
+      display: none !important;
     }
 
     * {
@@ -116,7 +144,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      padding: 60px 80px 90px;
+      padding: 50px 80px 90px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -162,7 +190,7 @@
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       width: fit-content;
     }
 
@@ -172,29 +200,29 @@
     }
 
     .slide-title {
-      font-size: 2.75rem;
+      font-size: 2.6rem;
       font-weight: 800;
       line-height: 1.15;
       letter-spacing: -0.03em;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       background: var(--title-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .slide-subtitle {
-      font-size: 1.25rem;
+      font-size: 1.18rem;
       color: var(--text-muted);
       line-height: 1.5;
-      max-width: 900px;
-      margin-bottom: 36px;
+      max-width: 950px;
+      margin-bottom: 28px;
     }
 
     /* Layout Grids */
     .grid-2 {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+      gap: 22px;
       position: relative;
       z-index: 2;
     }
@@ -202,7 +230,7 @@
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+      gap: 18px;
       position: relative;
       z-index: 2;
     }
@@ -220,7 +248,7 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 24px;
+      padding: 22px;
       backdrop-filter: blur(16px);
       transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
       display: flex;
@@ -243,27 +271,27 @@
     }
 
     .card-icon {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
-      margin-bottom: 16px;
+      font-size: 1.25rem;
+      margin-bottom: 14px;
       background: var(--btn-bg);
       border: 1px solid var(--border);
     }
 
     .card-title {
-      font-size: 1.15rem;
+      font-size: 1.12rem;
       font-weight: 700;
       color: var(--card-title-color);
       margin-bottom: 8px;
     }
 
     .card-text {
-      font-size: 0.92rem;
+      font-size: 0.90rem;
       color: var(--text-muted);
       line-height: 1.5;
     }
@@ -306,7 +334,7 @@
       background: var(--code-bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px 20px;
+      padding: 14px 18px;
       font-size: 0.85rem;
       line-height: 1.5;
       color: var(--code-text);
@@ -342,8 +370,8 @@
       background: var(--flow-node-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 12px 18px;
-      font-size: 0.9rem;
+      padding: 10px 16px;
+      font-size: 0.88rem;
       font-weight: 600;
       color: var(--text-main);
       display: flex;
@@ -381,7 +409,7 @@
     }
 
     .deck-table td {
-      padding: 14px 16px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       color: var(--text-muted);
       line-height: 1.4;
@@ -396,13 +424,32 @@
       color: var(--table-hover-color);
     }
 
+    /* Diagram Card in Slide 13 */
+    .diagram-container {
+      width: 100%;
+      background: var(--diagram-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 20px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .diagram-svg {
+      width: 100%;
+      max-width: 1080px;
+      height: auto;
+    }
+
     /* Deck Controls & Bottom Bar */
     .deck-footer {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100vw;
-      padding: 20px 80px;
+      padding: 16px 60px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -444,7 +491,7 @@
       background: var(--btn-bg);
       border: 1px solid var(--btn-border);
       color: var(--text-main);
-      padding: 8px 16px;
+      padding: 8px 14px;
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
@@ -467,7 +514,7 @@
     }
 
     .brand-mark {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text-muted);
@@ -492,7 +539,7 @@
       border: 1px solid var(--key-pill-border);
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--key-pill-color);
     }
   </style>
@@ -513,83 +560,141 @@
 
     <!-- SLIDE 1: Cover -->
     <section class="slide active" data-slide="1">
-      <div class="slide-tag">Autonomous CLI Orchestration</div>
-      <h1 class="slide-title" style="font-size: 3.5rem; margin-bottom: 20px;">
+      <div class="slide-tag">
+        <span class="t-en">Autonomous CLI Orchestration</span>
+        <span class="t-ru">Автономная CLI-Оркестрация</span>
+      </div>
+      <h1 class="slide-title" style="font-size: 3.4rem; margin-bottom: 16px;">
         CAO: CLI Agent Orchestrator
       </h1>
-      <p class="slide-subtitle" style="font-size: 1.4rem; max-width: 840px;">
-        Turning frontier AI coding CLIs into a unified, self-healing, quota-aware engineering squad.
+      <p class="slide-subtitle">
+        <span class="t-en">Turning frontier AI coding CLIs into a unified, self-healing, quota-aware engineering squad.</span>
+        <span class="t-ru">Превращаем передовые AI-терминалы в единую самовосстанавливающуюся инженерную команду с контролем квот.</span>
       </p>
 
-      <div class="card" style="max-width: 800px; margin-bottom: 24px; border-left: 3px solid var(--accent);">
+      <div class="card" style="max-width: 850px; margin-bottom: 22px; border-left: 3px solid var(--accent);">
         <p style="font-size: 0.95rem; color: var(--text-main); line-height: 1.6;">
-          <strong style="color: var(--card-title-color);">Origins & Lineage:</strong> Originated as an automated setup and configuration harness for AWS Labs' open-source <code>cli-agent-orchestrator</code>. Expanded into a full autonomous software-building platform with Git-native memory (<code>wcao/</code>), proactive TokenMaster quota telemetry, and anti-tamper audit loops.
+          <strong style="color: var(--card-title-color);">
+            <span class="t-en">Origins & Lineage:</span>
+            <span class="t-ru">Происхождение и корни:</span>
+          </strong>
+          <span class="t-en">Originated as an automated setup harness for AWS Labs' open-source <code>cli-agent-orchestrator</code>. Expanded into a full autonomous software-building platform with Git-native memory (<code>wcao/</code>), proactive TokenMaster quota telemetry, and anti-tamper audit loops.</span>
+          <span class="t-ru">Зародился как сетап-харнес для open-source проекта <code>cli-agent-orchestrator</code> от AWS Labs. Вырос в полноценную автономную платформу разработки с Git-памятью (<code>wcao/</code>), упреждающим сенсором квот TokenMaster и анти-фальсификацией тестов.</span>
         </p>
       </div>
 
-      <div class="flow-row" style="margin-top: 10px;">
-        <div class="flow-node"><span style="color:#f43f5e;">●</span> Claude Code (Architect)</div>
+      <div class="flow-row" style="margin-top: 6px;">
+        <div class="flow-node">
+          <span style="color:#f43f5e;">●</span>
+          <span class="t-en">Claude Code (Architect)</span>
+          <span class="t-ru">Claude Code (Архитектор)</span>
+        </div>
         <div class="flow-arrow">+</div>
-        <div class="flow-node"><span style="color:#06b6d4;">●</span> OpenCode / DeepSeek (Bulk Coder)</div>
+        <div class="flow-node">
+          <span style="color:#06b6d4;">●</span>
+          <span class="t-en">OpenCode / DeepSeek (Bulk Coder)</span>
+          <span class="t-ru">OpenCode / DeepSeek (Массовый код)</span>
+        </div>
         <div class="flow-arrow">+</div>
-        <div class="flow-node"><span style="color:#10b981;">●</span> Gemini / Agy (1M Context)</div>
+        <div class="flow-node">
+          <span style="color:#10b981;">●</span>
+          <span class="t-en">Gemini / Agy (1M Context)</span>
+          <span class="t-ru">Gemini / Agy (1M контекст)</span>
+        </div>
         <div class="flow-arrow">+</div>
-        <div class="flow-node"><span style="color:#f59e0b;">●</span> Nous Hermes (Reasoner)</div>
+        <div class="flow-node">
+          <span style="color:#f59e0b;">●</span>
+          <span class="t-en">Nous Hermes (Reasoner)</span>
+          <span class="t-ru">Nous Hermes (Логик)</span>
+        </div>
       </div>
     </section>
 
     <!-- SLIDE 2: The Problem -->
     <section class="slide" data-slide="2">
-      <div class="slide-tag">The Challenge</div>
-      <h2 class="slide-title">The 5 Fatal Flaws of Single-Agent Coding</h2>
-      <p class="slide-subtitle">Why lone coding agents hit walls on real production repositories.</p>
+      <div class="slide-tag">
+        <span class="t-en">The Challenge</span>
+        <span class="t-ru">Проблематика</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">The 5 Fatal Flaws of Single-Agent Coding</span>
+        <span class="t-ru">5 фатальных изъянов одиночных AI-агентов</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Why lone coding agents hit walls on real production repositories.</span>
+        <span class="t-ru">Почему автономные агенты в одиночку заходят в тупик на реальных репозиториях.</span>
+      </p>
 
       <div class="grid-3">
         <div class="card">
           <div class="card-icon" style="color: var(--accent-rose);">🪟</div>
-          <div class="card-title">Siloed Terminals</div>
+          <div class="card-title">
+            <span class="t-en">Siloed Terminals</span>
+            <span class="t-ru">Изолированные терминалы</span>
+          </div>
           <div class="card-text">
-            Claude Code, Codex, Agy, and OpenCode each operate in isolated terminal bubbles with no shared contracts, task queues, or coordination.
+            <span class="t-en">Claude Code, Codex, Agy, and OpenCode each operate in isolated terminal bubbles with no shared contracts, task queues, or coordination.</span>
+            <span class="t-ru">Claude Code, Codex, Agy и OpenCode работают изолированно, не имея общих контрактов, очереди задач и координации.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="card-icon" style="color: var(--accent-amber);">💸</div>
-          <div class="card-title">Token & Quota Burn</div>
+          <div class="card-title">
+            <span class="t-en">Token & Quota Burn</span>
+            <span class="t-ru">Сжигание токенов и квот</span>
+          </div>
           <div class="card-text">
-            Spending frontier reasoning models (Claude Opus/Sonnet) on mundane CRUD, boilerplate typing, or reading huge repos burns rate limits in minutes.
+            <span class="t-en">Spending frontier reasoning models (Claude Opus/Sonnet) on mundane CRUD, boilerplate typing, or reading huge repos burns rate limits in minutes.</span>
+            <span class="t-ru">Тратить дорогие флагманские модели на простой CRUD, бойлерплейт или чтение чужих файлов сжигает лимиты за считанные минуты.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="card-icon" style="color: var(--accent-cyan);">📉</div>
-          <div class="card-title">Context Rot & Amnesia</div>
+          <div class="card-title">
+            <span class="t-en">Context Rot & Amnesia</span>
+            <span class="t-ru">Засорение контекста и амнезия</span>
+          </div>
           <div class="card-text">
-            Long-running sessions accumulate thousands of lines of raw tool outputs. Context saturates, leading to hallucinations and forgotten past fixes.
+            <span class="t-en">Long-running sessions accumulate thousands of lines of raw tool outputs. Context saturates, leading to hallucinations and forgotten past fixes.</span>
+            <span class="t-ru">Длинные сессии накапливают тысячи строк вывода инструментов. Контекст переполняется, вызывая галлюцинации и потерю контекста.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="card-icon" style="color: var(--accent-rose);">💥</div>
-          <div class="card-title">Multi-Agent Collisions</div>
+          <div class="card-title">
+            <span class="t-en">Multi-Agent Collisions</span>
+            <span class="t-ru">Конфликты мульти-агентов</span>
+          </div>
           <div class="card-text">
-            Running multiple autonomous agents concurrently on the same codebase causes catastrophic race conditions and conflicting file overwrites.
+            <span class="t-en">Running multiple autonomous agents concurrently on the same codebase causes catastrophic race conditions and conflicting file overwrites.</span>
+            <span class="t-ru">Одновременный запуск нескольких агентов на одном репозитории приводит к перезаписи файлов и гонкам данных.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="card-icon" style="color: var(--accent-amber);">🛑</div>
-          <div class="card-title">Premature "Done" Claims</div>
+          <div class="card-title">
+            <span class="t-en">Premature "Done" Claims</span>
+            <span class="t-ru">Преждевременные рапорты об успехе</span>
+          </div>
           <div class="card-text">
-            Standard agents declare victory the instant code is typed—without running AST checks, security audits, or verifying test regressions.
+            <span class="t-en">Standard agents declare victory the instant code is typed—without running AST checks, security audits, or verifying test regressions.</span>
+            <span class="t-ru">Обычные агенты заявляют о готовности сразу после набора кода — без валидации AST, проверки безопасности и прогона тестов.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="card-icon" style="color: var(--accent-emerald);">⚡</div>
-          <div class="card-title">Mid-Run Quota Freezes</div>
+          <div class="card-title">
+            <span class="t-en">Mid-Run Quota Freezes</span>
+            <span class="t-ru">Внезапные блокировки 429</span>
+          </div>
           <div class="card-text">
-            Hitting an unexpected HTTP 429 quota ceiling in the middle of a complex multi-file refactor completely halts the development process.
+            <span class="t-en">Hitting an unexpected HTTP 429 quota ceiling in the middle of a complex multi-file refactor completely halts the development process.</span>
+            <span class="t-ru">Неожиданная ошибка HTTP 429 посреди сложного многофайлового рефакторинга полностью замораживает разработку.</span>
           </div>
         </div>
       </div>
@@ -597,16 +702,32 @@
 
     <!-- SLIDE 3: Architectural Philosophy -->
     <section class="slide" data-slide="3">
-      <div class="slide-tag">Core Solution</div>
-      <h2 class="slide-title">Economic Asymmetry & Specialist Division</h2>
-      <p class="slide-subtitle">Route every coding task to the engine that is best (and most economical) at that specific job.</p>
+      <div class="slide-tag">
+        <span class="t-en">Core Solution</span>
+        <span class="t-ru">Базовое решение</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">Economic Asymmetry & Specialist Division</span>
+        <span class="t-ru">Экономическая асимметрия и специализация</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Route every coding task to the engine that is best (and most economical) at that specific job.</span>
+        <span class="t-ru">Направляем каждую задачу тому движку, который решает её эффективнее и дешевле всего.</span>
+      </p>
 
       <div class="grid-2">
         <div class="card">
-          <div class="badge badge-indigo">Strategic Layer</div>
-          <div class="card-title">Tech Lead Supervisor (Claude / AGY)</div>
+          <div class="badge badge-indigo">
+            <span class="t-en">Strategic Layer</span>
+            <span class="t-ru">Стратегический уровень</span>
+          </div>
+          <div class="card-title">
+            <span class="t-en">Tech Lead Supervisor (Claude / AGY)</span>
+            <span class="t-ru">Техлид-супервизор (Claude / AGY)</span>
+          </div>
           <p class="card-text" style="margin-bottom: 12px;">
-            Expensive reasoning models are spent <strong>only</strong> on high-leverage work: system architecture, API boundaries, and DAG task decomposition.
+            <span class="t-en">Expensive reasoning models are spent <strong>only</strong> on high-leverage work: system architecture, API boundaries, and DAG task decomposition.</span>
+            <span class="t-ru">Дорогие модели расходуются <strong>исключительно</strong> на стратегию: архитектуру системы, границы API и планирование задач в DAG.</span>
           </p>
           <div class="code-box">
             <span class="code-comment"># Supervisor defines architecture contract first</span><br>
@@ -616,14 +737,21 @@
         </div>
 
         <div class="card">
-          <div class="badge badge-cyan">Tactical Workforce</div>
-          <div class="card-title">Specialist Worker Engines</div>
+          <div class="badge badge-cyan">
+            <span class="t-en">Tactical Workforce</span>
+            <span class="t-ru">Тактические воркеры</span>
+          </div>
+          <div class="card-title">
+            <span class="t-en">Specialist Worker Engines</span>
+            <span class="t-ru">Специализированные движки</span>
+          </div>
           <p class="card-text" style="margin-bottom: 12px;">
-            Bulk implementation typing goes to cheap high-throughput engines; whole-repo reading goes to massive-context engines.
+            <span class="t-en">Bulk implementation typing goes to cheap high-throughput engines; whole-repo reading goes to massive-context engines.</span>
+            <span class="t-ru">Массовый набор кода делегируется дешёвым быстрым движкам; сканирование всего репозитория — моделям с огромным контекстом.</span>
           </p>
           <div class="code-box">
-            <span class="code-str">coder_worker</span> (DeepSeek): High-volume CRUD & schemas<br>
-            <span class="code-hl">analyst_worker</span> (Gemini): 1M+ token whole-repo reading<br>
+            <span class="code-str">coder_worker</span> (DeepSeek): CRUD & schemas<br>
+            <span class="code-hl">analyst_worker</span> (Gemini): 1M+ whole-repo analysis<br>
             <span class="code-kw">hermes_worker</span> (Nous Hermes): Open-source reasoning
           </div>
         </div>
@@ -632,62 +760,95 @@
 
     <!-- SLIDE 4: The Specialist Swarm -->
     <section class="slide" data-slide="4">
-      <div class="slide-tag">Worker Swarm</div>
-      <h2 class="slide-title">The Specialist Engine Matrix</h2>
-      <p class="slide-subtitle">Configured from a single source of truth: <code>2_configure/cao.config.toml</code>.</p>
+      <div class="slide-tag">
+        <span class="t-en">Worker Swarm</span>
+        <span class="t-ru">Пул воркеров</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">The Specialist Engine Matrix</span>
+        <span class="t-ru">Матрица специализированных воркеров</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Configured from a single source of truth: <code>2_configure/cao.config.toml</code>.</span>
+        <span class="t-ru">Настраивается из единого файла конфигурации: <code>2_configure/cao.config.toml</code>.</span>
+      </p>
 
       <div class="grid-3">
         <div class="card">
           <div class="badge badge-indigo">claude_worker</div>
-          <div class="card-title">The Architect</div>
+          <div class="card-title">
+            <span class="t-en">The Architect</span>
+            <span class="t-ru">Архитектор</span>
+          </div>
           <div class="card-text">
             <strong>Engine:</strong> Claude Code<br>
-            <strong>Role:</strong> Domain logic, API design, contract definitions, hard algorithmic reasoning.
+            <span class="t-en"><strong>Role:</strong> Domain logic, API design, contract definitions, hard algorithmic reasoning.</span>
+            <span class="t-ru"><strong>Роль:</strong> Архитектура домена, дизайн API, контракты интерфейсов, сложные алгоритмы.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="badge badge-cyan">coder_worker</div>
-          <div class="card-title">The High-Throughput Coder</div>
+          <div class="card-title">
+            <span class="t-en">The High-Throughput Coder</span>
+            <span class="t-ru">Высокоскоростной кодер</span>
+          </div>
           <div class="card-text">
             <strong>Engine:</strong> OpenCode (DeepSeek-V4-Pro)<br>
-            <strong>Role:</strong> Low-cost bulk coding, DB migrations, boilerplate, implementing against specs.
+            <span class="t-en"><strong>Role:</strong> Low-cost bulk coding, DB migrations, boilerplate, implementing against specs.</span>
+            <span class="t-ru"><strong>Роль:</strong> Быстрый дешёвый код, миграции БД, бойлерплейт, реализация по спецификациям.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="badge badge-emerald">analyst_worker</div>
-          <div class="card-title">The Whole-Repo Eyes</div>
+          <div class="card-title">
+            <span class="t-en">The Whole-Repo Eyes</span>
+            <span class="t-ru">Аналитик репозитория</span>
+          </div>
           <div class="card-text">
             <strong>Engine:</strong> Antigravity / Gemini Flash<br>
-            <strong>Role:</strong> 1M+ token context: repository dependency graphs, cross-module impact analysis.
+            <span class="t-en"><strong>Role:</strong> 1M+ token context: repository dependency graphs, cross-module impact analysis.</span>
+            <span class="t-ru"><strong>Роль:</strong> 1M+ токенов контекста: граф зависимостей репозитория, анализ влияния правок.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="badge badge-amber">codex_worker</div>
-          <div class="card-title">Frontend Specialist</div>
+          <div class="card-title">
+            <span class="t-en">Frontend Specialist</span>
+            <span class="t-ru">Фронтенд-специалист</span>
+          </div>
           <div class="card-text">
             <strong>Engine:</strong> OpenAI Codex<br>
-            <strong>Role:</strong> React, Vue, Svelte, Tailwind CSS, and interactive UI components.
+            <span class="t-en"><strong>Role:</strong> React, Vue, Svelte, Tailwind CSS, and interactive UI components.</span>
+            <span class="t-ru"><strong>Роль:</strong> React, Vue, Svelte, Tailwind CSS и интерактивные UI-компоненты.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="badge badge-rose">antigravity_worker</div>
-          <div class="card-title">QA & Security Auditor</div>
+          <div class="card-title">
+            <span class="t-en">QA & Security Auditor</span>
+            <span class="t-ru">QA и аудит безопасности</span>
+          </div>
           <div class="card-text">
             <strong>Engine:</strong> Antigravity / Gemini Pro<br>
-            <strong>Role:</strong> Code quality reviews, vulnerability scans, edge cases, test verification.
+            <span class="t-en"><strong>Role:</strong> Code quality reviews, vulnerability scans, edge cases, test verification.</span>
+            <span class="t-ru"><strong>Роль:</strong> Ревью качества кода, сканирование уязвимостей, краевые случаи, проверка тестов.</span>
           </div>
         </div>
 
         <div class="card">
           <div class="badge badge-indigo">hermes_worker</div>
-          <div class="card-title">Open-Source Reasoner</div>
+          <div class="card-title">
+            <span class="t-en">Open-Source Reasoner</span>
+            <span class="t-ru">Open-Source логик</span>
+          </div>
           <div class="card-text">
             <strong>Engine:</strong> Nous Hermes CLI<br>
-            <strong>Role:</strong> Self-directed problem solving, tool use, and architect escalation fixes.
+            <span class="t-en"><strong>Role:</strong> Self-directed problem solving, tool use, and architect escalation fixes.</span>
+            <span class="t-ru"><strong>Роль:</strong> Автономное решение проблем, использование инструментов, фиксы архитектора.</span>
           </div>
         </div>
       </div>
@@ -695,25 +856,40 @@
 
     <!-- SLIDE 5: wcao/ Standard -->
     <section class="slide" data-slide="5">
-      <div class="slide-tag">Storage & Contracts</div>
-      <h2 class="slide-title">The Single Project Brain: <code>wcao/</code></h2>
-      <p class="slide-subtitle">All plans, contracts, test scorecards, and episodic memories live right inside the repository.</p>
+      <div class="slide-tag">
+        <span class="t-en">Storage & Contracts</span>
+        <span class="t-ru">Стандарт хранения</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">The Single Project Brain: <code>wcao/</code></span>
+        <span class="t-ru">Единый мозг проекта: <code>wcao/</code></span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">All plans, contracts, test scorecards, and episodic memories live right inside the repository.</span>
+        <span class="t-ru">Все планы, контракты, протоколы тестов и эпизодическая память хранятся прямо в репозитории.</span>
+      </p>
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">Git-Tracked Project Artifacts</div>
+          <div class="card-title">
+            <span class="t-en">Git-Tracked Project Artifacts</span>
+            <span class="t-ru">Git-артефакты проекта</span>
+          </div>
           <div class="code-box" style="font-size: 0.9rem;">
             wcao/<br>
             ├── <span class="code-str">plans/now.md</span>       <span class="code-comment"># Active North Star & checkpoints</span><br>
             ├── <span class="code-hl">tasks.json</span>         <span class="code-comment"># Directed Acyclic Graph (DAG)</span><br>
             ├── <span class="code-kw">design/*.mmd</span>       <span class="code-comment"># Living Mermaid sequence & state</span><br>
             ├── <span class="code-str">skills/*.md</span>       <span class="code-comment"># Procedural learned recipes</span><br>
-            └── <span class="code-comment">audit/*.md</span>        <span class="code-comment"># Postflight scorecards & stress tests</span>
+            └── <span class="code-comment">audit/*.md</span>        <span class="code-comment"># Postflight scorecards & tests</span>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title">Local Episodic Database (Gitignored)</div>
+          <div class="card-title">
+            <span class="t-en">Local Episodic Database (Gitignored)</span>
+            <span class="t-ru">Локальная база памяти (Gitignored)</span>
+          </div>
           <div class="code-box" style="font-size: 0.9rem;">
             wcao/<br>
             └── <span class="code-hl">memory.sqlite</span>      <span class="code-comment"># SQLite FTS5 BM25 memory</span><br>
@@ -723,7 +899,8 @@
             &nbsp;&nbsp;&nbsp;&nbsp;└── file_paths & timestamp
           </div>
           <p class="card-text" style="margin-top: 14px;">
-            Zero cloud lock-in. Transparent markdown files can be read, inspected, and code-reviewed by human developers in standard git pull requests.
+            <span class="t-en">Zero cloud lock-in. Transparent markdown files can be read, inspected, and code-reviewed by human developers in standard pull requests.</span>
+            <span class="t-ru">Никакой привязки к облаку. Прозрачные markdown-файлы легко читаются разработчиками и проверяются в pull request.</span>
           </p>
         </div>
       </div>
@@ -731,15 +908,28 @@
 
     <!-- SLIDE 6: Hermes Continuous Learning -->
     <section class="slide" data-slide="6">
-      <div class="slide-tag">Intelligence Layer</div>
-      <h2 class="slide-title">Hermes Continuous Learning System</h2>
-      <p class="slide-subtitle">Zero API cost, sub-millisecond retrieval, and persistent cross-session memory.</p>
+      <div class="slide-tag">
+        <span class="t-en">Intelligence Layer</span>
+        <span class="t-ru">Слой непрерывного обучения</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">Hermes Continuous Learning System</span>
+        <span class="t-ru">Система непрерывного обучения Hermes</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Zero API cost, sub-millisecond retrieval, and persistent cross-session memory.</span>
+        <span class="t-ru">Нулевая стоимость API, мгновенный поиск и сохранение памяти между запусками.</span>
+      </p>
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">1. Episodic Memory (SQLite FTS5)</div>
+          <div class="card-title">
+            <span class="t-en">1. Episodic Memory (SQLite FTS5)</span>
+            <span class="t-ru">1. Эпизодическая память (SQLite FTS5)</span>
+          </div>
           <p class="card-text">
-            Full-text indexed search with BM25 ranking. Stores past solutions, compiler fixes, and architectural choices across all runs.
+            <span class="t-en">Full-text indexed search with BM25 ranking. Stores past solutions, compiler fixes, and architectural choices across all runs.</span>
+            <span class="t-ru">Полнотекстовый поиск с ранжированием BM25. Сохраняет прошлые решения, фиксы компилятора и архитектурные решения.</span>
           </p>
           <div class="code-box">
             <span class="code-comment"># CLI: Query memory anytime</span><br>
@@ -749,9 +939,13 @@
         </div>
 
         <div class="card">
-          <div class="card-title">2. Hermes 50% Compaction Rule</div>
+          <div class="card-title">
+            <span class="t-en">2. Hermes 50% Compaction Rule</span>
+            <span class="t-ru">2. Правило сжатия контекста 50%</span>
+          </div>
           <p class="card-text">
-            Tracks turns and estimated tokens during execution. When conversation history reaches 50% of the active window, it automatically compresses verbose tool outputs into structured checkpoints in <code>now.md</code>.
+            <span class="t-en">Tracks turns and estimated tokens during execution. When history reaches 50% of the active window, it automatically compresses verbose tool outputs into structured checkpoints in <code>now.md</code>.</span>
+            <span class="t-ru">Отслеживает шаги и объём токенов. При достижении 50% окна контекста сжимает сырые логи инструментов в структурированные чекпоинты <code>now.md</code>.</span>
           </p>
           <div class="code-box">
             ContextCompactor.record_turn()<br>
@@ -761,26 +955,46 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top: 20px;">
-        <div class="card-title">3. Retrospective Storage & Procedural Skills</div>
+      <div class="card" style="margin-top: 18px;">
+        <div class="card-title">
+          <span class="t-en">3. Retrospective Storage & Procedural Skills</span>
+          <span class="t-ru">3. Сохранение ретроспектив и процедурные навыки</span>
+        </div>
         <p class="card-text">
-          Whenever the self-healing loop resolves a failure, the root cause and resolution are automatically indexed into <code>wcao/memory.sqlite</code> and written as reusable Markdown recipes in <code>wcao/skills/</code>. Future workers never repeat the same mistake.
+          <span class="t-en">Whenever the self-healing loop resolves a failure, the root cause and resolution are automatically indexed into <code>wcao/memory.sqlite</code> and written as reusable Markdown recipes in <code>wcao/skills/</code>. Future workers never repeat the same mistake.</span>
+          <span class="t-ru">Когда цикл самоисцеления устраняет баг, первопричина и решение автоматически индексируются в <code>wcao/memory.sqlite</code> и сохраняются как рецепты в <code>wcao/skills/</code>. Будущие воркеры больше не повторяют эту ошибку.</span>
         </p>
       </div>
     </section>
 
     <!-- SLIDE 7: Proactive TokenMaster -->
     <section class="slide" data-slide="7">
-      <div class="slide-tag">Quota Intelligence</div>
-      <h2 class="slide-title">TokenMaster: Proactive Quota Awareness</h2>
-      <p class="slide-subtitle">Sensing rate-limit ceilings and preventing 429 errors before they happen.</p>
+      <div class="slide-tag">
+        <span class="t-en">Quota Intelligence</span>
+        <span class="t-ru">Сенсор квот</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">TokenMaster: Proactive Quota Awareness</span>
+        <span class="t-ru">TokenMaster: Упреждающий контроль квот</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Sensing rate-limit ceilings and preventing 429 errors before they happen.</span>
+        <span class="t-ru">Обнаружение лимитов и предотвращение ошибок 429 до их возникновения.</span>
+      </p>
 
       <div class="grid-3">
         <div class="card">
-          <div class="badge badge-rose">Telemetry Sensing</div>
-          <div class="card-title">Live Window Monitoring</div>
+          <div class="badge badge-rose">
+            <span class="t-en">Telemetry Sensing</span>
+            <span class="t-ru">Телеметрия</span>
+          </div>
+          <div class="card-title">
+            <span class="t-en">Live Window Monitoring</span>
+            <span class="t-ru">Мониторинг окон лимитов</span>
+          </div>
           <div class="card-text">
-            Reads Claude's on-disk rate-limit event stream (5-hour and 7-day windows) and reset timestamps without making external API calls.
+            <span class="t-en">Reads Claude's on-disk rate-limit event stream (5-hour and 7-day windows) and reset timestamps without making external API calls.</span>
+            <span class="t-ru">Считывает локальный поток событий лимитов Claude (окна 5 часов и 7 дней) без лишних сетевых вызовов к API.</span>
           </div>
           <div class="code-box">
             Claude 7-day: 89% util &rarr; <span class="code-str">NEAR LIMIT</span>
@@ -788,10 +1002,17 @@
         </div>
 
         <div class="card">
-          <div class="badge badge-amber">Watermark Swapping</div>
-          <div class="card-title">80% Safety Watermark</div>
+          <div class="badge badge-amber">
+            <span class="t-en">Watermark Swapping</span>
+            <span class="t-ru">Вотермарк 80%</span>
+          </div>
+          <div class="card-title">
+            <span class="t-en">80% Safety Watermark</span>
+            <span class="t-ru">Порог безопасности</span>
+          </div>
           <div class="card-text">
-            When quota utilization reaches &ge; 80%, TokenMaster proactively reassigns tasks from <code>claude_worker</code> to <code>hermes_worker</code> or <code>coder_worker</code> before dispatch.
+            <span class="t-en">When quota utilization reaches &ge; 80%, TokenMaster proactively reassigns tasks from <code>claude_worker</code> to <code>hermes_worker</code> or <code>coder_worker</code> before dispatch.</span>
+            <span class="t-ru">Когда загрузка квоты достигает &ge; 80%, задачи упреждающе переносятся с Claude на Hermes или Coder до запуска.</span>
           </div>
           <div class="code-box">
             Swapped: True (Util 89% &ge; 80%)
@@ -799,10 +1020,17 @@
         </div>
 
         <div class="card">
-          <div class="badge badge-cyan">Cooling-Off Cache</div>
-          <div class="card-title">Cross-Engine Protection</div>
+          <div class="badge badge-cyan">
+            <span class="t-en">Cooling-Off Cache</span>
+            <span class="t-ru">Кэш охлаждения</span>
+          </div>
+          <div class="card-title">
+            <span class="t-en">Cross-Engine Protection</span>
+            <span class="t-ru">Междвижковая защита</span>
+          </div>
           <div class="card-text">
-            If Codex or AGY hits a server-side 429, TokenMaster marks the engine blocked for 1 hour. All remaining DAG tasks swap proactively without failing.
+            <span class="t-en">If Codex or AGY hits a server-side 429, TokenMaster marks the engine blocked for 1 hour. All remaining DAG tasks swap proactively without failing.</span>
+            <span class="t-ru">Если Codex или AGY ловят 429, TokenMaster блокирует движок на 1 час. Все следующие задачи DAG плавно переводятся на резервный движок.</span>
           </div>
           <div class="code-box">
             mark_engine_blocked("codex")
@@ -813,15 +1041,28 @@
 
     <!-- SLIDE 8: Deterministic Execution Engine -->
     <section class="slide" data-slide="8">
-      <div class="slide-tag">Autonomous Execution</div>
-      <h2 class="slide-title">Headless DAG Scheduler (<code>cao_auto</code>)</h2>
-      <p class="slide-subtitle">Safe, parallel, conflict-free multi-agent task execution.</p>
+      <div class="slide-tag">
+        <span class="t-en">Autonomous Execution</span>
+        <span class="t-ru">Автономное исполнение</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">Headless DAG Scheduler (<code>cao_auto</code>)</span>
+        <span class="t-ru">Headless DAG планировщик (<code>cao_auto</code>)</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Safe, parallel, conflict-free multi-agent task execution.</span>
+        <span class="t-ru">Безопасное, параллельное, бесконфликтное выполнение задач несколькими агентами.</span>
+      </p>
 
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">DAG Dependencies (<code>depends_on</code>)</div>
+          <div class="card-title">
+            <span class="t-en">DAG Dependencies (<code>depends_on</code>)</span>
+            <span class="t-ru">Зависимости DAG (<code>depends_on</code>)</span>
+          </div>
           <p class="card-text">
-            Evaluates topological dependencies so downstream implementation steps never begin until prerequisites are verified and marked <code>done</code>.
+            <span class="t-en">Evaluates topological dependencies so downstream implementation steps never begin until prerequisites are verified and marked <code>done</code>.</span>
+            <span class="t-ru">Вычисляет топологический порядок, гарантируя, что код не начнёт писаться, пока не утверждён контракт архитектуры.</span>
           </p>
           <div class="code-box">
             Task 01 (Arch) &rarr; Task 02 (Impl) &rarr; Task 03 (Tests)
@@ -829,9 +1070,13 @@
         </div>
 
         <div class="card">
-          <div class="card-title">File Disjointness Locks (<code>files</code>)</div>
+          <div class="card-title">
+            <span class="t-en">File Disjointness Locks (<code>files</code>)</span>
+            <span class="t-ru">Файловые блокировки (<code>files</code>)</span>
+          </div>
           <p class="card-text">
-            If Worker A is editing <code>run/cao_auto.py</code>, no other worker touching that file can run concurrently. Guarantees <strong>zero merge conflicts and zero overwritten edits</strong>.
+            <span class="t-en">If Worker A is editing <code>run/cao_auto.py</code>, no other worker touching that file can run concurrently. Guarantees <strong>zero merge conflicts and zero overwritten edits</strong>.</span>
+            <span class="t-ru">Если Воркер А редактирует <code>run/cao_auto.py</code>, другой воркер с этим файлом не запустится параллельно. <strong>Ноль конфликтов слияния</strong>.</span>
           </p>
           <div class="code-box">
             Worker 1 locks: ["run/cao_auto.py"]<br>
@@ -843,32 +1088,56 @@
 
     <!-- SLIDE 9: Bulletproof Quality & Self-Healing -->
     <section class="slide" data-slide="9">
-      <div class="slide-tag">Quality Assurance</div>
-      <h2 class="slide-title">Self-Healing & Anti-Tampering Gates</h2>
-      <p class="slide-subtitle">Ensuring code is verified, honest, and resilient against regressions.</p>
+      <div class="slide-tag">
+        <span class="t-en">Quality Assurance</span>
+        <span class="t-ru">Контроль качества</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">Self-Healing & Anti-Tampering Gates</span>
+        <span class="t-ru">Самоисцеление и защита от подделки тестов</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Ensuring code is verified, honest, and resilient against regressions.</span>
+        <span class="t-ru">Гарантия честного кода, устойчивого к ошибкам и регрессиям.</span>
+      </p>
 
       <div class="grid-3">
         <div class="card">
-          <div class="badge badge-cyan">Aggressive Audit Gate</div>
+          <div class="badge badge-cyan">
+            <span class="t-en">Aggressive Audit Gate</span>
+            <span class="t-ru">Строгий аудит</span>
+          </div>
           <div class="card-title"><code>cao-aggressive</code></div>
           <div class="card-text">
-            Automated AST compilation across all Python files, shell syntax verification, hardcoded secrets scans, and complete test suite execution.
+            <span class="t-en">Automated AST compilation across all Python files, shell syntax verification, hardcoded secrets scans, and complete test suite execution.</span>
+            <span class="t-ru">Автоматическая проверка AST всех файлов Python, синтаксис bash, сканирование секретов и запуск всех тестов.</span>
           </div>
         </div>
 
         <div class="card">
-          <div class="badge badge-rose">Anti-Test-Tampering</div>
+          <div class="badge badge-rose">
+            <span class="t-en">Anti-Test-Tampering</span>
+            <span class="t-ru">Анти-фальсификация</span>
+          </div>
           <div class="card-title"><code>cao_tamper.py</code></div>
           <div class="card-text">
-            Detects if workers weaken assertions, delete test functions, or insert <code>assert True</code> to cheat the audit. Automatically reverts test edits!
+            <span class="t-en">Detects if workers weaken assertions, delete test functions, or insert <code>assert True</code> to cheat the audit. Automatically reverts test edits!</span>
+            <span class="t-ru">Обнаруживает попытки удалить проверки, стереть тесты или вставить <code>assert True</code> ради прохождения аудита. Автоматически откатывает тесты!</span>
           </div>
         </div>
 
         <div class="card">
-          <div class="badge badge-emerald">Architect Escalation</div>
-          <div class="card-title">Level 2 Escalation</div>
+          <div class="badge badge-emerald">
+            <span class="t-en">Architect Escalation</span>
+            <span class="t-ru">Эскалация архитектора</span>
+          </div>
+          <div class="card-title">
+            <span class="t-en">Level 2 Escalation</span>
+            <span class="t-ru">Эскалация уровня 2</span>
+          </div>
           <div class="card-text">
-            If a bulk coder fails to fix an audit issue on attempt 1, attempt 2+ escalates to <code>hermes_worker</code> or <code>claude_worker</code> for architectural root-cause diagnosis.
+            <span class="t-en">If a bulk coder fails to fix an audit issue on attempt 1, attempt 2+ escalates to <code>hermes_worker</code> or <code>claude_worker</code> for architectural root-cause diagnosis.</span>
+            <span class="t-ru">Если кодер не устранил ошибку аудита с 1-й попытки, со 2-й попытки задача эскалируется на архитектора (Hermes / Claude) для поиска первопричины.</span>
           </div>
         </div>
       </div>
@@ -876,11 +1145,20 @@
 
     <!-- SLIDE 10: Autonomous Planning -->
     <section class="slide" data-slide="10">
-      <div class="slide-tag">Goal Decomposition</div>
-      <h2 class="slide-title">Autonomous Planning: <code>cao-plan</code></h2>
-      <p class="slide-subtitle">Transforming high-level human objectives into executable acyclic DAGs.</p>
+      <div class="slide-tag">
+        <span class="t-en">Goal Decomposition</span>
+        <span class="t-ru">Декомпозиция целей</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">Autonomous Planning: <code>cao-plan</code></span>
+        <span class="t-ru">Автономное планирование: <code>cao-plan</code></span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Transforming high-level human objectives into executable acyclic DAGs.</span>
+        <span class="t-ru">Превращение высокоуровневых человеческих целей в исполняемый ациклический граф задач (DAG).</span>
+      </p>
 
-      <div class="card" style="margin-bottom: 24px;">
+      <div class="card" style="margin-bottom: 22px;">
         <div class="code-box" style="font-size: 0.95rem;">
           $ cao-plan <span class="code-str">"Build a Redis rate limiter with sliding window"</span><br>
           <span class="code-hl">&rarr; Cycle detection verified (acyclic graphlib.TopologicalSorter)</span><br>
@@ -892,86 +1170,131 @@
       <div class="grid-4">
         <div class="card">
           <div class="badge badge-indigo">Step 1</div>
-          <div class="card-title" style="font-size: 1rem;">Architecture Contract</div>
-          <div class="card-text">Mermaid sequence diagram in <code>wcao/design/</code>.</div>
+          <div class="card-title" style="font-size: 1rem;">
+            <span class="t-en">Architecture Contract</span>
+            <span class="t-ru">Контракт архитектуры</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Mermaid sequence diagram in <code>wcao/design/</code>.</span>
+            <span class="t-ru">Mermaid sequence диаграмма в <code>wcao/design/</code>.</span>
+          </div>
         </div>
 
         <div class="card">
           <div class="badge badge-cyan">Step 2</div>
-          <div class="card-title" style="font-size: 1rem;">Core Implementation</div>
-          <div class="card-text">Production code fulfilling architecture spec.</div>
+          <div class="card-title" style="font-size: 1rem;">
+            <span class="t-en">Core Implementation</span>
+            <span class="t-ru">Реализация ядра</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Production code fulfilling architecture spec.</span>
+            <span class="t-ru">Код реализации строго по архитектурной спецификации.</span>
+          </div>
         </div>
 
         <div class="card">
           <div class="badge badge-amber">Step 3</div>
-          <div class="card-title" style="font-size: 1rem;">Unit Test Suite</div>
-          <div class="card-text">Thorough unit & edge-case test coverage in <code>tests/</code>.</div>
+          <div class="card-title" style="font-size: 1rem;">
+            <span class="t-en">Unit Test Suite</span>
+            <span class="t-ru">Набор юнит-тестов</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Thorough unit & edge-case test coverage in <code>tests/</code>.</span>
+            <span class="t-ru">Полное покрытие тестами и краевыми случаями в <code>tests/</code>.</span>
+          </div>
         </div>
 
         <div class="card">
           <div class="badge badge-emerald">Step 4</div>
-          <div class="card-title" style="font-size: 1rem;">Audit & Verification</div>
-          <div class="card-text">Postflight audit gate and README documentation.</div>
+          <div class="card-title" style="font-size: 1rem;">
+            <span class="t-en">Audit & Verification</span>
+            <span class="t-ru">Аудит и верификация</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Postflight audit gate and README documentation.</span>
+            <span class="t-ru">Финальный гейт аудита и документация в README.</span>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- SLIDE 11: End-to-End Lifecycle -->
     <section class="slide" data-slide="11">
-      <div class="slide-tag">End-to-End Lifecycle</div>
-      <h2 class="slide-title">The Complete Autonomous Flow</h2>
-      <p class="slide-subtitle">From user prompt to verified, self-healed, committed software.</p>
+      <div class="slide-tag">
+        <span class="t-en">End-to-End Lifecycle</span>
+        <span class="t-ru">Жизненный цикл</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">The Complete Autonomous Flow</span>
+        <span class="t-ru">Полный цикл автономного исполнения</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">From user prompt to verified, self-healed, committed software.</span>
+        <span class="t-ru">От постановки цели до проверенного, самоисцелённого и закоммиченного кода.</span>
+      </p>
 
       <table class="deck-table">
         <thead>
           <tr>
-            <th>Phase</th>
-            <th>Component</th>
-            <th>Action</th>
-            <th>Artifact Generated</th>
+            <th>
+              <span class="t-en">Phase</span>
+              <span class="t-ru">Фаза</span>
+            </th>
+            <th>
+              <span class="t-en">Component</span>
+              <span class="t-ru">Компонент</span>
+            </th>
+            <th>
+              <span class="t-en">Action</span>
+              <span class="t-ru">Действие</span>
+            </th>
+            <th>
+              <span class="t-en">Artifact Generated</span>
+              <span class="t-ru">Создаваемый артефакт</span>
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>1. Goal Ingestion</strong></td>
+            <td><strong><span class="t-en">1. Goal Ingestion</span><span class="t-ru">1. Постановка цели</span></strong></td>
             <td><code>cao-plan</code></td>
-            <td>Reads objective & decomposes into acyclic DAG</td>
+            <td><span class="t-en">Reads objective & decomposes into acyclic DAG</span><span class="t-ru">Читает цель и декомпозирует в ациклический DAG</span></td>
             <td><code>wcao/tasks.json</code></td>
           </tr>
           <tr>
-            <td><strong>2. Memory Recall</strong></td>
+            <td><strong><span class="t-en">2. Memory Recall</span><span class="t-ru">2. Поиск в памяти</span></strong></td>
             <td><code>cao_memory</code></td>
-            <td>FTS5 BM25 search injects past lessons into worker prompts</td>
-            <td>Injected Prompt Slice</td>
+            <td><span class="t-en">FTS5 BM25 search injects past lessons into worker prompts</span><span class="t-ru">BM25-поиск встраивает прошлые уроки в промпты воркеров</span></td>
+            <td><span class="t-en">Injected Prompt Slice</span><span class="t-ru">Встроенный контекст</span></td>
           </tr>
           <tr>
-            <td><strong>3. Parallel Coding</strong></td>
+            <td><strong><span class="t-en">3. Parallel Coding</span><span class="t-ru">3. Параллельный код</span></strong></td>
             <td><code>cao_auto</code></td>
-            <td>Dispatches workers adhering to file disjointness locks</td>
-            <td>Source Code Files</td>
+            <td><span class="t-en">Dispatches workers adhering to file disjointness locks</span><span class="t-ru">Запускает воркеров с соблюдением файловых блокировок</span></td>
+            <td><span class="t-en">Source Code Files</span><span class="t-ru">Файлы исходного кода</span></td>
           </tr>
           <tr>
-            <td><strong>4. Compaction</strong></td>
+            <td><strong><span class="t-en">4. Compaction</span><span class="t-ru">4. Сжатие контекста</span></strong></td>
             <td><code>ContextCompactor</code></td>
-            <td>Hermes 50% rule prevents token blowout during runs</td>
+            <td><span class="t-en">Hermes 50% rule prevents token blowout during runs</span><span class="t-ru">Правило 50% предотвращает переполнение контекста</span></td>
             <td><code>wcao/plans/now.md</code></td>
           </tr>
           <tr>
-            <td><strong>5. Audit Gate</strong></td>
+            <td><strong><span class="t-en">5. Audit Gate</span><span class="t-ru">5. Гейт аудита</span></strong></td>
             <td><code>cao-aggressive</code></td>
-            <td>AST validation, security check, full test suite</td>
+            <td><span class="t-en">AST validation, security check, full test suite</span><span class="t-ru">Проверка AST, сканер безопасности, полный прогон тестов</span></td>
             <td><code>wcao/audit/*.md</code></td>
           </tr>
           <tr>
-            <td><strong>6. Tamper Verification</strong></td>
+            <td><strong><span class="t-en">6. Tamper Verification</span><span class="t-ru">6. Защита тестов</span></strong></td>
             <td><code>cao_tamper</code></td>
-            <td>Reverts test weakening if worker attempts bypass</td>
-            <td>Clean Test Suite</td>
+            <td><span class="t-en">Reverts test weakening if worker attempts bypass</span><span class="t-ru">Откатывает правки тестов при попытках обойти аудит</span></td>
+            <td><span class="t-en">Clean Test Suite</span><span class="t-ru">Неповреждённые тесты</span></td>
           </tr>
           <tr>
-            <td><strong>7. Retrospective</strong></td>
+            <td><strong><span class="t-en">7. Retrospective</span><span class="t-ru">7. Ретроспектива</span></strong></td>
             <td>Hermes Memory</td>
-            <td>Stores root causes & lessons learned for future sessions</td>
+            <td><span class="t-en">Stores root causes & lessons learned for future sessions</span><span class="t-ru">Сохраняет первопричины и решения для будущих сессий</span></td>
             <td><code>wcao/memory.sqlite</code></td>
           </tr>
         </tbody>
@@ -980,40 +1303,267 @@
 
     <!-- SLIDE 12: Summary & Impact -->
     <section class="slide" data-slide="12">
-      <div class="slide-tag">Conclusion</div>
-      <h2 class="slide-title">The Next Era of Autonomous Software Engineering</h2>
-      <p class="slide-subtitle">Robust, economical, and self-learning.</p>
+      <div class="slide-tag">
+        <span class="t-en">Conclusion</span>
+        <span class="t-ru">Итоги</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">The Next Era of Autonomous Software Engineering</span>
+        <span class="t-ru">Новая эра автономной разработки ПО</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Robust, economical, and self-learning.</span>
+        <span class="t-ru">Надёжно, экономично и с непрерывным самообучением.</span>
+      </p>
 
-      <div class="grid-3" style="margin-bottom: 24px;">
+      <div class="grid-3" style="margin-bottom: 22px;">
         <div class="card" style="border-top: 3px solid var(--accent-cyan);">
-          <div class="card-title">Token-Aware Economics</div>
+          <div class="card-title">
+            <span class="t-en">Token-Aware Economics</span>
+            <span class="t-ru">Экономия токенов и квот</span>
+          </div>
           <div class="card-text">
-            Spend expensive models only on architecture. Let high-throughput models handle bulk code without burning rate limits.
+            <span class="t-en">Spend expensive models only on architecture. Let high-throughput models handle bulk code without burning rate limits.</span>
+            <span class="t-ru">Используйте дорогие модели только для архитектуры. Массовый код пишут скоростные воркеры без риска 429.</span>
           </div>
         </div>
 
         <div class="card" style="border-top: 3px solid var(--accent-emerald);">
-          <div class="card-title">Deterministic Safety</div>
+          <div class="card-title">
+            <span class="t-en">Deterministic Safety</span>
+            <span class="t-ru">Детерминированная надёжность</span>
+          </div>
           <div class="card-text">
-            Acyclic DAGs and file disjointness locks eliminate the chaos, race conditions, and merge conflicts of multi-agent coding.
+            <span class="t-en">Acyclic DAGs and file disjointness locks eliminate the chaos, race conditions, and merge conflicts of multi-agent coding.</span>
+            <span class="t-ru">Ациклические DAG и файловые блокировки устраняют хаос, гонки данных и конфликты слияния мульти-агентов.</span>
           </div>
         </div>
 
         <div class="card" style="border-top: 3px solid var(--accent-indigo);">
-          <div class="card-title">Continuous Learning</div>
+          <div class="card-title">
+            <span class="t-en">Continuous Learning</span>
+            <span class="t-ru">Непрерывное обучение</span>
+          </div>
           <div class="card-text">
-            Episodic FTS5 memory and procedural skills mean every bug fixed today makes the system smarter tomorrow.
+            <span class="t-en">Episodic FTS5 memory and procedural skills mean every bug fixed today makes the system smarter tomorrow.</span>
+            <span class="t-ru">Эпизодическая память FTS5 и процедурные навыки делают систему умнее с каждым устранённым багом.</span>
           </div>
         </div>
       </div>
 
       <div class="card" style="text-align: center; background: var(--highlight-card-bg); border-color: var(--border-accent);">
         <p style="font-size: 1.15rem; font-weight: 700; color: var(--card-title-color); margin-bottom: 6px;">
-          Autonomous Engineering with CLI Agent Orchestrator
+          <span class="t-en">Autonomous Engineering with CLI Agent Orchestrator</span>
+          <span class="t-ru">Автономная разработка с CLI Agent Orchestrator</span>
         </p>
         <p style="font-size: 0.95rem; color: var(--text-muted);">
-          Run interactive supervisor with <code>cao-run</code> or headless autonomous execution with <code>cao-plan</code> & <code>cao-auto</code>.
+          <span class="t-en">Run interactive supervisor with <code>cao-run</code> or headless autonomous execution with <code>cao-plan</code> & <code>cao-auto</code>.</span>
+          <span class="t-ru">Интерактивный супервизор: <code>cao-run</code> | Полная автономия: <code>cao-plan</code> и <code>cao-auto</code>.</span>
         </p>
+      </div>
+    </section>
+
+    <!-- SLIDE 13: Native Sequence Diagram ("Last Flight") -->
+    <section class="slide" data-slide="13">
+      <div class="slide-tag">
+        <span class="t-en">Architecture Trace</span>
+        <span class="t-ru">Нативная Sequence-Диаграмма</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">End-to-End Execution Sequence</span>
+        <span class="t-ru">Полный цикл выполнения задачи</span>
+      </h2>
+      <p class="slide-subtitle" style="margin-bottom: 16px;">
+        <span class="t-en">Native visual walkthrough: from user goal to DAG decomposition, quota failover, parallel workers, anti-tampering, and memory retention.</span>
+        <span class="t-ru">Наглядное прохождение: от цели инженера до DAG-декомпозиции, обхода 429 квот, параллельных воркеров, защиты тестов и сохранения памяти.</span>
+      </p>
+
+      <div class="diagram-container">
+        <svg class="diagram-svg" viewBox="0 0 1020 540" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Definitions: Marker Arrows -->
+          <defs>
+            <marker id="arr-indigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#6366f1" />
+            </marker>
+            <marker id="arr-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#06b6d4" />
+            </marker>
+            <marker id="arr-emerald" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+            </marker>
+            <marker id="arr-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+            </marker>
+            <marker id="arr-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+            </marker>
+          </defs>
+
+          <!-- Vertical Lifelines -->
+          <!-- 1. User: x=70 -->
+          <line x1="70" y1="50" x2="70" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+          <!-- 2. cao-plan: x=220 -->
+          <line x1="220" y1="50" x2="220" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+          <!-- 3. cao-auto: x=380 -->
+          <line x1="380" y1="50" x2="380" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+          <!-- 4. TokenMaster: x=540 -->
+          <line x1="540" y1="50" x2="540" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+          <!-- 5. Workers: x=700 -->
+          <line x1="700" y1="50" x2="700" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+          <!-- 6. Tamper & Audit: x=860 -->
+          <line x1="860" y1="50" x2="860" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+          <!-- 7. Hermes Memory: x=980 -->
+          <line x1="970" y1="50" x2="970" y2="510" stroke="var(--diagram-line)" stroke-width="1.5" stroke-dasharray="4 4" />
+
+          <!-- Actor Header Badges -->
+          <!-- Actor 1: User -->
+          <rect x="15" y="12" width="110" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--border)" />
+          <text x="70" y="34" font-size="12" font-weight="700" fill="var(--text-main)" text-anchor="middle">
+            <tspan class="t-en">👤 Engineer</tspan>
+            <tspan class="t-ru">👤 Инженер</tspan>
+          </text>
+
+          <!-- Actor 2: cao-plan -->
+          <rect x="165" y="12" width="110" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--accent-cyan)" stroke-width="1.5" />
+          <text x="220" y="34" font-size="12" font-weight="700" fill="var(--accent-cyan)" text-anchor="middle">cao-plan</text>
+
+          <!-- Actor 3: cao-auto -->
+          <rect x="325" y="12" width="110" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--accent-indigo)" stroke-width="1.5" />
+          <text x="380" y="34" font-size="12" font-weight="700" fill="var(--accent-indigo)" text-anchor="middle">cao-auto</text>
+
+          <!-- Actor 4: TokenMaster -->
+          <rect x="485" y="12" width="110" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--accent-amber)" stroke-width="1.5" />
+          <text x="540" y="34" font-size="12" font-weight="700" fill="var(--accent-amber)" text-anchor="middle">TokenMaster</text>
+
+          <!-- Actor 5: Workers -->
+          <rect x="645" y="12" width="110" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--accent-cyan)" stroke-width="1.5" />
+          <text x="700" y="34" font-size="12" font-weight="700" fill="var(--text-main)" text-anchor="middle">
+            <tspan class="t-en">⚡ Workers</tspan>
+            <tspan class="t-ru">⚡ Воркеры</tspan>
+          </text>
+
+          <!-- Actor 6: Tamper & Audit -->
+          <rect x="805" y="12" width="110" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--accent-rose)" stroke-width="1.5" />
+          <text x="860" y="34" font-size="12" font-weight="700" fill="var(--accent-rose)" text-anchor="middle">
+            <tspan class="t-en">🛡️ Audit Gate</tspan>
+            <tspan class="t-ru">🛡️ Гейт Аудита</tspan>
+          </text>
+
+          <!-- Actor 7: Hermes Memory -->
+          <rect x="920" y="12" width="95" height="34" rx="8" fill="var(--diagram-actor-bg)" stroke="var(--accent-emerald)" stroke-width="1.5" />
+          <text x="968" y="34" font-size="11" font-weight="700" fill="var(--accent-emerald)" text-anchor="middle">
+            <tspan class="t-en">🧠 Memory</tspan>
+            <tspan class="t-ru">🧠 Память</tspan>
+          </text>
+
+          <!-- SEQUENCE FLOW MESSAGES -->
+
+          <!-- 1. Goal Ingestion -->
+          <line x1="70" y1="75" x2="210" y2="75" stroke="#06b6d4" stroke-width="1.8" marker-end="url(#arr-cyan)" />
+          <text x="140" y="68" font-size="11" font-weight="600" fill="#06b6d4" text-anchor="middle">
+            <tspan class="t-en">1. cao plan "Add OAuth2"</tspan>
+            <tspan class="t-ru">1. cao plan "Добавить OAuth2"</tspan>
+          </text>
+
+          <!-- 2. Self-loop cao-plan (DAG generation) -->
+          <path d="M 220 85 C 265 85, 265 110, 225 110" fill="none" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arr-cyan)" />
+          <text x="275" y="102" font-size="10" fill="var(--text-muted)">
+            <tspan class="t-en">2. Validate acyclic DAG (wcao/tasks.json)</tspan>
+            <tspan class="t-ru">2. Валидация DAG (wcao/tasks.json)</tspan>
+          </text>
+
+          <!-- 3. User launches cao auto -->
+          <line x1="70" y1="135" x2="370" y2="135" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arr-indigo)" />
+          <text x="220" y="128" font-size="11" font-weight="600" fill="#6366f1" text-anchor="middle">
+            <tspan class="t-en">3. cao auto (Headless execution)</tspan>
+            <tspan class="t-ru">3. cao auto (Автономный запуск)</tspan>
+          </text>
+
+          <!-- 4. cao-auto recalls past lessons from SQLite memory -->
+          <line x1="380" y1="165" x2="960" y2="165" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arr-emerald)" />
+          <text x="670" y="158" font-size="11" font-weight="600" fill="#10b981" text-anchor="middle">
+            <tspan class="t-en">4. FTS5 BM25 Recall ("auth gotchas / fixes")</tspan>
+            <tspan class="t-ru">4. FTS5 BM25 Поиск ("ошибки auth / фиксы")</tspan>
+          </text>
+
+          <!-- 5. cao-auto checks TokenMaster limits -->
+          <line x1="380" y1="195" x2="530" y2="195" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr-amber)" />
+          <text x="455" y="188" font-size="11" font-weight="600" fill="#f59e0b" text-anchor="middle">
+            <tspan class="t-en">5. Evaluate Quota (80% watermark)</tspan>
+            <tspan class="t-ru">5. Проверка квоты (порог 80%)</tspan>
+          </text>
+
+          <!-- 6. TokenMaster approves / reroutes to coder_worker -->
+          <line x1="540" y1="225" x2="390" y2="225" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arr-amber)" />
+          <text x="465" y="218" font-size="11" fill="var(--text-muted)" text-anchor="middle">
+            <tspan class="t-en">6. Engine approved (or proactive swap)</tspan>
+            <tspan class="t-ru">6. Движок одобрен (или упреждающий своп)</tspan>
+          </text>
+
+          <!-- 7. cao-auto dispatches parallel workers with file disjointness -->
+          <line x1="380" y1="260" x2="690" y2="260" stroke="#06b6d4" stroke-width="1.8" marker-end="url(#arr-cyan)" />
+          <text x="535" y="253" font-size="11" font-weight="600" fill="#06b6d4" text-anchor="middle">
+            <tspan class="t-en">7. Dispatch parallel tasks (File locks: auth.py vs db.py)</tspan>
+            <tspan class="t-ru">7. Запуск воркеров (Файловые блокировки: auth.py vs db.py)</tspan>
+          </text>
+
+          <!-- ALT BOX: Quota 429 Fallback Ladder -->
+          <rect x="520" y="278" width="270" height="60" rx="8" fill="var(--diagram-box-alt)" stroke="var(--accent-amber)" stroke-dasharray="4 3" />
+          <text x="530" y="293" font-size="10" font-weight="700" fill="var(--accent-amber)">
+            <tspan class="t-en">ALT: 429 Quota Auto-Failover</tspan>
+            <tspan class="t-ru">ALT: Авто-обход 429 ошибки квоты</tspan>
+          </text>
+          <line x1="700" y1="308" x2="550" y2="308" stroke="#f59e0b" stroke-width="1.3" marker-end="url(#arr-amber)" />
+          <text x="625" y="303" font-size="10" fill="var(--text-muted)" text-anchor="middle">
+            <tspan class="t-en">Worker hits 429 &rarr; 1h block cached</tspan>
+            <tspan class="t-ru">Воркер словил 429 &rarr; блок на 1ч</tspan>
+          </text>
+          <line x1="540" y1="326" x2="690" y2="326" stroke="#10b981" stroke-width="1.3" marker-end="url(#arr-emerald)" />
+          <text x="615" y="322" font-size="10" fill="#10b981" text-anchor="middle">
+            <tspan class="t-en">Auto-swap to coder_worker (DeepSeek)</tspan>
+            <tspan class="t-ru">Авто-перевод на coder_worker</tspan>
+          </text>
+
+          <!-- 8. Worker submits code for testing -->
+          <line x1="700" y1="355" x2="850" y2="355" stroke="#6366f1" stroke-width="1.8" marker-end="url(#arr-indigo)" />
+          <text x="775" y="348" font-size="11" font-weight="600" fill="#6366f1" text-anchor="middle">
+            <tspan class="t-en">8. Run Test Suite & Linters</tspan>
+            <tspan class="t-ru">8. Запуск тестов и линтеров</tspan>
+          </text>
+
+          <!-- ALT BOX: Anti-Tamper Check -->
+          <rect x="680" y="372" width="280" height="52" rx="8" fill="rgba(244, 63, 94, 0.08)" stroke="var(--accent-rose)" stroke-dasharray="4 3" />
+          <text x="690" y="387" font-size="10" font-weight="700" fill="var(--accent-rose)">
+            <tspan class="t-en">ALT: Anti-Tamper Gate (cao_tamper.py)</tspan>
+            <tspan class="t-ru">ALT: Защита от подделки тестов</tspan>
+          </text>
+          <line x1="860" y1="405" x2="710" y2="405" stroke="#f43f5e" stroke-width="1.3" marker-end="url(#arr-rose)" />
+          <text x="785" y="401" font-size="10" fill="#f43f5e" text-anchor="middle">
+            <tspan class="t-en">Tamper detected &rarr; git checkout -- tests/ (Revert cheat)</tspan>
+            <tspan class="t-ru">Обман в тестах &rarr; автооткат git checkout tests/</tspan>
+          </text>
+
+          <!-- 9. Audit Gate Validation -->
+          <line x1="860" y1="440" x2="390" y2="440" stroke="#10b981" stroke-width="1.8" marker-end="url(#arr-emerald)" />
+          <text x="625" y="433" font-size="11" font-weight="700" fill="#10b981" text-anchor="middle">
+            <tspan class="t-en">9. Audit Gate Pass: 10/10 Score (AST + Security + Tests)</tspan>
+            <tspan class="t-ru">9. Аудит пройден: 10/10 (AST + Безопасность + Тесты)</tspan>
+          </text>
+
+          <!-- 10. Hermes Memory Retrospective -->
+          <line x1="380" y1="470" x2="960" y2="470" stroke="#10b981" stroke-width="1.6" marker-end="url(#arr-emerald)" />
+          <text x="670" y="463" font-size="11" font-weight="600" fill="#10b981" text-anchor="middle">
+            <tspan class="t-en">10. Store Retrospective Lesson in wcao/memory.sqlite</tspan>
+            <tspan class="t-ru">10. Сохранение урока в wcao/memory.sqlite</tspan>
+          </text>
+
+          <!-- 11. Complete PR-Ready signal to User -->
+          <line x1="380" y1="498" x2="80" y2="498" stroke="#10b981" stroke-width="2" marker-end="url(#arr-emerald)" />
+          <text x="230" y="491" font-size="12" font-weight="800" fill="#10b981" text-anchor="middle">
+            <tspan class="t-en">✔ Complete: PR Ready & Verified (0 human interventions)</tspan>
+            <tspan class="t-ru">✔ Готово: PR проверен и готов (0 ручных вмешательств)</tspan>
+          </text>
+        </svg>
       </div>
     </section>
 
@@ -1027,21 +1577,25 @@
     </div>
 
     <div class="controls">
-      <span class="slide-counter" id="slideCounter">01 / 12</span>
+      <span class="slide-counter" id="slideCounter">01 / 13</span>
       <button class="btn" id="prevBtn" title="Previous (Left Arrow / K)">
-        &larr; Prev
+        &larr; <span class="t-en">Prev</span><span class="t-ru">Назад</span>
       </button>
       <button class="btn" id="nextBtn" title="Next (Right Arrow / Space / J)">
-        Next &rarr;
+        <span class="t-en">Next</span><span class="t-ru">Далее</span> &rarr;
       </button>
       <button class="btn" id="themeToggleBtn" title="Toggle Light / Dark Theme (T)">
         <span id="themeIcon">☀️</span> <span id="themeLabel">Light Mode</span>
       </button>
+      <button class="btn" id="langToggleBtn" title="Switch Language EN / RU (L)">
+        <span id="langIcon">🌐</span> <span id="langLabel">RU</span>
+      </button>
     </div>
 
     <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 12px;">
-      <span>Navigate: <span class="key-pill">&larr;</span> <span class="key-pill">&rarr;</span> <span class="key-pill">Space</span></span>
-      <span>Theme: <span class="key-pill">T</span></span>
+      <span><span class="t-en">Nav</span><span class="t-ru">Навигация</span>: <span class="key-pill">&larr;</span> <span class="key-pill">&rarr;</span> <span class="key-pill">Space</span></span>
+      <span><span class="t-en">Theme</span><span class="t-ru">Тема</span>: <span class="key-pill">T</span></span>
+      <span><span class="t-en">Lang</span><span class="t-ru">Язык</span>: <span class="key-pill">L</span></span>
     </div>
   </footer>
 
@@ -1055,22 +1609,25 @@
       const themeToggleBtn = document.getElementById('themeToggleBtn');
       const themeIcon = document.getElementById('themeIcon');
       const themeLabel = document.getElementById('themeLabel');
+      const langToggleBtn = document.getElementById('langToggleBtn');
+      const langLabel = document.getElementById('langLabel');
       let currentIndex = 0;
       const totalSlides = slides.length;
 
-      // Theme management (Dark / Light) with persistence
+      // Theme management (Dark / Light)
       function setTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         try {
           localStorage.setItem('cao_deck_theme', theme);
         } catch (e) {}
 
+        const isRu = document.documentElement.getAttribute('lang') === 'ru';
         if (theme === 'light') {
           themeIcon.textContent = '🌙';
-          themeLabel.textContent = 'Dark Mode';
+          themeLabel.textContent = isRu ? 'Тёмная' : 'Dark Mode';
         } else {
           themeIcon.textContent = '☀️';
-          themeLabel.textContent = 'Light Mode';
+          themeLabel.textContent = isRu ? 'Светлая' : 'Light Mode';
         }
       }
 
@@ -1079,19 +1636,50 @@
         setTheme(currentTheme === 'light' ? 'dark' : 'light');
       }
 
-      // Initialize theme: check saved or system preference
+      // Language management (EN / RU)
+      function setLanguage(lang) {
+        document.documentElement.setAttribute('lang', lang);
+        try {
+          localStorage.setItem('cao_deck_lang', lang);
+        } catch (e) {}
+
+        langLabel.textContent = lang === 'ru' ? 'EN' : 'RU';
+        // Refresh theme button label translation
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme || 'dark');
+      }
+
+      function toggleLanguage() {
+        const currentLang = document.documentElement.getAttribute('lang') === 'ru' ? 'ru' : 'en';
+        setLanguage(currentLang === 'ru' ? 'en' : 'ru');
+      }
+
+      // Initialize theme & language
       let initialTheme = 'dark';
       try {
-        const saved = localStorage.getItem('cao_deck_theme');
-        if (saved === 'light' || saved === 'dark') {
-          initialTheme = saved;
+        const savedTheme = localStorage.getItem('cao_deck_theme');
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          initialTheme = savedTheme;
         } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
           initialTheme = 'light';
         }
       } catch (e) {}
+
+      let initialLang = 'en';
+      try {
+        const savedLang = localStorage.getItem('cao_deck_lang');
+        if (savedLang === 'ru' || savedLang === 'en') {
+          initialLang = savedLang;
+        } else if (navigator.language && navigator.language.startsWith('ru')) {
+          initialLang = 'ru';
+        }
+      } catch (e) {}
+
+      setLanguage(initialLang);
       setTheme(initialTheme);
 
       themeToggleBtn.addEventListener('click', toggleTheme);
+      langToggleBtn.addEventListener('click', toggleLanguage);
 
       function updateSlide(index) {
         if (index < 0) index = 0;
@@ -1140,6 +1728,8 @@
           updateSlide(totalSlides - 1);
         } else if (e.key === 't' || e.key === 'T') {
           toggleTheme();
+        } else if (e.key === 'l' || e.key === 'L') {
+          toggleLanguage();
         }
       });
 
