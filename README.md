@@ -1,10 +1,43 @@
-# cao-setup
+# CAO — Autonomous CLI Agent Orchestrator
 
-Set up a **CLI Agent Orchestrator (CAO)** on macOS or Linux: one Claude
-supervisor that plans work and delegates it to a team of specialist worker
-engines — each on the CLI that's best (and cheapest) at its job. This repo
-installs it, configures it from one file, and keeps every setting in one place.
+> **Orchestrate your frontier AI coding CLI engines into a cohesive, self-learning engineering squad.**
 
+---
+
+### The Problem
+* **Siloed CLI Agents:** Claude Code, Codex, Antigravity/Gemini, OpenCode, and Hermes each live in isolated terminal windows with no shared memory, contracts, or task delegation.
+* **Token & Quota Burn:** Using expensive frontier models for mundane boilerplate, migrations, or whole-repo reading exhausts rate limits and quotas rapidly.
+* **Context Decay & Amnesia:** As agent sessions grow, token context degrades, leading to hallucinated edits, broken syntax, and forgotten lessons across sessions.
+* **Race Conditions in Multi-Agent Coding:** Running multiple autonomous agents simultaneously on the same codebase leads to file collisions and overwritten code.
+* **Premature Completion without Verification:** Most agent setups stop as soon as code is written—without running tests, verifying AST syntax, or fixing their own regressions.
+
+---
+
+### The Solution: A Unified Engineering Squad
+**CAO (CLI Agent Orchestrator)** turns individual CLI tools into an autonomous, fault-tolerant software engineering system:
+
+* **Tech Lead Supervisor (Claude / AGY):** Plans architecture, decomposes requirements into Directed Acyclic Graphs (DAGs), and delegates.
+* **Specialist Workforce:** Routes tasks to the best-fit engine—Claude for hard domain logic, high-throughput models (DeepSeek/OpenCode) for bulk typing, Gemini/AGY for massive-context codebase analysis, Codex for UI, and Hermes for open-source reasoning.
+* **Deterministic Execution & Safety Locks:** A headless execution engine (`cao_auto`) schedules tasks, enforces file-level disjointness locks, and prevents parallel collision.
+* **Autonomous Closed-Loop Quality:** An aggressive postflight audit gate tests and scans code before marking any task complete, with an automatic self-healing loop that fixes failures without human intervention.
+* **Hermes Cross-Engine Memory:** Context compactor (Hermes 50% rule) prevents token blowout, while SQLite FTS5 episodic memory stores lessons learned so future workers never repeat past mistakes.
+
+---
+
+### Core Capabilities at a Glance
+
+| Capability | How CAO Delivers It |
+|---|---|
+| **Multi-Engine Swarm** | Unifies Claude, Codex, OpenCode, Antigravity, Copilot, and Hermes into one orchestrated pipeline. |
+| **Token-Aware Efficiency** | Frontier models design contracts; cheap models write boilerplate; huge-context models read the repo. |
+| **Zero-Collision Concurrency** | Task DAG scheduler evaluates dependencies and locks files dynamically across parallel workers. |
+| **Autonomous Self-Healing** | Postflight AST checks, security audits, and test suites trigger automatic remediation loops when regressions occur. |
+| **Persistent Project Brain (`wcao/`)** | Single source of truth for architectural diagrams (`design/*.mmd`), active plans (`now.md`), and reusable skills (`skills/`). |
+| **Quota Resilience** | Real-time detection of 429 rate limits with automatic fallback to secondary engines and supervisor failover. |
+
+---
+
+```
 cao-run  →  supervisor (Claude, Tech Lead)  →  assign  →
     ┌ claude_worker       claude       architecture, contracts, hard logic
     ├ coder_worker        opencode     implementation, schemas, CRUD (cheap model)
