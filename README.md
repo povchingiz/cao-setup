@@ -2,6 +2,9 @@
 
 > **Orchestrate your frontier AI coding CLI engines into a cohesive, self-learning engineering squad.**
 
+> [!NOTE]
+> **Origins & Lineage:** This project originated as an automated setup and configuration harness for AWS Labs' open-source [`cli-agent-orchestrator`](https://github.com/awslabs/cli-agent-orchestrator) (CAO). It has since expanded significantly beyond the original launcher into an autonomous multi-engine platform—adding the **`wcao/` project standard**, **Hermes episodic & procedural memory**, **proactive TokenMaster quota intelligence**, **headless DAG execution (`cao_auto`)**, and **anti-tamper self-healing audit gates**.
+
 ---
 
 ### The Problem
