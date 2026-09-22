@@ -70,8 +70,8 @@ focus    = "QA / audit only: run tests, security review, edge cases (see analyst
 
 [workers.copilot_worker]
 provider = "copilot_cli"
-aliases  = ["copilot"]
-focus    = "general coding worker (role TBD)"
+aliases  = ["copilot", "deploy", "ci", "github"]
+focus    = "GitHub PRs, Actions workflows, CI/CD pipelines, deployment configs (Vercel, Railway, Docker)"
 
 [workers.hermes_worker]
 provider = "hermes_cli"

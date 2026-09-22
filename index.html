@@ -853,8 +853,8 @@
         <span class="t-ru">Матрица специализированных воркеров</span>
       </h2>
       <p class="slide-subtitle">
-        <span class="t-en">Configured from a single source of truth: <code>2_configure/cao.config.toml</code>.</span>
-        <span class="t-ru">Настраивается из единого файла конфигурации: <code>2_configure/cao.config.toml</code>.</span>
+        <span class="t-en">Configured in <code>2_configure/cao.config.toml</code>. Open-source models (Hermes / Ollama) plug in as swappable drop-ins.</span>
+        <span class="t-ru">Настраивается в <code>2_configure/cao.config.toml</code>. Open-source модели (Hermes / Ollama) подключаются как сменные воркеры.</span>
       </p>
 
       <div class="grid-3">
@@ -924,15 +924,15 @@
         </div>
 
         <div class="card">
-          <div class="badge badge-indigo">hermes_worker (Swappable)</div>
+          <div class="badge badge-indigo">copilot_worker</div>
           <div class="card-title">
-            <span class="t-en">Open-Source / Fallback</span>
-            <span class="t-ru">Сменный Open-Source / Резерв</span>
+            <span class="t-en">CI/CD & Cloud Deploy</span>
+            <span class="t-ru">CI/CD и облачный деплой</span>
           </div>
           <div class="card-text">
-            <strong>Engine:</strong> Nous Hermes / Ollama<br>
-            <span class="t-en"><strong>Role:</strong> Swappable alternative to OpenCode: autonomous open-source reasoning, local models, or L2 fallback.</span>
-            <span class="t-ru"><strong>Роль:</strong> Взаимозаменяем с OpenCode: открытые рассуждения, локальные модели или резерв при L2-эскалации.</span>
+            <strong>Engine:</strong> GitHub Copilot CLI<br>
+            <span class="t-en"><strong>Role:</strong> GitHub Actions workflows, PR descriptions, and cloud deployment manifests (Vercel, Railway, Docker).</span>
+            <span class="t-ru"><strong>Роль:</strong> Пайплайны GitHub Actions, описания PR и конфигурации деплоя (Vercel, Railway, Docker).</span>
           </div>
         </div>
       </div>
@@ -993,13 +993,13 @@
       </div>
 
       <div class="card" style="border-left: 3px solid var(--accent-emerald);">
-        <p class="card-text" style="font-size: 0.92rem; color: var(--text-main);">
-          <strong>
-            <span class="t-en">Universal CLI Adapter Philosophy:</span>
-            <span class="t-ru">Принцип универсального CLI-адаптера:</span>
-          </strong>
-          <span class="t-en">CAO treats CLI binaries as swappable unix pipes. New AI tools (Cursor CLI, Kiro, Codex, Amazon Q, custom internal LLM wrappers) plug in with zero architectural refactoring.</span>
-          <span class="t-ru">CAO относится к CLI-утилитам как к заменяемым unix-пайпам. Любые новые AI-инструменты (Cursor CLI, Kiro, Codex, Amazon Q, кастомные CLI) подключаются без переписывания архитектуры.</span>
+        <div class="card-title" style="font-size: 1rem; margin-bottom: 6px;">
+          <span class="t-en">Zero-Credential Trust & Native Terminal Logins</span>
+          <span class="t-ru">Нулевая передача паролей · Нативная авторизация в терминале</span>
+        </div>
+        <p class="card-text" style="font-size: 0.85rem; line-height: 1.45; color: var(--text-main);">
+          <span class="t-en">CAO never proxies web passwords or session tokens. You authenticate once natively in your terminal (<code>claude /login</code>, <code>codex login</code>, <code>agy</code>, <code>gh auth login</code>). CAO orchestrates these existing, pre-authenticated CLI sessions inside background tmux panes. New tools (Cursor CLI, Kiro, local Ollama) plug in as swappable unix pipes.</span>
+          <span class="t-ru">CAO никогда не запрашивает пароли от аккаунтов и не перехватывает ключи. Вы авторизуетесь один раз в своих официальных CLI (<code>claude /login</code>, <code>codex login</code>, <code>agy</code>, <code>gh auth login</code>). CAO оркестрирует эти уже авторизованные процессы внутри сессий tmux без посредников.</span>
         </p>
       </div>
     </section>

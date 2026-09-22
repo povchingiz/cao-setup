@@ -64,8 +64,8 @@ cao-run  →  supervisor (Claude, Tech Lead)  →  assign  →
     ├ analyst_worker      gemini/agy   whole-repo maps, long docs, multimodal (huge context)
     ├ codex_worker        codex        frontend / UI
     ├ antigravity_worker  gemini/agy   QA, tests, security review
-    ├ hermes_worker       hermes       open-source reasoning, autonomous implementation
-    └ copilot_worker      copilot      general coding hand (role TBD)
+    ├ copilot_worker      copilot      GitHub, CI/CD workflows, deploy (Vercel/Railway)
+    └ hermes_worker       hermes       open-source reasoning, autonomous fallback
 ```
 
 **Why it saves tokens:** the expensive model (Claude) is spent only on design,
@@ -137,12 +137,15 @@ Flags: `--inherit-mcp` (give your existing Claude MCP servers to the workers),
 Prerequisites: macOS needs [Homebrew](https://brew.sh); Linux needs `sudo` (for
 `apt`). Scripts clone executable — no `chmod` needed.
 
-Then the interactive logins the installer prints (only a human can do these):
+### Native CLI Authentication (Pre-Flight Terminal Logins)
+
+> **Zero Credential Sharing:** CAO never asks for your web account passwords or proxies your session keys. You authenticate once natively in your terminal using the official vendor CLIs. CAO simply connects to these pre-authenticated CLI sessions inside background `tmux` panes:
 
 ```sh
-claude          # /login on first use
-codex login     # ChatGPT sign-in
-agy             # Google sign-in if prompted
+claude          # Anthropic subscription (/login on first prompt)
+codex login     # OpenAI subscription (ChatGPT / API sign-in)
+agy             # Google Antigravity / Gemini sign-in
+gh auth login   # GitHub Copilot CLI subscription (if using copilot_worker)
 ```
 
 ## 2. Configure — one file
