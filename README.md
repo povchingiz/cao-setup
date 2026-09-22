@@ -2,11 +2,13 @@
 
 > **Orchestrate your frontier AI coding CLI engines into a cohesive, self-learning engineering squad.**
 
-[![Live Presentation Deck](https://img.shields.io/badge/Live%20Deck-Interactive%20Pitch%20Presentation-6366f1?style=for-the-badge&logo=html5&logoColor=white)](https://povchingiz.github.io/cao-setup/)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-06b6d4?style=for-the-badge&logo=github)](https://povchingiz.github.io/cao-setup/)
+[![Interactive Presentation Deck](https://img.shields.io/badge/Interactive%20Deck-16%20Slides%20(RU%2FEN)-6366f1?style=for-the-badge&logo=googleslides&logoColor=white)](https://povchingiz.github.io/cao-setup/)
+[![Sequence Diagram](https://img.shields.io/badge/Architecture-Sequence%20Diagram-06b6d4?style=for-the-badge&logo=diagramsdotnet&logoColor=white)](https://povchingiz.github.io/cao-setup/#16)
+[![Python Version](https://img.shields.io/badge/Python-%3E%3D3.11-3776ab?style=for-the-badge&logo=python&logoColor=white)](pyproject.toml)
+[![Architecture](https://img.shields.io/badge/Architecture-Multi--Engine%20DAG-10b981?style=for-the-badge&logo=git&logoColor=white)](#the-solution-a-unified-engineering-squad)
 
-> 🌐 **Interactive Presentation Deck**: [**https://povchingiz.github.io/cao-setup/**](https://povchingiz.github.io/cao-setup/)  
-> *(16 Slides · Dual Dark/Light Mode · RU/EN Localization · Native Sequence Diagram · Rival Matrices)*
+> 🌐 **Interactive Pitch Deck**: [**povchingiz.github.io/cao-setup**](https://povchingiz.github.io/cao-setup/) *(16 Slides · Dual Dark/Light Mode · RU/EN Localization · Native Sequence Diagram · Rival Matrices)*  
+> 🔍 **Direct Architecture Trace**: Jump straight to the [**End-to-End Sequence Diagram (Slide 16)**](https://povchingiz.github.io/cao-setup/#16)
 
 > [!NOTE]
 > **Origins & Lineage:** This project originated as an automated setup and configuration harness for AWS Labs' open-source [`cli-agent-orchestrator`](https://github.com/awslabs/cli-agent-orchestrator) (CAO). It has since expanded significantly beyond the original launcher into an autonomous multi-engine platform—adding the **`wcao/` project standard**, **Hermes episodic & procedural memory**, **proactive TokenMaster quota intelligence**, **headless DAG execution (`cao_auto`)**, and **anti-tamper self-healing audit gates**.
