@@ -710,59 +710,133 @@
       </div>
     </section>
 
-    <!-- SLIDE 3: Architectural Philosophy -->
+    <!-- SLIDE 3: Architectural Solution Bridge -->
     <section class="slide" data-slide="3">
       <div class="slide-tag">
-        <span class="t-en">Core Solution</span>
-        <span class="t-ru">Базовое решение</span>
+        <span class="t-en">The Architectural Antidote</span>
+        <span class="t-ru">Архитектурный ответ</span>
       </div>
       <h2 class="slide-title">
-        <span class="t-en">Economic Asymmetry & Specialist Division</span>
-        <span class="t-ru">Экономическая асимметрия и специализация</span>
+        <span class="t-en">How CAO Solves Every Developer Bottleneck</span>
+        <span class="t-ru">Как CAO устраняет каждое из этих 6 узких мест</span>
       </h2>
       <p class="slide-subtitle">
-        <span class="t-en">Route every coding task to the engine that is best (and most economical) at that specific job.</span>
-        <span class="t-ru">Направляем каждую задачу тому движку, который решает её эффективнее и дешевле всего.</span>
+        <span class="t-en">Direct, engineered mechanisms addressing the 6 fatal multi-agent bottlenecks from Slide 2.</span>
+        <span class="t-ru">Прямые инженерные решения, превращающие хаос разрозненных терминалов в надёжную автономную фабрику.</span>
       </p>
 
-      <div class="grid-2">
-        <div class="card">
-          <div class="badge badge-indigo">
-            <span class="t-en">Strategic Layer</span>
-            <span class="t-ru">Стратегический уровень</span>
+      <div class="grid-3">
+        <!-- 1. Siloed Terminals Fix -->
+        <div class="card" style="border-top: 3px solid var(--accent-indigo);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-indigo" style="font-size: 0.68rem; padding: 2px 7px;">
+              <span class="t-en">Fix 1 · Siloed Terminals</span>
+              <span class="t-ru">Решение 1 · Разрозненность</span>
+            </span>
+            <span style="font-size: 1.1rem;">🎛️</span>
           </div>
-          <div class="card-title">
-            <span class="t-en">Tech Lead Supervisor (Claude / AGY)</span>
-            <span class="t-ru">Техлид-супервизор (Claude / AGY)</span>
+          <div class="card-title" style="font-size: 1.02rem; margin-bottom: 6px;">
+            <span class="t-en">Unified tmux Hub & MCP Daemon</span>
+            <span class="t-ru">Единый tmux-хаб и MCP-демон</span>
           </div>
-          <p class="card-text" style="margin-bottom: 12px;">
-            <span class="t-en">Expensive reasoning models are spent <strong>only</strong> on high-leverage work: system architecture, API boundaries, and DAG task decomposition.</span>
-            <span class="t-ru">Дорогие модели расходуются <strong>исключительно</strong> на стратегию: архитектуру системы, границы API и планирование задач в DAG.</span>
-          </p>
-          <div class="code-box">
-            <span class="code-comment"># Supervisor defines architecture contract first</span><br>
-            wcao/design/architecture.mmd &rarr; Sequence & State<br>
-            wcao/tasks.json &rarr; DAG with file disjointness locks
+          <div class="card-text" style="font-size: 0.83rem; line-height: 1.45;">
+            <span class="t-en">Instead of juggling 4 tabs, CAO drives all CLIs (Claude Code, Codex, AGY, local LLMs) in one persistent tmux workspace under a central REST daemon with synchronized cross-pane IPC.</span>
+            <span class="t-ru">Вместо ручного жонглирования 4 окнами, CAO запускает все CLI (Claude Code, Codex, AGY, локальные LLM) в единой сессии tmux под управлением общего REST-демона с межпроцессными сигналами.</span>
           </div>
         </div>
 
-        <div class="card">
-          <div class="badge badge-cyan">
-            <span class="t-en">Tactical Workforce</span>
-            <span class="t-ru">Тактические воркеры</span>
+        <!-- 2. Token & Quota Burn Fix -->
+        <div class="card" style="border-top: 3px solid var(--accent-amber);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-amber" style="font-size: 0.68rem; padding: 2px 7px;">
+              <span class="t-en">Fix 2 · Quota Burn</span>
+              <span class="t-ru">Решение 2 · Сжигание квот</span>
+            </span>
+            <span style="font-size: 1.1rem;">⚖️</span>
           </div>
-          <div class="card-title">
-            <span class="t-en">Specialist Worker Engines</span>
-            <span class="t-ru">Специализированные движки</span>
+          <div class="card-title" style="font-size: 1.02rem; margin-bottom: 6px;">
+            <span class="t-en">Economic Asymmetry Routing</span>
+            <span class="t-ru">Экономическая асимметрия</span>
           </div>
-          <p class="card-text" style="margin-bottom: 12px;">
-            <span class="t-en">Bulk implementation typing goes to cheap high-throughput engines; whole-repo reading goes to massive-context engines.</span>
-            <span class="t-ru">Массовый набор кода делегируется дешёвым быстрым движкам; сканирование всего репозитория — моделям с огромным контекстом.</span>
-          </p>
-          <div class="code-box">
-            <span class="code-str">coder_worker</span> (DeepSeek): CRUD & schemas<br>
-            <span class="code-hl">analyst_worker</span> (Gemini): 1M+ whole-repo analysis<br>
-            <span class="code-kw">hermes_worker</span> (Nous Hermes): Open-source reasoning
+          <div class="card-text" style="font-size: 0.83rem; line-height: 1.45;">
+            <span class="t-en">Frontier reasoning models write contracts and DAG plans only. Fast, low-cost engines (DeepSeek, Gemini) type bulk code and analyze whole repos at 1/50th of the cost.</span>
+            <span class="t-ru">Дорогие модели пишут только архитектуру и DAG. Скоростные дешёвые движки (DeepSeek, Gemini) пишут массовый код и читают кодовую базу в 50 раз экономнее.</span>
+          </div>
+        </div>
+
+        <!-- 3. Context Rot Fix -->
+        <div class="card" style="border-top: 3px solid var(--accent-cyan);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-cyan" style="font-size: 0.68rem; padding: 2px 7px;">
+              <span class="t-en">Fix 3 · Context Rot</span>
+              <span class="t-ru">Решение 3 · Амнезия контекста</span>
+            </span>
+            <span style="font-size: 1.1rem;">🧠</span>
+          </div>
+          <div class="card-title" style="font-size: 1.02rem; margin-bottom: 6px;">
+            <span class="t-en">Shared Brain & 50% Compactor</span>
+            <span class="t-ru">Общая память и сжатие 50%</span>
+          </div>
+          <div class="card-text" style="font-size: 0.83rem; line-height: 1.45;">
+            <span class="t-en">A shared SQLite FTS5 database stores past fixes across all tools. At 50% context usage, Hermes automatically compacts state into <code>wcao/now.md</code> checkpoints—zero amnesia.</span>
+            <span class="t-ru">Единая база SQLite FTS5 хранит опыт для всех CLI. При 50% контекста Hermes сжимает историю в чекпоинты <code>wcao/now.md</code> — сессии не переполняются, а память сохраняется.</span>
+          </div>
+        </div>
+
+        <!-- 4. Collisions Fix -->
+        <div class="card" style="border-top: 3px solid var(--accent-rose);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-rose" style="font-size: 0.68rem; padding: 2px 7px;">
+              <span class="t-en">Fix 4 · Agent Collisions</span>
+              <span class="t-ru">Решение 4 · Конфликты файлов</span>
+            </span>
+            <span style="font-size: 1.1rem;">🛡️</span>
+          </div>
+          <div class="card-title" style="font-size: 1.02rem; margin-bottom: 6px;">
+            <span class="t-en">Topological DAG & Mutex Locks</span>
+            <span class="t-ru">Топологический DAG и Mutex-замки</span>
+          </div>
+          <div class="card-text" style="font-size: 0.83rem; line-height: 1.45;">
+            <span class="t-en"><code>graphlib</code> orchestrates task dependencies while file-level mutex locks enforce disjoint write paths. Multiple agents code concurrently with zero overwrite collisions.</span>
+            <span class="t-ru">Движок <code>graphlib</code> строит граф зависимостей, а файловые mutex-замки гарантируют непересекающиеся пути. Агенты пишут код параллельно без перезаписи.</span>
+          </div>
+        </div>
+
+        <!-- 5. Premature Done Fix -->
+        <div class="card" style="border-top: 3px solid var(--accent-amber);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-amber" style="font-size: 0.68rem; padding: 2px 7px;">
+              <span class="t-en">Fix 5 · False "Done"</span>
+              <span class="t-ru">Решение 5 · Ложный финиш</span>
+            </span>
+            <span style="font-size: 1.1rem;">🎯</span>
+          </div>
+          <div class="card-title" style="font-size: 1.02rem; margin-bottom: 6px;">
+            <span class="t-en">Anti-Tamper & 10/10 Verification</span>
+            <span class="t-ru">Античит-контроль и приёмка 10/10</span>
+          </div>
+          <div class="card-text" style="font-size: 0.83rem; line-height: 1.45;">
+            <span class="t-en"><code>cao_tamper.py</code> performs AST diff analysis to instantly catch and revert modified test assertions. <code>cao-aggressive</code> demands real test execution logs and a 10/10 score.</span>
+            <span class="t-ru">Скрипт <code>cao_tamper.py</code> через AST-дифф выявляет и откатывает попытки ослабить тесты. Аудитор <code>cao-aggressive</code> требует реальных логов и оценки 10/10.</span>
+          </div>
+        </div>
+
+        <!-- 6. Mid-Run 429 Quota Freeze Fix -->
+        <div class="card" style="border-top: 3px solid var(--accent-emerald);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-emerald" style="font-size: 0.68rem; padding: 2px 7px;">
+              <span class="t-en">Fix 6 · 429 Freezes</span>
+              <span class="t-ru">Решение 6 · Зависания 429</span>
+            </span>
+            <span style="font-size: 1.1rem;">⚡</span>
+          </div>
+          <div class="card-title" style="font-size: 1.02rem; margin-bottom: 6px;">
+            <span class="t-en">Proactive TokenMaster & Failover</span>
+            <span class="t-ru">Сенсор TokenMaster и авто-своп</span>
+          </div>
+          <div class="card-text" style="font-size: 0.83rem; line-height: 1.45;">
+            <span class="t-en"><code>cao-tokenmaster</code> tracks rate limits on-disk. At 80% quota, tasks proactively swap to standby fallback engines with a 1h cooling cache—zero 429 pipeline halts.</span>
+            <span class="t-ru">Сенсор <code>cao-tokenmaster</code> читает лимиты с диска. При 80% квоты задачи на лету переключаются на резервные движки с кэшем охлаждения — ноль остановок на 429.</span>
           </div>
         </div>
       </div>
@@ -1567,12 +1641,12 @@
 
         <div class="card" style="border-left: 3px solid var(--accent-emerald);">
           <div class="card-title">
-            <span class="t-en">100% Local & Cost-Free</span>
-            <span class="t-ru">100% Локально и без подписок</span>
+            <span class="t-en">Unified Command & Zero SaaS Tax</span>
+            <span class="t-ru">Единый центр управления без наценки</span>
           </div>
           <div class="card-text">
-            <span class="t-en">No monthly cloud seat fee, no telemetry lock-in. Everything executes in native terminal processes on your machine.</span>
-            <span class="t-ru">Никаких облачных ежемесячных подписок за платформу. Всё работает локально в нативных процессах вашего терминала.</span>
+            <span class="t-en">Simultaneously drives your existing subscriptions (Claude Code, Codex, AGY, or any API) from one place. Keeps unified memory, synchronized plans, and token governance with zero platform fees.</span>
+            <span class="t-ru">Одновременно управляет всеми вашими подписками (Claude Code, Codex, AGY и API) из одного места. Ведёт общую память проекта, единые планы и учёт токенов без наценки за платформу.</span>
           </div>
         </div>
       </div>
