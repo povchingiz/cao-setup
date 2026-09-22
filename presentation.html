@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAO — Autonomous CLI Agent Orchestrator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --bg-card-hover: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --code-bg: rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* Presentation Deck Container */
+    .deck {
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Individual Slide */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      padding: 60px 80px 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px) scale(0.98);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      z-index: 10;
+    }
+
+    /* Ambient Glow Backgrounds */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.15;
+    }
+
+    .orb-1 { top: -10%; left: 10%; width: 500px; height: 500px; background: var(--accent); }
+    .orb-2 { bottom: -10%; right: 10%; width: 600px; height: 600px; background: var(--accent-cyan); }
+
+    /* Header & Badges */
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 9999px;
+      color: #a5b4fc;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      width: fit-content;
+    }
+
+    .slide-title {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 900px;
+      margin-bottom: 36px;
+    }
+
+    /* Layout Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Glass Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .card-text {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      width: fit-content;
+    }
+    .badge-cyan { background: rgba(6, 182, 212, 0.15); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-rose { background: rgba(244, 63, 94, 0.15); color: #fca5a5; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-indigo { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+    /* Code Snippets */
+    .code-box {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+      margin-top: 14px;
+      overflow-x: auto;
+    }
+
+    .code-hl { color: #818cf8; }
+    .code-str { color: #34d399; }
+    .code-kw { color: #f472b6; }
+    .code-comment { color: #64748b; }
+
+    /* Sequence & Flow Diagram Nodes */
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    .flow-node {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-node.active-node {
+      border-color: var(--accent);
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+    }
+
+    /* Comparison Table */
+    .deck-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 10px;
+    }
+
+    .deck-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .deck-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .deck-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #f1f5f9;
+    }
+
+    /* Deck Controls & Bottom Bar */
+    .deck-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      padding: 20px 80px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .progress-bar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      z-index: 1000;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-cyan));
+      transition: width 0.3s ease;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .brand-mark {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald);
+    }
+
+    /* Key indicator pills */
+    .key-pill {
+      display: inline-block;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Ambient Glow Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <!-- Slide Deck -->
+  <main class="deck" id="deck">
+
+    <!-- SLIDE 1: Cover -->
+    <section class="slide active" data-slide="1">
+      <div class="slide-tag">Autonomous CLI Orchestration</div>
+      <h1 class="slide-title" style="font-size: 3.5rem; margin-bottom: 20px;">
+        CAO: CLI Agent Orchestrator
+      </h1>
+      <p class="slide-subtitle" style="font-size: 1.4rem; max-width: 840px;">
+        Turning frontier AI coding CLIs into a unified, self-healing, quota-aware engineering squad.
+      </p>
+
+      <div class="card" style="max-width: 800px; margin-bottom: 24px; border-left: 3px solid var(--accent);">
+        <p style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.6;">
+          <strong style="color: #fff;">Origins & Lineage:</strong> Originated as an automated setup and configuration harness for AWS Labs' open-source <code>cli-agent-orchestrator</code>. Expanded into a full autonomous software-building platform with Git-native memory (<code>wcao/</code>), proactive TokenMaster quota telemetry, and anti-tamper audit loops.
+        </p>
+      </div>
+
+      <div class="flow-row" style="margin-top: 10px;">
+        <div class="flow-node"><span style="color:#f43f5e;">●</span> Claude Code (Architect)</div>
+        <div class="flow-arrow">+</div>
+        <div class="flow-node"><span style="color:#06b6d4;">●</span> OpenCode / DeepSeek (Bulk Coder)</div>
+        <div class="flow-arrow">+</div>
+        <div class="flow-node"><span style="color:#10b981;">●</span> Gemini / Agy (1M Context)</div>
+        <div class="flow-arrow">+</div>
+        <div class="flow-node"><span style="color:#f59e0b;">●</span> Nous Hermes (Reasoner)</div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: The Problem -->
+    <section class="slide" data-slide="2">
+      <div class="slide-tag">The Challenge</div>
+      <h2 class="slide-title">The 5 Fatal Flaws of Single-Agent Coding</h2>
+      <p class="slide-subtitle">Why lone coding agents hit walls on real production repositories.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon" style="color: var(--accent-rose);">🪟</div>
+          <div class="card-title">Siloed Terminals</div>
+          <div class="card-text">
+            Claude Code, Codex, Agy, and OpenCode each operate in isolated terminal bubbles with no shared contracts, task queues, or coordination.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="color: var(--accent-amber);">💸</div>
+          <div class="card-title">Token & Quota Burn</div>
+          <div class="card-text">
+            Spending frontier reasoning models (Claude Opus/Sonnet) on mundane CRUD, boilerplate typing, or reading huge repos burns rate limits in minutes.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="color: var(--accent-cyan);">📉</div>
+          <div class="card-title">Context Rot & Amnesia</div>
+          <div class="card-text">
+            Long-running sessions accumulate thousands of lines of raw tool outputs. Context saturates, leading to hallucinations and forgotten past fixes.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="color: var(--accent-rose);">💥</div>
+          <div class="card-title">Multi-Agent Collisions</div>
+          <div class="card-text">
+            Running multiple autonomous agents concurrently on the same codebase causes catastrophic race conditions and conflicting file overwrites.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="color: var(--accent-amber);">🛑</div>
+          <div class="card-title">Premature "Done" Claims</div>
+          <div class="card-text">
+            Standard agents declare victory the instant code is typed—without running AST checks, security audits, or verifying test regressions.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="color: var(--accent-emerald);">⚡</div>
+          <div class="card-title">Mid-Run Quota Freezes</div>
+          <div class="card-text">
+            Hitting an unexpected HTTP 429 quota ceiling in the middle of a complex multi-file refactor completely halts the development process.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: Architectural Philosophy -->
+    <section class="slide" data-slide="3">
+      <div class="slide-tag">Core Solution</div>
+      <h2 class="slide-title">Economic Asymmetry & Specialist Division</h2>
+      <p class="slide-subtitle">Route every coding task to the engine that is best (and most economical) at that specific job.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="badge badge-indigo">Strategic Layer</div>
+          <div class="card-title">Tech Lead Supervisor (Claude / AGY)</div>
+          <p class="card-text" style="margin-bottom: 12px;">
+            Expensive reasoning models are spent <strong>only</strong> on high-leverage work: system architecture, API boundaries, and DAG task decomposition.
+          </p>
+          <div class="code-box">
+            <span class="code-comment"># Supervisor defines architecture contract first</span><br>
+            wcao/design/architecture.mmd &rarr; Sequence & State<br>
+            wcao/tasks.json &rarr; DAG with file disjointness locks
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-cyan">Tactical Workforce</div>
+          <div class="card-title">Specialist Worker Engines</div>
+          <p class="card-text" style="margin-bottom: 12px;">
+            Bulk implementation typing goes to cheap high-throughput engines; whole-repo reading goes to massive-context engines.
+          </p>
+          <div class="code-box">
+            <span class="code-str">coder_worker</span> (DeepSeek): High-volume CRUD & schemas<br>
+            <span class="code-hl">analyst_worker</span> (Gemini): 1M+ token whole-repo reading<br>
+            <span class="code-kw">hermes_worker</span> (Nous Hermes): Open-source reasoning
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: The Specialist Swarm -->
+    <section class="slide" data-slide="4">
+      <div class="slide-tag">Worker Swarm</div>
+      <h2 class="slide-title">The Specialist Engine Matrix</h2>
+      <p class="slide-subtitle">Configured from a single source of truth: <code>2_configure/cao.config.toml</code>.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="badge badge-indigo">claude_worker</div>
+          <div class="card-title">The Architect</div>
+          <div class="card-text">
+            <strong>Engine:</strong> Claude Code<br>
+            <strong>Role:</strong> Domain logic, API design, contract definitions, hard algorithmic reasoning.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-cyan">coder_worker</div>
+          <div class="card-title">The High-Throughput Coder</div>
+          <div class="card-text">
+            <strong>Engine:</strong> OpenCode (DeepSeek-V4-Pro)<br>
+            <strong>Role:</strong> Low-cost bulk coding, DB migrations, boilerplate, implementing against specs.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-emerald">analyst_worker</div>
+          <div class="card-title">The Whole-Repo Eyes</div>
+          <div class="card-text">
+            <strong>Engine:</strong> Antigravity / Gemini Flash<br>
+            <strong>Role:</strong> 1M+ token context: repository dependency graphs, cross-module impact analysis.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-amber">codex_worker</div>
+          <div class="card-title">Frontend Specialist</div>
+          <div class="card-text">
+            <strong>Engine:</strong> OpenAI Codex<br>
+            <strong>Role:</strong> React, Vue, Svelte, Tailwind CSS, and interactive UI components.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-rose">antigravity_worker</div>
+          <div class="card-title">QA & Security Auditor</div>
+          <div class="card-text">
+            <strong>Engine:</strong> Antigravity / Gemini Pro<br>
+            <strong>Role:</strong> Code quality reviews, vulnerability scans, edge cases, test verification.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-indigo">hermes_worker</div>
+          <div class="card-title">Open-Source Reasoner</div>
+          <div class="card-text">
+            <strong>Engine:</strong> Nous Hermes CLI<br>
+            <strong>Role:</strong> Self-directed problem solving, tool use, and architect escalation fixes.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: wcao/ Standard -->
+    <section class="slide" data-slide="5">
+      <div class="slide-tag">Storage & Contracts</div>
+      <h2 class="slide-title">The Single Project Brain: <code>wcao/</code></h2>
+      <p class="slide-subtitle">All plans, contracts, test scorecards, and episodic memories live right inside the repository.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Git-Tracked Project Artifacts</div>
+          <div class="code-box" style="font-size: 0.9rem;">
+            wcao/<br>
+            ├── <span class="code-str">plans/now.md</span>       <span class="code-comment"># Active North Star & checkpoints</span><br>
+            ├── <span class="code-hl">tasks.json</span>         <span class="code-comment"># Directed Acyclic Graph (DAG)</span><br>
+            ├── <span class="code-kw">design/*.mmd</span>       <span class="code-comment"># Living Mermaid sequence & state</span><br>
+            ├── <span class="code-str">skills/*.md</span>       <span class="code-comment"># Procedural learned recipes</span><br>
+            └── <span class="code-comment">audit/*.md</span>        <span class="code-comment"># Postflight scorecards & stress tests</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Local Episodic Database (Gitignored)</div>
+          <div class="code-box" style="font-size: 0.9rem;">
+            wcao/<br>
+            └── <span class="code-hl">memory.sqlite</span>      <span class="code-comment"># SQLite FTS5 BM25 memory</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;├── session_id<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;├── category (bug_fix / arch / gotcha)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;├── summary & details<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;└── file_paths & timestamp
+          </div>
+          <p class="card-text" style="margin-top: 14px;">
+            Zero cloud lock-in. Transparent markdown files can be read, inspected, and code-reviewed by human developers in standard git pull requests.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: Hermes Continuous Learning -->
+    <section class="slide" data-slide="6">
+      <div class="slide-tag">Intelligence Layer</div>
+      <h2 class="slide-title">Hermes Continuous Learning System</h2>
+      <p class="slide-subtitle">Zero API cost, sub-millisecond retrieval, and persistent cross-session memory.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">1. Episodic Memory (SQLite FTS5)</div>
+          <p class="card-text">
+            Full-text indexed search with BM25 ranking. Stores past solutions, compiler fixes, and architectural choices across all runs.
+          </p>
+          <div class="code-box">
+            <span class="code-comment"># CLI: Query memory anytime</span><br>
+            cao-memory recall <span class="code-str">"sqlite3 OperationalError"</span><br>
+            <span class="code-comment"># Dispatched workers inherit past lessons automatically!</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">2. Hermes 50% Compaction Rule</div>
+          <p class="card-text">
+            Tracks turns and estimated tokens during execution. When conversation history reaches 50% of the active window, it automatically compresses verbose tool outputs into structured checkpoints in <code>now.md</code>.
+          </p>
+          <div class="code-box">
+            ContextCompactor.record_turn()<br>
+            <span class="code-kw">if</span> compactor.should_compact():<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;compact_history_to_now_md()
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-title">3. Retrospective Storage & Procedural Skills</div>
+        <p class="card-text">
+          Whenever the self-healing loop resolves a failure, the root cause and resolution are automatically indexed into <code>wcao/memory.sqlite</code> and written as reusable Markdown recipes in <code>wcao/skills/</code>. Future workers never repeat the same mistake.
+        </p>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: Proactive TokenMaster -->
+    <section class="slide" data-slide="7">
+      <div class="slide-tag">Quota Intelligence</div>
+      <h2 class="slide-title">TokenMaster: Proactive Quota Awareness</h2>
+      <p class="slide-subtitle">Sensing rate-limit ceilings and preventing 429 errors before they happen.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="badge badge-rose">Telemetry Sensing</div>
+          <div class="card-title">Live Window Monitoring</div>
+          <div class="card-text">
+            Reads Claude's on-disk rate-limit event stream (5-hour and 7-day windows) and reset timestamps without making external API calls.
+          </div>
+          <div class="code-box">
+            Claude 7-day: 89% util &rarr; <span class="code-str">NEAR LIMIT</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-amber">Watermark Swapping</div>
+          <div class="card-title">80% Safety Watermark</div>
+          <div class="card-text">
+            When quota utilization reaches &ge; 80%, TokenMaster proactively reassigns tasks from <code>claude_worker</code> to <code>hermes_worker</code> or <code>coder_worker</code> before dispatch.
+          </div>
+          <div class="code-box">
+            Swapped: True (Util 89% &ge; 80%)
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-cyan">Cooling-Off Cache</div>
+          <div class="card-title">Cross-Engine Protection</div>
+          <div class="card-text">
+            If Codex or AGY hits a server-side 429, TokenMaster marks the engine blocked for 1 hour. All remaining DAG tasks swap proactively without failing.
+          </div>
+          <div class="code-box">
+            mark_engine_blocked("codex")
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: Deterministic Execution Engine -->
+    <section class="slide" data-slide="8">
+      <div class="slide-tag">Autonomous Execution</div>
+      <h2 class="slide-title">Headless DAG Scheduler (<code>cao_auto</code>)</h2>
+      <p class="slide-subtitle">Safe, parallel, conflict-free multi-agent task execution.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">DAG Dependencies (<code>depends_on</code>)</div>
+          <p class="card-text">
+            Evaluates topological dependencies so downstream implementation steps never begin until prerequisites are verified and marked <code>done</code>.
+          </p>
+          <div class="code-box">
+            Task 01 (Arch) &rarr; Task 02 (Impl) &rarr; Task 03 (Tests)
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">File Disjointness Locks (<code>files</code>)</div>
+          <p class="card-text">
+            If Worker A is editing <code>run/cao_auto.py</code>, no other worker touching that file can run concurrently. Guarantees <strong>zero merge conflicts and zero overwritten edits</strong>.
+          </p>
+          <div class="code-box">
+            Worker 1 locks: ["run/cao_auto.py"]<br>
+            Worker 2 locks: ["tests/test_auto.py"] &rarr; <span class="code-str">PARALLEL OK</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: Bulletproof Quality & Self-Healing -->
+    <section class="slide" data-slide="9">
+      <div class="slide-tag">Quality Assurance</div>
+      <h2 class="slide-title">Self-Healing & Anti-Tampering Gates</h2>
+      <p class="slide-subtitle">Ensuring code is verified, honest, and resilient against regressions.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="badge badge-cyan">Aggressive Audit Gate</div>
+          <div class="card-title"><code>cao-aggressive</code></div>
+          <div class="card-text">
+            Automated AST compilation across all Python files, shell syntax verification, hardcoded secrets scans, and complete test suite execution.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-rose">Anti-Test-Tampering</div>
+          <div class="card-title"><code>cao_tamper.py</code></div>
+          <div class="card-text">
+            Detects if workers weaken assertions, delete test functions, or insert <code>assert True</code> to cheat the audit. Automatically reverts test edits!
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-emerald">Architect Escalation</div>
+          <div class="card-title">Level 2 Escalation</div>
+          <div class="card-text">
+            If a bulk coder fails to fix an audit issue on attempt 1, attempt 2+ escalates to <code>hermes_worker</code> or <code>claude_worker</code> for architectural root-cause diagnosis.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: Autonomous Planning -->
+    <section class="slide" data-slide="10">
+      <div class="slide-tag">Goal Decomposition</div>
+      <h2 class="slide-title">Autonomous Planning: <code>cao-plan</code></h2>
+      <p class="slide-subtitle">Transforming high-level human objectives into executable acyclic DAGs.</p>
+
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="code-box" style="font-size: 0.95rem;">
+          $ cao-plan <span class="code-str">"Build a Redis rate limiter with sliding window"</span><br>
+          <span class="code-hl">&rarr; Cycle detection verified (acyclic graphlib.TopologicalSorter)</span><br>
+          <span class="code-hl">&rarr; TokenMaster checked quota ceilings</span><br>
+          <span class="code-str">&check; Generated 4 DAG tasks in wcao/tasks.json & updated wcao/plans/now.md</span>
+        </div>
+      </div>
+
+      <div class="grid-4">
+        <div class="card">
+          <div class="badge badge-indigo">Step 1</div>
+          <div class="card-title" style="font-size: 1rem;">Architecture Contract</div>
+          <div class="card-text">Mermaid sequence diagram in <code>wcao/design/</code>.</div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-cyan">Step 2</div>
+          <div class="card-title" style="font-size: 1rem;">Core Implementation</div>
+          <div class="card-text">Production code fulfilling architecture spec.</div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-amber">Step 3</div>
+          <div class="card-title" style="font-size: 1rem;">Unit Test Suite</div>
+          <div class="card-text">Thorough unit & edge-case test coverage in <code>tests/</code>.</div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-emerald">Step 4</div>
+          <div class="card-title" style="font-size: 1rem;">Audit & Verification</div>
+          <div class="card-text">Postflight audit gate and README documentation.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: End-to-End Lifecycle -->
+    <section class="slide" data-slide="11">
+      <div class="slide-tag">End-to-End Lifecycle</div>
+      <h2 class="slide-title">The Complete Autonomous Flow</h2>
+      <p class="slide-subtitle">From user prompt to verified, self-healed, committed software.</p>
+
+      <table class="deck-table">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Component</th>
+            <th>Action</th>
+            <th>Artifact Generated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Goal Ingestion</strong></td>
+            <td><code>cao-plan</code></td>
+            <td>Reads objective & decomposes into acyclic DAG</td>
+            <td><code>wcao/tasks.json</code></td>
+          </tr>
+          <tr>
+            <td><strong>2. Memory Recall</strong></td>
+            <td><code>cao_memory</code></td>
+            <td>FTS5 BM25 search injects past lessons into worker prompts</td>
+            <td>Injected Prompt Slice</td>
+          </tr>
+          <tr>
+            <td><strong>3. Parallel Coding</strong></td>
+            <td><code>cao_auto</code></td>
+            <td>Dispatches workers adhering to file disjointness locks</td>
+            <td>Source Code Files</td>
+          </tr>
+          <tr>
+            <td><strong>4. Compaction</strong></td>
+            <td><code>ContextCompactor</code></td>
+            <td>Hermes 50% rule prevents token blowout during runs</td>
+            <td><code>wcao/plans/now.md</code></td>
+          </tr>
+          <tr>
+            <td><strong>5. Audit Gate</strong></td>
+            <td><code>cao-aggressive</code></td>
+            <td>AST validation, security check, full test suite</td>
+            <td><code>wcao/audit/*.md</code></td>
+          </tr>
+          <tr>
+            <td><strong>6. Tamper Verification</strong></td>
+            <td><code>cao_tamper</code></td>
+            <td>Reverts test weakening if worker attempts bypass</td>
+            <td>Clean Test Suite</td>
+          </tr>
+          <tr>
+            <td><strong>7. Retrospective</strong></td>
+            <td>Hermes Memory</td>
+            <td>Stores root causes & lessons learned for future sessions</td>
+            <td><code>wcao/memory.sqlite</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SLIDE 12: Summary & Impact -->
+    <section class="slide" data-slide="12">
+      <div class="slide-tag">Conclusion</div>
+      <h2 class="slide-title">The Next Era of Autonomous Software Engineering</h2>
+      <p class="slide-subtitle">Robust, economical, and self-learning.</p>
+
+      <div class="grid-3" style="margin-bottom: 24px;">
+        <div class="card" style="border-top: 3px solid var(--accent-cyan);">
+          <div class="card-title">Token-Aware Economics</div>
+          <div class="card-text">
+            Spend expensive models only on architecture. Let high-throughput models handle bulk code without burning rate limits.
+          </div>
+        </div>
+
+        <div class="card" style="border-top: 3px solid var(--accent-emerald);">
+          <div class="card-title">Deterministic Safety</div>
+          <div class="card-text">
+            Acyclic DAGs and file disjointness locks eliminate the chaos, race conditions, and merge conflicts of multi-agent coding.
+          </div>
+        </div>
+
+        <div class="card" style="border-top: 3px solid var(--accent-indigo);">
+          <div class="card-title">Continuous Learning</div>
+          <div class="card-text">
+            Episodic FTS5 memory and procedural skills mean every bug fixed today makes the system smarter tomorrow.
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="text-align: center; background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
+        <p style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 6px;">
+          Autonomous Engineering with CLI Agent Orchestrator
+        </p>
+        <p style="font-size: 0.95rem; color: #94a3b8;">
+          Run interactive supervisor with <code>cao-run</code> or headless autonomous execution with <code>cao-plan</code> & <code>cao-auto</code>.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <footer class="deck-footer">
+    <div class="brand-mark">
+      <span class="brand-dot"></span>
+      <span>CAO PLATFORM DECK</span>
+    </div>
+
+    <div class="controls">
+      <span class="slide-counter" id="slideCounter">01 / 12</span>
+      <button class="btn" id="prevBtn" title="Previous (Left Arrow / K)">
+        &larr; Prev
+      </button>
+      <button class="btn" id="nextBtn" title="Next (Right Arrow / Space / J)">
+        Next &rarr;
+      </button>
+    </div>
+
+    <div style="font-size: 0.8rem; color: var(--text-muted);">
+      Navigate: <span class="key-pill">&larr;</span> <span class="key-pill">&rarr;</span> <span class="key-pill">Space</span>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      const slides = document.querySelectorAll('.slide');
+      const progressBar = document.getElementById('progressBar');
+      const slideCounter = document.getElementById('slideCounter');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      let currentIndex = 0;
+      const totalSlides = slides.length;
+
+      function updateSlide(index) {
+        if (index < 0) index = 0;
+        if (index >= totalSlides) index = totalSlides - 1;
+        currentIndex = index;
+
+        slides.forEach((s, idx) => {
+          if (idx === currentIndex) {
+            s.classList.add('active');
+          } else {
+            s.classList.remove('active');
+          }
+        });
+
+        const progressPercent = ((currentIndex + 1) / totalSlides) * 100;
+        progressBar.style.width = progressPercent + '%';
+        slideCounter.textContent = `${String(currentIndex + 1).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex === totalSlides - 1;
+      }
+
+      function nextSlide() {
+        if (currentIndex < totalSlides - 1) {
+          updateSlide(currentIndex + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentIndex > 0) {
+          updateSlide(currentIndex - 1);
+        }
+      }
+
+      nextBtn.addEventListener('click', nextSlide);
+      prevBtn.addEventListener('click', prevSlide);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'j') {
+          nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') {
+          prevSlide();
+        } else if (e.key === 'Home') {
+          updateSlide(0);
+        } else if (e.key === 'End') {
+          updateSlide(totalSlides - 1);
+        }
+      });
+
+      // Touch / Swipe support
+      let touchStartX = 0;
+      let touchEndX = 0;
+      window.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+      });
+      window.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchEndX < touchStartX - 50) nextSlide();
+        if (touchEndX > touchStartX + 50) prevSlide();
+      });
+
+      updateSlide(0);
+    })();
+  </script>
+</body>
+</html>
