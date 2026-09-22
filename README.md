@@ -11,7 +11,7 @@
 
 > **`wcao` turns your fragmented terminal AI tools (`claude`, `codex`, `agy`, `opencode`, `copilot`, `hermes`) into an autonomous, quota-aware engineering squad managed inside background `tmux` sessions.**
 
-* 💰 **Economic Asymmetry:** The expensive model (Claude) designs architecture and reviews PRs; cheap/local models (OpenCode, DeepSeek, Hermes) write bulk boilerplate; Gemini/Antigravity ingests massive 1M+ token repo contexts; Copilot configures CI/CD & cloud deployment (Vercel, Railway, Docker).
+* 💰 **Economic Asymmetry:** The expensive model (Claude) designs architecture and reviews PRs; cheap/local models (OpenCode, DeepSeek, Hermes) write bulk boilerplate; Gemini/Antigravity ingests massive 1M+ token repo contexts; Copilot (*in progress / WIP*) drafts GitHub PRs, Actions, and cloud deploy configs.
 * 🔑 **Zero Subscription Tax:** Authenticate once natively in your terminal (`claude /login`, `codex login`, `agy`, `gh auth login`). CAO connects directly to your existing authenticated CLI sessions — no proxying, no extra SaaS markups, no token leakage.
 * 🛡️ **Autonomous Self-Healing:** Headless DAG task execution (`cao-auto`) with AST-based anti-tampering guards, 5-vector verification audit, and auto-generated load stress testing (`wcao/audit/stress-test.sh`).
 * 🧠 **Persistent Memory Standard (`wcao/`):** SQLite FTS5 episodic storage + `wcao/plans/now.md` checkpoints ensure full context preservation across reboots, crashes, and model switches.
@@ -81,7 +81,7 @@ cao-run  →  supervisor (Claude, Tech Lead)  →  assign  →
     ├ analyst_worker      gemini/agy   whole-repo maps, long docs, multimodal (huge context)
     ├ codex_worker        codex        frontend / UI
     ├ antigravity_worker  gemini/agy   QA, tests, security review
-    ├ copilot_worker      copilot      GitHub, CI/CD workflows, deploy (Vercel/Railway)
+    ├ copilot_worker      copilot      GitHub PRs, CI/CD deploy (in progress / WIP)
     └ hermes_worker       hermes       open-source reasoning, autonomous fallback
 ```
 
