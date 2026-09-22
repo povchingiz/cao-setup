@@ -5,13 +5,13 @@ supervisor that plans work and delegates it to a team of specialist worker
 engines — each on the CLI that's best (and cheapest) at its job. This repo
 installs it, configures it from one file, and keeps every setting in one place.
 
-```
 cao-run  →  supervisor (Claude, Tech Lead)  →  assign  →
     ┌ claude_worker       claude       architecture, contracts, hard logic
     ├ coder_worker        opencode     implementation, schemas, CRUD (cheap model)
     ├ analyst_worker      gemini/agy   whole-repo maps, long docs, multimodal (huge context)
     ├ codex_worker        codex        frontend / UI
     ├ antigravity_worker  gemini/agy   QA, tests, security review
+    ├ hermes_worker       hermes       open-source reasoning, autonomous implementation
     └ copilot_worker      copilot      general coding hand (role TBD)
 ```
 
@@ -33,12 +33,12 @@ Roles above are the **defaults** — every one is editable (see *Configure*).
 ## Repo layout — by lifecycle phase
 
 ```
+wcao/          plans/ · design/ · skills/ · audit/ · tasks.json  ← project state, contracts, & memory
 1_install/     bootstrap.sh · bootstrap.ps1 · patch_pyte.py     ← run once
 2_configure/   cao.config.toml · prompts/*.md                   ← edit these
 3_apply/       apply.sh · render_config.py · inherit_mcp.py · inherit_all.py   ← push edits · share MCP
-run/           cao-run · cao-doctor · cao-stop · cao-tokens · cao-plugins   ← launch · check · stop · usage · share
+run/           cao-run · cao_auto.py · cao-doctor · cao-stop · cao-memory · cao-aggressive · cao-tokens · cao-plugins
 .generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
-plans/         session reports · local plans   ← yours; contents gitignored (README tracked)
 ```
 
 Edit only in `2_configure/`. Everything else is machinery. Never edit the live
@@ -50,11 +50,14 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 
 | Command | What it does |
 |---------|--------------|
-| `cao-run` | health-check, then launch the supervisor (add `--skip-check` to skip the gate) |
-| `cao-doctor` | run the pre-flight health check on its own (toolchain, engines, logins, endpoint) |
-| `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out); `--since 2w`, `--lifetime`, `--day YYYY-MM-DD`, `--claude`, `--all-sessions` |
+| `cao-run` | health-check, then launch the interactive supervisor in tmux (add `--skip-check` to skip gate) |
+| `python run/cao_auto.py --tasks <path>` | **Headless autonomous runner**: executes task DAG, prevents file race collisions, auto-switches 429 quota, self-heals |
+| `cao-memory` | **Episodic memory**: SQLite FTS5 store, recall, and list cross-session lessons (`store`, `recall`, `list`) |
+| `cao-aggressive` | **Postflight audit gate**: AST syntax verification, security scan, and test suite execution |
+| `cao-doctor` | run pre-flight health check on its own (toolchain, engines, logins, endpoint) |
+| `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out) |
 | `cao-plugins` | share Claude MCP + plugins/skills with every engine (`list`, `broadcast --dry-run`) |
-| `cao-stop` | end the session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
+| `cao-stop` | end session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
 | `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
 | `python3 3_apply/inherit_mcp.py` | copy your Claude MCP servers into worker profiles (`--list`, `--dry-run`) |
 | `python3 3_apply/inherit_all.py` | register those MCP servers with every engine's own CLI (codex/opencode/agy/copilot) |
@@ -217,28 +220,48 @@ cao-tokens --json         # machine-readable form of the selected view
 
 **Design first for big work.** For a new project or a large feature the
 supervisor acts as architect: it discusses the system with you, writes a Mermaid
-sequence/flow diagram to `cao_session/design/`, and gets your approval before
+sequence/flow diagram to `wcao/design/`, and gets your approval before
 any code is delegated — the diagram is the contract the workers build against.
 Small changes skip this and go straight to delegation. The diagram is a living
 document: it's referenced and edited across sessions, not redrawn each time.
 
-**How work is tracked.** The supervisor keeps a per-session board under
-`cao_session/session_NNN/` — `plan.md` (agreed plan), `tasks.json` (the task
-graph: each task has an `engine`, the `files` it owns, and `depends_on` edges),
-`reports/` (audits), and `context.md` (running log). Independent tasks (no
-shared `depends_on`) are dispatched together and run in parallel up to the
-worker cap; dependent ones wait. `cao_session/` is gitignored — local working
-state, not committed.
+**Single Source of Truth (`wcao/`).** All project-level plans, contracts, and knowledge live in `wcao/`:
+- `wcao/plans/now.md` — Active plan, North Star objective, and latest checkpoint.
+- `wcao/tasks.json` — Directed Acyclic Graph (DAG) of tasks with dependencies and file locks.
+- `wcao/design/*.mmd` — Architecture and sequence diagrams.
+- `wcao/skills/*.md` — Procedural memory (rules, workflows, tool gotchas).
+- `wcao/audit/` — Postflight audit reports and test scorecards.
+- `wcao/memory.sqlite` — Local episodic memory database with BM25 FTS5 full-text search (gitignored).
 
-**Audit gate before "done".** When the tasks finish, the supervisor runs an
-audit through `antigravity_worker`, which reviews style / security / tests /
-performance and reports findings with severity levels (`[minor]`…`[critical]`).
-A `[critical]` security finding or a failing test is a **blocker**: the
-supervisor turns it into a fix-task for the worker that owns that code (the
-cheap bulk worker fixes its own output — a strong model isn't spent on it),
-re-audits, and repeats until clean. Only then is the session reported complete —
-and you still run your own acceptance pass. If dev-kodeks is installed, the
-auditor uses its code/security criteria as the rubric.
+## Autonomous Execution & Self-Healing (`cao_auto`)
+
+`cao_auto` provides fully headless, autonomous execution of task graphs:
+
+```sh
+python run/cao_auto.py --tasks wcao/tasks.json --max-workers 4
+```
+
+1. **DAG Scheduling & File Locks**: Evaluates `depends_on` relationships and prevents concurrent workers from touching overlapping `files`, ensuring zero merge conflicts or race conditions.
+2. **Quota Failover**: Catches 429 quota exhaustion or provider errors in real time and automatically fails over to alternative engines (e.g. `coder_worker` on OpenCode / DeepSeek).
+3. **Aggressive Postflight Audit Gate (`cao-aggressive`)**: Runs automated AST validation, security scans, and test suite executions upon task completion.
+4. **Autonomous Self-Healing**: If the audit gate catches test failures or regressions, `cao_auto` automatically creates and dispatches remediation tasks (up to 3 attempts) to fix the code, verifying each attempt.
+
+## Hermes Learning & Memory System
+
+CAO incorporates the **Hermes Continuous Learning** architecture across all engines:
+
+1. **Episodic Memory (`cao-memory`)**:
+   Powered by SQLite with FTS5 and BM25 ranking. Stores context, past solutions, and debugging outcomes.
+   - `cao-memory store <category> <summary> [details]`
+   - `cao-memory recall <query> [-n 5]`
+   - `cao-memory list [--category <cat>]`
+   Before any task is dispatched, `cao_auto` automatically searches episodic memory and injects relevant historical lessons directly into the worker's prompt.
+2. **Procedural Memory (`wcao/skills/`)**:
+   Reusable behavioral and debugging recipes saved as Markdown files in `wcao/skills/`, shared across all worker engines.
+3. **Hermes 50% Compaction Rule**:
+   To prevent context saturation, the `ContextCompactor` automatically triggers every 5 turns or when context fills. It condenses verbose conversation histories into structured summaries, extracts new lessons, and writes progress checkpoints directly to `wcao/plans/now.md`.
+4. **Retrospective Storage**:
+   Whenever a self-healing loop resolves a failure, the root cause and fix are automatically indexed into `memory.sqlite` and `wcao/skills/` so future workers never repeat the mistake.
 
 ## Share your MCP servers with every engine
 
