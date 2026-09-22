@@ -101,8 +101,8 @@ class TokenMaster:
             if limits.seven_day:
                 util = max(util, limits.seven_day.utilization)
 
-            if limits.is_blocked() or limits.blocked:
-                # Proactive swap: Claude is blocked
+            if limits.is_blocked():
+                # Proactive swap: Claude is actively blocked
                 target_engine = self.reasoning_fallback or self.fallback_engine
                 reason = f"Proactive quota swap: Claude rate limit blocked (resets at {limits.blocked_resets_at})"
                 return TokenMasterDecision(
