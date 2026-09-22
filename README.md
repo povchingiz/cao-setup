@@ -17,6 +17,7 @@
 * 🚀 **[Installation & Setup](#1-install-once)** — 5-minute bootstrap and configuration
 * 🧠 **[Hermes Learning & Memory](#hermes-learning--memory-system)** — SQLite FTS5 episodic storage and now.md checkpoints
 * 🛡️ **[Autonomous Self-Healing](#autonomous-execution--self-healing-cao_auto)** — AST anti-tampering, 5-vector audit gate, and L2 escalation
+* 🔬 **[Audit & Stress-Testing Docs](docs/AUDIT_AND_STRESS_TESTING.md)** — 5-vector verification gate, threat analysis, and auto-generated load harness (`wcao/audit/stress-test.sh`)
 
 > [!NOTE]
 > **Origins & Lineage:** This project originated as an automated setup and configuration harness for AWS Labs' open-source [`cli-agent-orchestrator`](https://github.com/awslabs/cli-agent-orchestrator) (CAO). It has since expanded significantly beyond the original launcher into an autonomous multi-engine platform—adding the **`wcao/` project standard**, **Hermes episodic & procedural memory**, **proactive TokenMaster quota intelligence**, **headless DAG execution (`cao_auto`)**, and **anti-tamper self-healing audit gates**.
@@ -108,7 +109,7 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 | `cao-limits` | **Engine quota status**: live Claude 5h/7d window utilization %, reset times, and engine spend |
 | `cao-monitor` | **Real-time board**: terminal dashboard of running tasks, worker statuses, and file locks |
 | `cao-memory` | **Episodic memory**: SQLite FTS5 store, recall, and list cross-session lessons (`store`, `recall`, `list`) |
-| `cao-aggressive` | **Postflight audit gate**: AST syntax verification, security scan, and test suite execution |
+| `cao-aggressive` | **Postflight audit & stress-tester**: 5-vector verification (AST, secrets, 12-factor, tests) + auto-generates executable load/stress harness (`wcao/audit/stress-test.sh`) |
 | `cao-doctor` | run pre-flight health check on its own (toolchain, engines, logins, endpoint) |
 | `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out) |
 | `cao-plugins` | share Claude MCP + plugins/skills with every engine (`list`, `broadcast --dry-run`) |
@@ -285,7 +286,7 @@ document: it's referenced and edited across sessions, not redrawn each time.
 - `wcao/tasks.json` — Directed Acyclic Graph (DAG) of tasks with dependencies and file locks.
 - `wcao/design/*.mmd` — Architecture and sequence diagrams.
 - `wcao/skills/*.md` — Procedural memory (rules, workflows, tool gotchas).
-- `wcao/audit/` — Postflight audit reports and test scorecards.
+- `wcao/audit/` — Postflight audit reports (`aggressive-audit.md`), threat analysis (`weaknesses.md`), and executable load/stress harness (`stress-test.sh`).
 - `wcao/memory.sqlite` — Local episodic memory database with BM25 FTS5 full-text search (gitignored).
 
 ## Autonomous Execution & Self-Healing (`cao_auto`)
@@ -299,8 +300,9 @@ python run/cao_auto.py --tasks wcao/tasks.json --max-workers 4
 1. **Autonomous Planning (`cao-plan`)**: Decomposes a high-level goal into an acyclic DAG (`wcao/tasks.json`) with TokenMaster model routing and contract specification.
 2. **DAG Scheduling & File Locks**: Evaluates `depends_on` relationships and prevents concurrent workers from touching overlapping `files`, ensuring zero merge conflicts or race conditions.
 3. **Proactive TokenMaster Quota Control**: Reads live quota utilization via `cao_limits`. If quota exceeds the 80% watermark or is blocked, it proactively reassigns tasks to `hermes_worker` or `coder_worker` before hitting rate limits.
-4. **Anti-Test-Tampering Gate**: During postflight audit, inspects git diffs to ensure workers have not weakened assertions, inserted bypasses (`assert True`), or deleted test functions. Automatically reverts tampered tests and forces fixes in production code.
+4. **Anti-Test-Tampering Gate (`cao_tamper.py`)**: During postflight audit, inspects git diffs to ensure workers have not weakened assertions, inserted bypasses (`assert True`), or deleted test functions. Automatically reverts tampered tests and forces fixes in production code.
 5. **Architect Escalation Protocol**: If a bulk implementation worker fails to fix an audit blocker on attempt 1, self-healing automatically escalates attempt 2+ to an Architect/Reasoning engine (`hermes_worker` or `claude_worker`) for root-cause diagnosis.
+6. **5-Vector Audit & Auto-Generated Stress Testing (`cao-aggressive`)**: Runs AST compilation across all files, high-entropy secrets scanning, and test suites. Automatically generates an executable load/stress test harness (`wcao/audit/stress-test.sh`) to stress concurrency bursts, CLI arguments, and process stability (see [Audit & Stress-Testing Docs](docs/AUDIT_AND_STRESS_TESTING.md)).
 
 ## Hermes Learning & Memory System
 

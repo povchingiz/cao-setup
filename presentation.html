@@ -1031,7 +1031,7 @@
             ├── <span class="code-hl">tasks.json</span>         <span class="code-comment"># Directed Acyclic Graph (DAG)</span><br>
             ├── <span class="code-kw">design/*.mmd</span>       <span class="code-comment"># Living Mermaid sequence & state</span><br>
             ├── <span class="code-str">skills/*.md</span>       <span class="code-comment"># Procedural learned recipes</span><br>
-            └── <span class="code-comment">audit/*.md</span>        <span class="code-comment"># Postflight scorecards & tests</span>
+            └── <span class="code-comment">audit/</span>            <span class="code-comment"># aggressive-audit.md & stress-test.sh</span>
           </div>
         </div>
 
@@ -1278,13 +1278,13 @@
 
         <div class="card">
           <div class="badge badge-cyan">
-            <span class="t-en">5-Vector Audit Gate</span>
-            <span class="t-ru">5-векторный аудит</span>
+            <span class="t-en">Audit & Stress Harness</span>
+            <span class="t-ru">Аудит и стресс-тест</span>
           </div>
           <div class="card-title" style="font-size: 0.98rem;"><code>cao-aggressive</code></div>
           <div class="card-text" style="font-size: 0.81rem; line-height: 1.4;">
-            <span class="t-en">AST syntax checks on all files, high-entropy secrets scanner (OpenAI, AWS, GitHub PATs), shell linting, and full test suite execution.</span>
-            <span class="t-ru">AST-компиляция всех файлов, поиск секретов (OpenAI, AWS, GitHub), синтаксис bash и прогон всех тестов с фиксацией кодов возврата.</span>
+            <span class="t-en">5-vector scan (AST, secrets, 12-factor, tests). Generates <code>aggressive-audit.md</code>, threat analysis, and an executable <code>stress-test.sh</code> harness!</span>
+            <span class="t-ru">5-векторный аудит (AST, секреты, 12 факторов, тесты). Создаёт <code>aggressive-audit.md</code>, анализ угроз и исполняемый скрипт <code>stress-test.sh</code>!</span>
           </div>
         </div>
 
@@ -1453,10 +1453,10 @@
             <td><code>wcao/plans/now.md</code></td>
           </tr>
           <tr>
-            <td><strong><span class="t-en">5. Audit Gate</span><span class="t-ru">5. Гейт аудита</span></strong></td>
+            <td><strong><span class="t-en">5. Audit & Stress Gate</span><span class="t-ru">5. Аудит и стресс-тест</span></strong></td>
             <td><code>cao-aggressive</code></td>
-            <td><span class="t-en">AST validation, security check, full test suite</span><span class="t-ru">Проверка AST, сканер безопасности, полный прогон тестов</span></td>
-            <td><code>wcao/audit/*.md</code></td>
+            <td><span class="t-en">AST validation, security check, full tests & stress harness generation</span><span class="t-ru">Проверка AST, секреты, тесты и генерация стресс-харнесса</span></td>
+            <td><code>wcao/audit/ (report + stress-test.sh)</code></td>
           </tr>
           <tr>
             <td><strong><span class="t-en">6. Tamper Verification</span><span class="t-ru">6. Защита тестов</span></strong></td>
