@@ -25,6 +25,7 @@ git clone git@github.com:povchingiz/wcao.git ~/wcao && cd ~/wcao
 
 ### Quick Navigation
 * ⚡ **[TL;DR](#tldr)** — 30-second summary: architecture, economic asymmetry, and quickstart
+* 🤖 **[AI Assistant Onboarding](#-first-time-let-your-ai-assistant-guide-you)** — ask your AI agent to set up wcao automatically (`AGENTS.md` standard)
 * 🌐 **[Interactive Slides](https://povchingiz.github.io/wcao/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
 * 🔄 **[Execution Sequence Diagram](https://povchingiz.github.io/wcao/#16)** — native visual trace from North Star goal to verified commit
 * ⚠️ **[The Problem](#the-problem)** — 6 fatal flaws of single-agent and uncoordinated coding
@@ -35,6 +36,20 @@ git clone git@github.com:povchingiz/wcao.git ~/wcao && cd ~/wcao
 * 🧠 **[Hermes Learning & Memory](#hermes-learning--memory-system)** — SQLite FTS5 episodic storage and now.md checkpoints
 * 🛡️ **[Autonomous Self-Healing](#autonomous-execution--self-healing-cao_auto)** — AST anti-tampering, 5-vector audit gate, and L2 escalation
 * 🔬 **[Audit & Stress-Testing Docs](docs/AUDIT_AND_STRESS_TESTING.md)** — 5-vector verification gate, threat analysis, and auto-generated load harness (`wcao/audit/stress-test.sh`)
+
+---
+
+### 🤖 First Time? Let Your AI Assistant Guide You
+
+If you are using **Cursor, Claude Code, OpenAI Codex, Windsurf, GitHub Copilot, or Google Antigravity**, you don't need to configure everything manually. This repository includes universal cross-agent instructions in [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md), and [`.cursorrules`](.cursorrules).
+
+Just open this repository in your IDE or terminal and prompt your AI assistant:
+> *"Help me set up wcao and check my environment"*
+
+Your AI assistant will automatically:
+1. Run `run/cao-doctor` to test your local tools, daemon port, and existing CLI logins.
+2. If any CLI is unauthenticated, give you the exact terminal command (`claude /login`, `codex login`, etc.).
+3. Explain how to launch either an interactive Tech Lead team (`run/cao-run`) or autonomous DAG tasks (`run/cao-auto`).
 
 > [!NOTE]
 > **Origins & Lineage:** This project originated as an automated setup and configuration harness for AWS Labs' open-source [`cli-agent-orchestrator`](https://github.com/awslabs/cli-agent-orchestrator) (CAO). It has since expanded significantly beyond the original launcher into an autonomous multi-engine platform—adding the **`wcao/` project standard**, **Hermes episodic & procedural memory**, **proactive TokenMaster quota intelligence**, **headless DAG execution (`cao_auto`)**, and **anti-tamper self-healing audit gates**.
