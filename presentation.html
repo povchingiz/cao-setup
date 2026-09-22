@@ -924,15 +924,15 @@
         </div>
 
         <div class="card">
-          <div class="badge badge-indigo">hermes_worker</div>
+          <div class="badge badge-indigo">hermes_worker (Swappable)</div>
           <div class="card-title">
-            <span class="t-en">Open-Source Reasoner</span>
-            <span class="t-ru">Open-Source логик</span>
+            <span class="t-en">Open-Source / Fallback</span>
+            <span class="t-ru">Сменный Open-Source / Резерв</span>
           </div>
           <div class="card-text">
-            <strong>Engine:</strong> Nous Hermes CLI<br>
-            <span class="t-en"><strong>Role:</strong> Self-directed problem solving, tool use, and architect escalation fixes.</span>
-            <span class="t-ru"><strong>Роль:</strong> Автономное решение проблем, использование инструментов, фиксы архитектора.</span>
+            <strong>Engine:</strong> Nous Hermes / Ollama<br>
+            <span class="t-en"><strong>Role:</strong> Swappable alternative to OpenCode: autonomous open-source reasoning, local models, or L2 fallback.</span>
+            <span class="t-ru"><strong>Роль:</strong> Взаимозаменяем с OpenCode: открытые рассуждения, локальные модели или резерв при L2-эскалации.</span>
           </div>
         </div>
       </div>
@@ -1239,28 +1239,28 @@
     <!-- SLIDE 10: Bulletproof Quality & Self-Healing -->
     <section class="slide" data-slide="10">
       <div class="slide-tag">
-        <span class="t-en">Quality Assurance</span>
-        <span class="t-ru">Контроль качества</span>
+        <span class="t-en">Quality & Safety Assurance</span>
+        <span class="t-ru">Контроль качества и безопасности</span>
       </div>
       <h2 class="slide-title">
-        <span class="t-en">Self-Healing & Anti-Tampering Gates</span>
-        <span class="t-ru">Самоисцеление и защита от подделки тестов</span>
+        <span class="t-en">Defense-in-Depth, Anti-Tampering & Self-Healing</span>
+        <span class="t-ru">Многоуровневая защита, античит и самоисцеление</span>
       </h2>
       <p class="slide-subtitle">
-        <span class="t-en">Ensuring code is verified, honest, and resilient against regressions.</span>
-        <span class="t-ru">Гарантия честного кода, устойчивого к ошибкам и регрессиям.</span>
+        <span class="t-en">Rigorous execution bounds, anti-cheating AST watchdogs, and automated remediation.</span>
+        <span class="t-ru">Строгие границы исполнения, защита тестов от подделки и автоматическое устранение дефектов.</span>
       </p>
 
-      <div class="grid-3">
+      <div class="grid-4" style="margin-bottom: 16px;">
         <div class="card">
-          <div class="badge badge-cyan">
-            <span class="t-en">Aggressive Audit Gate</span>
-            <span class="t-ru">Строгий аудит</span>
+          <div class="badge badge-indigo">
+            <span class="t-en">Supervisor Guard Hook</span>
+            <span class="t-ru">Песочница супервизора</span>
           </div>
-          <div class="card-title"><code>cao-aggressive</code></div>
-          <div class="card-text">
-            <span class="t-en">Automated AST compilation across all Python files, shell syntax verification, hardcoded secrets scans, and complete test suite execution.</span>
-            <span class="t-ru">Автоматическая проверка AST всех файлов Python, синтаксис bash, сканирование секретов и запуск всех тестов.</span>
+          <div class="card-title" style="font-size: 0.98rem;"><code>guard-env.sh</code></div>
+          <div class="card-text" style="font-size: 0.81rem; line-height: 1.4;">
+            <span class="t-en">PreToolUse hook intercepting bash in Claude Code. Hard-blocks <code>git push/pull/reset</code>, destructive shell calls, and remote credential leaks.</span>
+            <span class="t-ru">PreToolUse-хук в Claude Code. Жёстко блокирует <code>git push/pull/reset</code>, опасные shell-команды и утечки секретов наружу.</span>
           </div>
         </div>
 
@@ -1269,10 +1269,22 @@
             <span class="t-en">Anti-Test-Tampering</span>
             <span class="t-ru">Анти-фальсификация</span>
           </div>
-          <div class="card-title"><code>cao_tamper.py</code></div>
-          <div class="card-text">
-            <span class="t-en">Detects if workers weaken assertions, delete test functions, or insert <code>assert True</code> to cheat the audit. Automatically reverts test edits!</span>
-            <span class="t-ru">Обнаруживает попытки удалить проверки, стереть тесты или вставить <code>assert True</code> ради прохождения аудита. Автоматически откатывает тесты!</span>
+          <div class="card-title" style="font-size: 0.98rem;"><code>cao_tamper.py</code></div>
+          <div class="card-text" style="font-size: 0.81rem; line-height: 1.4;">
+            <span class="t-en">Uses AST diffs to detect if agents weaken assertions, delete test functions, or insert <code>assert True</code> to cheat. Auto-reverts tampered test files!</span>
+            <span class="t-ru">Через AST-дифф выявляет попытки удалить ассерты, стереть тесты или вставить <code>assert True</code>. Автоматически откатывает тесты!</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="badge badge-cyan">
+            <span class="t-en">5-Vector Audit Gate</span>
+            <span class="t-ru">5-векторный аудит</span>
+          </div>
+          <div class="card-title" style="font-size: 0.98rem;"><code>cao-aggressive</code></div>
+          <div class="card-text" style="font-size: 0.81rem; line-height: 1.4;">
+            <span class="t-en">AST syntax checks on all files, high-entropy secrets scanner (OpenAI, AWS, GitHub PATs), shell linting, and full test suite execution.</span>
+            <span class="t-ru">AST-компиляция всех файлов, поиск секретов (OpenAI, AWS, GitHub), синтаксис bash и прогон всех тестов с фиксацией кодов возврата.</span>
           </div>
         </div>
 
@@ -1281,15 +1293,26 @@
             <span class="t-en">Architect Escalation</span>
             <span class="t-ru">Эскалация архитектора</span>
           </div>
-          <div class="card-title">
+          <div class="card-title" style="font-size: 0.98rem;">
             <span class="t-en">Level 2 Escalation</span>
             <span class="t-ru">Эскалация уровня 2</span>
           </div>
-          <div class="card-text">
-            <span class="t-en">If a bulk coder fails to fix an audit issue on attempt 1, attempt 2+ escalates to <code>hermes_worker</code> or <code>claude_worker</code> for architectural root-cause diagnosis.</span>
-            <span class="t-ru">Если кодер не устранил ошибку аудита с 1-й попытки, со 2-й попытки задача эскалируется на архитектора (Hermes / Claude) для поиска первопричины.</span>
+          <div class="card-text" style="font-size: 0.81rem; line-height: 1.4;">
+            <span class="t-en">If a worker fails an audit gate on attempt 1, attempt 2 escalates to an architect model (Claude/Hermes) with inherited error memories from SQLite FTS5.</span>
+            <span class="t-ru">Если воркер не прошёл аудит с 1-й попытки, задача эскалируется на архитектора с передачей контекста ошибки из памяти SQLite FTS5.</span>
           </div>
         </div>
+      </div>
+
+      <div class="card" style="text-align: center; background: var(--highlight-card-bg); border-color: var(--border-accent); padding: 10px 14px;">
+        <p style="font-size: 0.88rem; font-weight: 700; color: var(--card-title-color); margin-bottom: 2px;">
+          <span class="t-en">🛡️ Validated by 56 Automated Tests (7.49s Execution)</span>
+          <span class="t-ru">🛡️ Подтверждено 56 автоматическими тестами (время прогона: 7.49 сек)</span>
+        </p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+          <span class="t-en">Comprehensive test suite covering DAG dependency sorting, in-tree file mutex locks, mid-run 429 quota failovers, AST tamper reversion, and SQLite memory retention.</span>
+          <span class="t-ru">Полный тестовый набор: валидация ацикличности DAG, файловые mutex-блокировки, авто-своп при 429, откат подделки тестов и память SQLite.</span>
+        </p>
       </div>
     </section>
 
