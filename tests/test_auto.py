@@ -115,3 +115,49 @@ def test_autonomous_runner_compactor_integration(tmp_path):
     runner.run(poll_interval=0.01)
 
     assert "## Context Compaction Checkpoint" in now_file.read_text()
+
+
+def test_self_healing_architect_escalation(tmp_path):
+    import json
+    from unittest.mock import MagicMock
+    from run.cao_auto import AutonomousRunner
+
+    tasks = [{"id": "t1", "title": "Base code", "status": "pending", "depends_on": []}]
+    tasks_file = tmp_path / "tasks.json"
+    tasks_file.write_text(json.dumps(tasks))
+
+    runner = AutonomousRunner(tasks_file=tasks_file, dry_run=True, max_heal_attempts=2)
+    # Simulate first audit fail, second audit pass
+    audit_calls = [0]
+    def mock_audit(tasks_list):
+        audit_calls[0] += 1
+        if audit_calls[0] == 1:
+            return False, "Simulated unit test failure"
+        return True, "Audit passed"
+
+    runner._run_audit_gate = MagicMock(side_effect=mock_audit)
+    success = runner.run(poll_interval=0.01)
+
+    assert success is True
+    updated = json.loads(tasks_file.read_text())
+    remediation_tasks = [t for t in updated if "remediation_heal" in t["id"]]
+    assert len(remediation_tasks) == 1
+    # Attempt 1: coder_worker
+    assert remediation_tasks[0]["engine"] == "coder_worker"
+
+
+def test_audit_gate_blocks_on_tampering(tmp_path):
+    from unittest.mock import patch
+    from run.cao_auto import AutonomousRunner
+
+    tasks_file = tmp_path / "tasks.json"
+    tasks_file.write_text("[]")
+    runner = AutonomousRunner(tasks_file=tasks_file, dry_run=False)
+
+    with patch("run.cao_tamper.detect_test_tampering", return_value=(True, "Deleted assertion", ["tests/test_foo.py"])):
+        with patch("run.cao_tamper.revert_test_tampering", return_value=True) as mock_revert:
+            passed, notes = runner._run_audit_gate([])
+            assert passed is False
+            assert "Anti-Tamper Blocker" in notes
+            mock_revert.assert_called_once_with(runner.repo_root, ["tests/test_foo.py"])
+

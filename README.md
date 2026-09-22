@@ -84,6 +84,7 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 | Command | What it does |
 |---------|--------------|
 | `cao-run` | health-check, then launch the interactive supervisor in tmux (add `--skip-check` to skip gate) |
+| `cao-plan "<goal>"` | **Autonomous Goal Decomposer**: splits high-level goal into acyclic DAG (`wcao/tasks.json`) with TokenMaster routing |
 | `python run/cao_auto.py --tasks <path>` | **Headless autonomous runner**: executes task DAG, prevents file race collisions, auto-switches 429 quota, self-heals |
 | `cao-memory` | **Episodic memory**: SQLite FTS5 store, recall, and list cross-session lessons (`store`, `recall`, `list`) |
 | `cao-aggressive` | **Postflight audit gate**: AST syntax verification, security scan, and test suite execution |
@@ -274,11 +275,11 @@ document: it's referenced and edited across sessions, not redrawn each time.
 python run/cao_auto.py --tasks wcao/tasks.json --max-workers 4
 ```
 
-1. **DAG Scheduling & File Locks**: Evaluates `depends_on` relationships and prevents concurrent workers from touching overlapping `files`, ensuring zero merge conflicts or race conditions.
-2. **Proactive TokenMaster Quota Control**: Reads Claude live window utilization via `cao_limits`. If quota exceeds the 80% watermark or is blocked, it proactively reassigns tasks to `hermes_worker` or `coder_worker` before hitting rate limits. Detects large multi-file contexts (>5 files) and advises routing to `analyst_worker` (Gemini 1M+ context).
-3. **Quota Failover**: Catches 429 quota exhaustion or provider errors in real time and automatically fails over to alternative engines (e.g. `coder_worker` on OpenCode / DeepSeek).
-4. **Aggressive Postflight Audit Gate (`cao-aggressive`)**: Runs automated AST validation, security scans, and test suite executions upon task completion.
-5. **Autonomous Self-Healing**: If the audit gate catches test failures or regressions, `cao_auto` automatically creates and dispatches remediation tasks (up to 3 attempts) to fix the code, verifying each attempt.
+1. **Autonomous Planning (`cao-plan`)**: Decomposes a high-level goal into an acyclic DAG (`wcao/tasks.json`) with TokenMaster model routing and contract specification.
+2. **DAG Scheduling & File Locks**: Evaluates `depends_on` relationships and prevents concurrent workers from touching overlapping `files`, ensuring zero merge conflicts or race conditions.
+3. **Proactive TokenMaster Quota Control**: Reads live quota utilization via `cao_limits`. If quota exceeds the 80% watermark or is blocked, it proactively reassigns tasks to `hermes_worker` or `coder_worker` before hitting rate limits.
+4. **Anti-Test-Tampering Gate**: During postflight audit, inspects git diffs to ensure workers have not weakened assertions, inserted bypasses (`assert True`), or deleted test functions. Automatically reverts tampered tests and forces fixes in production code.
+5. **Architect Escalation Protocol**: If a bulk implementation worker fails to fix an audit blocker on attempt 1, self-healing automatically escalates attempt 2+ to an Architect/Reasoning engine (`hermes_worker` or `claude_worker`) for root-cause diagnosis.
 
 ## Hermes Learning & Memory System
 

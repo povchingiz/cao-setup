@@ -32,6 +32,11 @@
   - [x] Wired proactive model swapping (>=80% utilization or blocked) to `hermes_worker` / `coder_worker` before hitting rate limits.
   - [x] Added large context & multi-file advisory routing in `_dispatch_task` in [`run/cao_auto.py`](../../run/cao_auto.py).
   - [x] Verified with 6 unit/integration tests in [`tests/test_token_master.py`](../../tests/test_token_master.py) (41/41 test suite passing).
+- [x] **Bulletproof Autonomous Engineering Fixes (P5)**:
+  - [x] **Autonomous Goal Decomposer (`cao-plan`)**: Built [`run/cao_plan.py`](../../run/cao_plan.py) and [`run/cao-plan`](../../run/cao-plan) generating cycle-free DAGs in `wcao/tasks.json` with TokenMaster routing (7/7 tests passing in [`tests/test_plan.py`](../../tests/test_plan.py)).
+  - [x] **Anti-Test-Tampering Gate**: Built [`run/cao_tamper.py`](../../run/cao_tamper.py) detecting weakened assertions or deleted test functions during self-healing, automatically reverting test regressions (4/4 tests passing in [`tests/test_tamper.py`](../../tests/test_tamper.py)).
+  - [x] **Architect Escalation Protocol**: Wired self-healing attempt 2+ in [`run/cao_auto.py`](../../run/cao_auto.py) to escalate from `coder_worker` to `hermes_worker` / `claude_worker` for deep root-cause diagnosis.
+  - [x] All 56/56 tests passing cleanly.
 
 ---
 

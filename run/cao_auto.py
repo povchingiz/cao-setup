@@ -263,20 +263,49 @@ class AutonomousRunner:
                 )
                 return False
 
-            # Trigger Self-Healing: Generate remediation task
+            # Trigger Self-Healing: Generate remediation task with Escalation Protocol
             heal_attempt += 1
             remediation_id = f"remediation_heal_{heal_attempt}_{int(time.time())}"
-            remediation_task = {
-                "id": remediation_id,
-                "title": f"Self-healing fix for audit failure (Attempt {heal_attempt})",
-                "status": "pending",
-                "engine": "coder_worker",
-                "depends_on": [],
-                "detail": f"Audit Gate failed with: {audit_notes}\nFix the failing tests, syntax errors, or security blockers and ensure the audit passes.",
-            }
+
+            if heal_attempt >= 2:
+                # Level 2 Escalation: Worker failed on previous attempt -> Escalate to Architect / Reasoner
+                escalation_engine = "hermes_worker"
+                decision = self.token_master.evaluate_task({"engine": "claude_worker"})
+                if not decision.swapped:
+                    escalation_engine = "claude_worker"
+
+                remediation_task = {
+                    "id": remediation_id,
+                    "title": f"ARCHITECT ESCALATION: Root-cause diagnosis & fix (Attempt {heal_attempt})",
+                    "status": "pending",
+                    "engine": escalation_engine,
+                    "depends_on": [],
+                    "detail": (
+                        f"ARCHITECT ESCALATION (Attempt {heal_attempt}): Worker failed to resolve failure on attempt 1.\n"
+                        f"Audit Blocker: {audit_notes}\n"
+                        f"As the Lead Architect/Reasoner ({escalation_engine}):\n"
+                        f"1. Perform root-cause analysis on the architectural invariant or implementation defect.\n"
+                        f"2. DO NOT weaken, delete, or bypass test assertions (anti-tamper gate is active).\n"
+                        f"3. Fix the underlying root cause in production code."
+                    ),
+                }
+                notify_telegram(
+                    f"ESCALATION: Self-healing attempt {heal_attempt} escalated to Architect `{escalation_engine}`!",
+                    level="warn",
+                )
+            else:
+                remediation_task = {
+                    "id": remediation_id,
+                    "title": f"Self-healing fix for audit failure (Attempt {heal_attempt})",
+                    "status": "pending",
+                    "engine": "coder_worker",
+                    "depends_on": [],
+                    "detail": f"Audit Gate failed with: {audit_notes}\nFix the failing tests, syntax errors, or security blockers and ensure the audit passes.",
+                }
+
             tasks.append(remediation_task)
             self.save_tasks(tasks)
-            notify_telegram(f"Spawned self-healing remediation task: `{remediation_id}`", level="warn")
+            notify_telegram(f"Spawned self-healing remediation task: `{remediation_id}` ({remediation_task['engine']})", level="warn")
 
             # Execute remediation task
             scheduler = DagScheduler(tasks)
@@ -442,6 +471,15 @@ class AutonomousRunner:
         root_dir = self.repo_root
         passed = True
         notes = "Automated test suite passed."
+
+        # Anti-Test-Tampering Gate: Verify tests were not deleted or assertions weakened
+        if not self.dry_run:
+            from run.cao_tamper import detect_test_tampering, revert_test_tampering
+            is_tampered, tamper_msg, tampered_files = detect_test_tampering(root_dir)
+            if is_tampered:
+                revert_test_tampering(root_dir, tampered_files)
+                notify_telegram(f"BLOCKED: Test tampering detected in {tampered_files}!", level="block")
+                return False, f"Anti-Tamper Blocker: Test suite was modified or weakened:\n{tamper_msg}\nTest modifications were reverted. Fix the implementation code instead."
 
         aggressive_script = root_dir / "run" / "cao-aggressive"
         if aggressive_script.exists() and not self.dry_run:

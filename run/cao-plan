@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""cao-plan — CLI shortcut for autonomous goal decomposition and DAG generation."""
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+from run.cao_plan import main
+
+if __name__ == "__main__":
+    main()
