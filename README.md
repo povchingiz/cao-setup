@@ -8,7 +8,7 @@
 ---
 
 ### Quick Navigation
-* 🌐 **[Interactive Pitch Deck](https://povchingiz.github.io/wcao/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
+* 🌐 **[Interactive Slides](https://povchingiz.github.io/wcao/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
 * 🔄 **[Execution Sequence Diagram](https://povchingiz.github.io/wcao/#16)** — native visual trace from North Star goal to verified commit
 * ⚠️ **[The Problem](#the-problem)** — 6 fatal flaws of single-agent and uncoordinated coding
 * 🧩 **[The Solution](#the-solution-a-unified-engineering-squad)** — specialist workforce, economic asymmetry, and DAG execution
