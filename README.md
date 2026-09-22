@@ -7,7 +7,24 @@
 
 ---
 
+## TL;DR
+
+> **`wcao` turns your fragmented terminal AI tools (`claude`, `codex`, `agy`, `opencode`, `copilot`, `hermes`) into an autonomous, quota-aware engineering squad managed inside background `tmux` sessions.**
+
+* 💰 **Economic Asymmetry:** The expensive model (Claude) designs architecture and reviews PRs; cheap/local models (OpenCode, DeepSeek, Hermes) write bulk boilerplate; Gemini/Antigravity ingests massive 1M+ token repo contexts; Copilot configures CI/CD & cloud deployment (Vercel, Railway, Docker).
+* 🔑 **Zero Subscription Tax:** Authenticate once natively in your terminal (`claude /login`, `codex login`, `agy`, `gh auth login`). CAO connects directly to your existing authenticated CLI sessions — no proxying, no extra SaaS markups, no token leakage.
+* 🛡️ **Autonomous Self-Healing:** Headless DAG task execution (`cao-auto`) with AST-based anti-tampering guards, 5-vector verification audit, and auto-generated load stress testing (`wcao/audit/stress-test.sh`).
+* 🧠 **Persistent Memory Standard (`wcao/`):** SQLite FTS5 episodic storage + `wcao/plans/now.md` checkpoints ensure full context preservation across reboots, crashes, and model switches.
+
+```bash
+git clone git@github.com:povchingiz/wcao.git ~/wcao && cd ~/wcao
+./1_install/bootstrap.sh && run/cao-run
+```
+
+---
+
 ### Quick Navigation
+* ⚡ **[TL;DR](#tldr)** — 30-second summary: architecture, economic asymmetry, and quickstart
 * 🌐 **[Interactive Slides](https://povchingiz.github.io/wcao/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
 * 🔄 **[Execution Sequence Diagram](https://povchingiz.github.io/wcao/#16)** — native visual trace from North Star goal to verified commit
 * ⚠️ **[The Problem](#the-problem)** — 6 fatal flaws of single-agent and uncoordinated coding
