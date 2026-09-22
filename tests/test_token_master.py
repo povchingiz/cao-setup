@@ -112,3 +112,28 @@ def test_autonomous_runner_token_master_integration(tmp_path: Path):
     assert tasks[0]["engine"] == "hermes_worker"
     assert "92%" in tasks[0]["swap_reason"]
 
+
+def test_token_master_marked_blocked_engine_swaps():
+    tm = TokenMaster()
+    # Mark codex_worker as blocked (e.g. after a runtime 429)
+    tm.mark_engine_blocked("codex_worker", duration_seconds=3600, reason="OpenAI quota exhausted")
+
+    task = {"id": "t_ui", "engine": "codex_worker", "title": "Build frontend"}
+    decision = tm.evaluate_task(task)
+
+    assert decision.swapped is True
+    assert decision.selected_engine == "coder_worker"
+    assert "OpenAI quota exhausted" in decision.reason
+
+
+def test_token_master_initial_blocked_engines():
+    # Test configuring initial blocked engines (e.g. user knows AGY or Codex has no quota)
+    tm = TokenMaster(initial_blocked_engines=["antigravity_worker", "codex_worker"])
+
+    task_agy = {"id": "t_audit", "engine": "antigravity_worker", "title": "Audit code"}
+    decision = tm.evaluate_task(task_agy)
+    assert decision.swapped is True
+    assert decision.selected_engine == "coder_worker"
+    assert "User configured quota exhaustion" in decision.reason
+
+

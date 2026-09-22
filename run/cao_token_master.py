@@ -5,7 +5,7 @@ adjusting task engines, models, and execution scopes before quota exhaustion occ
 """
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from run.cao_limits import ClaudeLimits, get_claude_limits
 
@@ -36,12 +36,37 @@ class TokenMaster:
         fallback_model: Optional[str] = None,
         reasoning_fallback: str = "hermes_worker",
         large_context_engine: str = "analyst_worker",
+        initial_blocked_engines: Optional[List[str]] = None,
     ):
         self.high_watermark = high_watermark
         self.fallback_engine = fallback_engine
         self.fallback_model = fallback_model
         self.reasoning_fallback = reasoning_fallback
         self.large_context_engine = large_context_engine
+        import time
+        self._time = time
+        # Map: engine_name -> (unblock_unix_timestamp, reason)
+        self.blocked_engines: Dict[str, Tuple[float, str]] = {}
+        if initial_blocked_engines:
+            for eng in initial_blocked_engines:
+                self.mark_engine_blocked(eng, duration_seconds=86400, reason="User configured quota exhaustion")
+
+    def mark_engine_blocked(
+        self, engine: str, duration_seconds: float = 3600.0, reason: str = "quota/429 rate limit"
+    ) -> None:
+        """Mark an engine as blocked for duration_seconds so subsequent tasks skip it proactively."""
+        unblock_time = self._time.time() + duration_seconds
+        self.blocked_engines[engine] = (unblock_time, reason)
+
+    def is_engine_blocked(self, engine: str) -> Tuple[bool, str]:
+        """Check if an engine is currently in a cooling-off block."""
+        if engine in self.blocked_engines:
+            unblock_time, reason = self.blocked_engines[engine]
+            if self._time.time() < unblock_time:
+                remaining = int(unblock_time - self._time.time())
+                return True, f"{reason} (cooling off, {remaining}s remaining)"
+            del self.blocked_engines[engine]
+        return False, ""
 
     def get_claude_quota_state(self) -> Optional[ClaudeLimits]:
         """Fetch current Claude limits on disk."""
@@ -79,6 +104,23 @@ class TokenMaster:
             if claude_limits_override is not None
             else self.get_claude_quota_state()
         )
+
+        # 0. Check if engine is in a known cooling-off / blocked state (Codex, AGY, or Claude)
+        is_blocked, blocked_reason = self.is_engine_blocked(engine)
+        if is_blocked:
+            target_engine = (
+                self.reasoning_fallback
+                if engine in ("claude_worker", "claude_code", "architect")
+                else self.fallback_engine
+            )
+            return TokenMasterDecision(
+                original_engine=engine,
+                selected_engine=target_engine,
+                selected_model=self.fallback_model,
+                swapped=True,
+                reason=f"Proactive quota swap: {engine} is currently blocked ({blocked_reason})",
+                notices=notices,
+            )
 
         # 1. Context Size / Large File Set Check
         if repo_root and files:

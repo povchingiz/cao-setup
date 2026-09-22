@@ -359,6 +359,7 @@ class AutonomousRunner:
         except Exception as exc:
             # Check if launch failure is a quota/engine error -> auto-fallback
             if is_quota_error(str(exc)):
+                self.token_master.mark_engine_blocked(engine, reason=str(exc))
                 apply_fallback(task, str(exc))
                 notify_telegram(
                     f"Task {tid}: {engine} launch hit quota -> auto-swapped to {task['engine']}",
@@ -400,6 +401,8 @@ class AutonomousRunner:
 
                 # Check 429 / Quota error
                 if is_quota_error(output) or is_quota_error(term.get("error")):
+                    failed_engine = meta.get("engine", task.get("engine", "unknown"))
+                    self.token_master.mark_engine_blocked(failed_engine, reason="runtime 429 / quota limit")
                     self.client.delete_terminal(terminal_id)
                     apply_fallback(task, "runtime 429 / quota limit")
                     notify_telegram(
