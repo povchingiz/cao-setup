@@ -146,7 +146,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      padding: 45px 70px 85px;
+      padding: 40px 65px 80px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -202,7 +202,7 @@
     }
 
     .slide-title {
-      font-size: 2.5rem;
+      font-size: 2.45rem;
       font-weight: 800;
       line-height: 1.15;
       letter-spacing: -0.03em;
@@ -213,18 +213,18 @@
     }
 
     .slide-subtitle {
-      font-size: 1.12rem;
+      font-size: 1.10rem;
       color: var(--text-muted);
       line-height: 1.45;
       max-width: 950px;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     /* Layout Grids */
     .grid-2 {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
+      gap: 18px;
       position: relative;
       z-index: 2;
     }
@@ -250,7 +250,7 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 20px;
+      padding: 18px;
       backdrop-filter: blur(16px);
       transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
       display: flex;
@@ -273,34 +273,34 @@
     }
 
     .card-icon {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
-      margin-bottom: 12px;
+      font-size: 1.15rem;
+      margin-bottom: 10px;
       background: var(--btn-bg);
       border: 1px solid var(--border);
     }
 
     .card-title {
-      font-size: 1.08rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: var(--card-title-color);
       margin-bottom: 6px;
     }
 
     .card-text {
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.45;
     }
 
     .badge {
       display: inline-block;
-      font-size: 0.70rem;
+      font-size: 0.68rem;
       font-weight: 700;
       padding: 2px 8px;
       border-radius: 6px;
@@ -337,10 +337,10 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px 16px;
-      font-size: 0.83rem;
+      font-size: 0.82rem;
       line-height: 1.5;
       color: var(--code-text);
-      margin-top: 12px;
+      margin-top: 10px;
       overflow-x: auto;
       transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
@@ -373,7 +373,7 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 8px 14px;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 600;
       color: var(--text-main);
       display: flex;
@@ -390,20 +390,20 @@
 
     .flow-arrow {
       color: var(--text-muted);
-      font-size: 1.2rem;
+      font-size: 1.15rem;
     }
 
     /* Comparison Table */
     .deck-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.84rem;
-      margin-top: 8px;
+      font-size: 0.82rem;
+      margin-top: 6px;
     }
 
     .deck-table th {
       text-align: left;
-      padding: 10px 14px;
+      padding: 9px 12px;
       background: var(--table-head-bg);
       color: var(--table-head-color);
       font-weight: 700;
@@ -419,7 +419,7 @@
     }
 
     .deck-table td {
-      padding: 10px 14px;
+      padding: 9px 12px;
       border-bottom: 1px solid var(--border);
       color: var(--text-muted);
       line-height: 1.35;
@@ -434,13 +434,13 @@
       color: var(--table-hover-color);
     }
 
-    /* Diagram Card in Slide 15 */
+    /* Diagram Card in Slide 16 */
     .diagram-container {
       width: 100%;
       background: var(--diagram-bg);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 12px 18px;
+      padding: 10px 16px;
       box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
       overflow-x: auto;
       display: flex;
@@ -459,7 +459,7 @@
       bottom: 0;
       left: 0;
       width: 100vw;
-      padding: 14px 50px;
+      padding: 12px 45px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -501,9 +501,9 @@
       background: var(--btn-bg);
       border: 1px solid var(--btn-border);
       color: var(--text-main);
-      padding: 7px 12px;
+      padding: 6px 12px;
       border-radius: 8px;
-      font-size: 0.83rem;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -524,7 +524,7 @@
     }
 
     .brand-mark {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text-muted);
@@ -864,8 +864,74 @@
       </div>
     </section>
 
-    <!-- SLIDE 5: wcao/ Standard -->
+    <!-- SLIDE 5: Fully Interchangeable Architecture (NEW) -->
     <section class="slide" data-slide="5">
+      <div class="slide-tag">
+        <span class="t-en">Zero Lock-in & Full Modularity</span>
+        <span class="t-ru">Модульность и ноль зависимостей</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">100% Configurable & Interchangeable</span>
+        <span class="t-ru">100% Взаимозаменяемость: любая CLI, роль или модель</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">No hardcoded engines or fixed roles. Edit <code>2_configure/cao.config.toml</code> and run <code>./apply.sh</code> to instantly swap any provider, model, or custom prompt.</span>
+        <span class="t-ru">Никаких захардкоженных движков. Измените <code>2_configure/cao.config.toml</code> и запустите <code>./apply.sh</code> для мгновенной смены провайдера, модели или роли.</span>
+      </p>
+
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div class="card">
+          <div class="card-title">
+            <span class="t-en">Swappable Providers & Local LLMs</span>
+            <span class="t-ru">Сменные CLI-провайдеры и локальные LLM</span>
+          </div>
+          <p class="card-text">
+            <span class="t-en">Don't have Claude Code? Swap <code>claude_worker.provider = "hermes_cli"</code> or <code>"opencode_cli"</code> with DeepSeek-R1. Want zero cloud fees? Point <code>base_url</code> to local Ollama (<code>localhost:11434</code>) or vLLM.</span>
+            <span class="t-ru">Нет доступа к Claude Code? Переключите <code>claude_worker.provider = "hermes_cli"</code> или <code>"opencode_cli"</code> на DeepSeek-R1. Нужен полный оффлайн? Укажите локальную Ollama (<code>localhost:11434</code>) или vLLM.</span>
+          </p>
+          <div class="code-box">
+            <span class="code-comment"># Swap architect to local DeepSeek-R1 in 3 lines:</span><br>
+            [workers.claude_worker]<br>
+            provider = <span class="code-str">"opencode_cli"</span><br>
+            model    = <span class="code-str">"ollama/deepseek-r1:70b"</span><br>
+            focus    = <span class="code-str">"system architecture, API contracts"</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="t-en">Dynamic Roles & Single-Command Compile</span>
+            <span class="t-ru">Динамические роли и авто-компиляция</span>
+          </div>
+          <p class="card-text">
+            <span class="t-en">Define custom team personas (e.g. <code>rust_specialist</code>, <code>db_migrator</code>, <code>pentest_auditor</code>). When you run <code>./apply.sh</code>, CAO regenerates supervisor routing tables and worker frontmatter automatically.</span>
+            <span class="t-ru">Создавайте любые собственные роли под стек команды (например, <code>rust_specialist</code>, <code>db_migrator</code>). При запуске <code>./apply.sh</code> CAO сам генерирует таблицу маршрутизации супервизора и frontmatter воркеров.</span>
+          </p>
+          <div class="code-box">
+            <span class="code-comment"># Define custom worker profile:</span><br>
+            [workers.security_auditor]<br>
+            provider = <span class="code-str">"antigravity_cli"</span><br>
+            aliases  = [<span class="code-str">"security"</span>, <span class="code-str">"sec"</span>, <span class="code-str">"cve"</span>]<br>
+            focus    = <span class="code-str">"CVE scans, SAST checks, auth bypasses"</span><br>
+            <span class="code-hl">$ ./apply.sh &rarr; Routing table updated!</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 3px solid var(--accent-emerald);">
+        <p class="card-text" style="font-size: 0.92rem; color: var(--text-main);">
+          <strong>
+            <span class="t-en">Universal CLI Adapter Philosophy:</span>
+            <span class="t-ru">Принцип универсального CLI-адаптера:</span>
+          </strong>
+          <span class="t-en">CAO treats CLI binaries as swappable unix pipes. New AI tools (Cursor CLI, Kiro, Codex, Amazon Q, custom internal LLM wrappers) plug in with zero architectural refactoring.</span>
+          <span class="t-ru">CAO относится к CLI-утилитам как к заменяемым unix-пайпам. Любые новые AI-инструменты (Cursor CLI, Kiro, Codex, Amazon Q, кастомные CLI) подключаются без переписывания архитектуры.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: wcao/ Standard -->
+    <section class="slide" data-slide="6">
       <div class="slide-tag">
         <span class="t-en">Storage & Contracts</span>
         <span class="t-ru">Стандарт хранения</span>
@@ -916,8 +982,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 6: Hermes Continuous Learning -->
-    <section class="slide" data-slide="6">
+    <!-- SLIDE 7: Hermes Continuous Learning -->
+    <section class="slide" data-slide="7">
       <div class="slide-tag">
         <span class="t-en">Intelligence Layer</span>
         <span class="t-ru">Слой непрерывного обучения</span>
@@ -965,7 +1031,7 @@
         </div>
       </div>
 
-      <div class="card" style="margin-top: 18px;">
+      <div class="card" style="margin-top: 16px;">
         <div class="card-title">
           <span class="t-en">3. Retrospective Storage & Procedural Skills</span>
           <span class="t-ru">3. Сохранение ретроспектив и процедурные навыки</span>
@@ -977,8 +1043,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 7: Proactive TokenMaster -->
-    <section class="slide" data-slide="7">
+    <!-- SLIDE 8: Proactive TokenMaster -->
+    <section class="slide" data-slide="8">
       <div class="slide-tag">
         <span class="t-en">Quota Intelligence</span>
         <span class="t-ru">Сенсор квот</span>
@@ -1049,8 +1115,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 8: Deterministic Execution Engine -->
-    <section class="slide" data-slide="8">
+    <!-- SLIDE 9: Deterministic Execution Engine -->
+    <section class="slide" data-slide="9">
       <div class="slide-tag">
         <span class="t-en">Autonomous Execution</span>
         <span class="t-ru">Автономное исполнение</span>
@@ -1096,8 +1162,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 9: Bulletproof Quality & Self-Healing -->
-    <section class="slide" data-slide="9">
+    <!-- SLIDE 10: Bulletproof Quality & Self-Healing -->
+    <section class="slide" data-slide="10">
       <div class="slide-tag">
         <span class="t-en">Quality Assurance</span>
         <span class="t-ru">Контроль качества</span>
@@ -1153,8 +1219,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 10: Autonomous Planning -->
-    <section class="slide" data-slide="10">
+    <!-- SLIDE 11: Autonomous Planning -->
+    <section class="slide" data-slide="11">
       <div class="slide-tag">
         <span class="t-en">Goal Decomposition</span>
         <span class="t-ru">Декомпозиция целей</span>
@@ -1228,8 +1294,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 11: End-to-End Lifecycle -->
-    <section class="slide" data-slide="11">
+    <!-- SLIDE 12: End-to-End Lifecycle -->
+    <section class="slide" data-slide="12">
       <div class="slide-tag">
         <span class="t-en">End-to-End Lifecycle</span>
         <span class="t-ru">Жизненный цикл</span>
@@ -1311,8 +1377,8 @@
       </table>
     </section>
 
-    <!-- SLIDE 12: Summary & Impact -->
-    <section class="slide" data-slide="12">
+    <!-- SLIDE 13: Summary & Impact -->
+    <section class="slide" data-slide="13">
       <div class="slide-tag">
         <span class="t-en">Conclusion</span>
         <span class="t-ru">Итоги</span>
@@ -1373,8 +1439,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 13: Rival Research — Multi-Agent Platforms -->
-    <section class="slide" data-slide="13">
+    <!-- SLIDE 14: Rival Research — Multi-Agent Platforms -->
+    <section class="slide" data-slide="14">
       <div class="slide-tag">
         <span class="t-en">Rival Benchmark · Multi-Agent Systems</span>
         <span class="t-ru">Сравнительный анализ · Мульти-агентные системы</span>
@@ -1388,7 +1454,7 @@
         <span class="t-ru">Техническое сравнение: чем CAO принципиально отличается от AWS Labs, OpenHands/Devin, MetaGPT, CrewAI и AutoGen.</span>
       </p>
 
-      <table class="deck-table" style="margin-bottom: 20px;">
+      <table class="deck-table" style="margin-bottom: 18px;">
         <thead>
           <tr>
             <th>
@@ -1409,6 +1475,14 @@
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td><strong><span class="t-en">100% Configurable & Interchangeable</span><span class="t-ru">Взаимозаменяемость движков и ролей</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">cao.config.toml + apply.sh</span><span class="t-ru">cao.config.toml + apply.sh</span></td>
+            <td>⚠️ <span class="t-en">Partial TOML</span><span class="t-ru">Частичный TOML</span></td>
+            <td>❌ <span class="t-en">Hardcoded runtime</span><span class="t-ru">Фиксированный рантайм</span></td>
+            <td>⚠️ <span class="t-en">Python class rewrites</span><span class="t-ru">Правка классов Python</span></td>
+            <td>❌ <span class="t-en">Rigid roles</span><span class="t-ru">Жёсткие роли</span></td>
+          </tr>
           <tr>
             <td><strong><span class="t-en">Proactive Quota Telemetry (80% swap)</span><span class="t-ru">Упреждающий контроль квот (80% своп)</span></strong></td>
             <td class="col-highlight">✅ <span class="t-en">TokenMaster (On-disk)</span><span class="t-ru">TokenMaster (С диска)</span></td>
@@ -1504,8 +1578,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 14: Rival Research — Standalone Coding CLIs -->
-    <section class="slide" data-slide="14">
+    <!-- SLIDE 15: Rival Research — Standalone Coding CLIs -->
+    <section class="slide" data-slide="15">
       <div class="slide-tag">
         <span class="t-en">Rival Benchmark · Standalone Coding CLIs</span>
         <span class="t-ru">Сравнительный анализ · Одиночные CLI</span>
@@ -1519,7 +1593,7 @@
         <span class="t-ru">Почему оркестрация Claude Code, Codex, DeepSeek и Agy в команде эффективнее любого отдельного CLI.</span>
       </p>
 
-      <table class="deck-table" style="margin-bottom: 20px;">
+      <table class="deck-table" style="margin-bottom: 18px;">
         <thead>
           <tr>
             <th>
@@ -1537,6 +1611,14 @@
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td><strong><span class="t-en">Configurable & Interchangeable</span><span class="t-ru">Взаимозаменяемость</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Swap any model/CLI anytime</span><span class="t-ru">Смена любого движка/модели</span></td>
+            <td>❌ <span class="t-en">Locked to Anthropic</span><span class="t-ru">Только Anthropic</span></td>
+            <td>❌ <span class="t-en">Locked to OpenAI</span><span class="t-ru">Только OpenAI</span></td>
+            <td>⚠️ <span class="t-en">Flags only, 1 model</span><span class="t-ru">Флаги, 1 модель</span></td>
+            <td>❌ <span class="t-en">Locked to Google</span><span class="t-ru">Только Google</span></td>
+          </tr>
           <tr>
             <td><strong><span class="t-en">Economic Asymmetry</span><span class="t-ru">Экономическая асимметрия</span></strong></td>
             <td class="col-highlight">✅ <span class="t-en">Bulk coder @ 1/50th cost</span><span class="t-ru">Массовый код в 50 раз дешевле</span></td>
@@ -1624,8 +1706,8 @@
       </div>
     </section>
 
-    <!-- SLIDE 15: Native Sequence Diagram ("Last Flight") -->
-    <section class="slide" data-slide="15">
+    <!-- SLIDE 16: Native Sequence Diagram ("Last Flight") -->
+    <section class="slide" data-slide="16">
       <div class="slide-tag">
         <span class="t-en">Architecture Trace · Last Flight</span>
         <span class="t-ru">Нативная Sequence-Диаграмма · Финальный пролёт</span>
@@ -1634,7 +1716,7 @@
         <span class="t-en">End-to-End Execution Sequence</span>
         <span class="t-ru">Полный цикл выполнения задачи</span>
       </h2>
-      <p class="slide-subtitle" style="margin-bottom: 16px;">
+      <p class="slide-subtitle" style="margin-bottom: 14px;">
         <span class="t-en">Native visual walkthrough: from user goal to DAG decomposition, quota failover, parallel workers, anti-tampering, and memory retention.</span>
         <span class="t-ru">Наглядное прохождение: от цели инженера до DAG-декомпозиции, обхода 429 квот, параллельных воркеров, защиты тестов и сохранения памяти.</span>
       </p>
@@ -1838,7 +1920,7 @@
     </div>
 
     <div class="controls">
-      <span class="slide-counter" id="slideCounter">01 / 15</span>
+      <span class="slide-counter" id="slideCounter">01 / 16</span>
       <button class="btn" id="prevBtn" title="Previous (Left Arrow / K)">
         &larr; <span class="t-en">Prev</span><span class="t-ru">Назад</span>
       </button>
