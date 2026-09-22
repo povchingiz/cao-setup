@@ -631,7 +631,7 @@
         <span class="t-ru">5 фатальных изъянов одиночных AI-агентов</span>
       </h2>
       <p class="slide-subtitle">
-        <span class="t-en">Why lone coding agents hit walls on real production repositories.</span>
+        <span class="t-en">Why isolated coding agents hit walls on real production repositories.</span>
         <span class="t-ru">Почему автономные агенты в одиночку заходят в тупик на реальных репозиториях.</span>
       </p>
 
@@ -1656,18 +1656,18 @@
     <section class="slide" data-slide="15">
       <div class="slide-tag">
         <span class="t-en">Rival Benchmark · Standalone Coding CLIs</span>
-        <span class="t-ru">Сравнительный анализ · Одиночные CLI</span>
+        <span class="t-ru">Сравнительный анализ · Отдельные CLI-инструменты</span>
       </div>
       <h2 class="slide-title">
-        <span class="t-en">CAO Squad vs Lone Frontier Coding CLIs</span>
-        <span class="t-ru">Команда CAO vs Одиночные CLI-агенты</span>
+        <span class="t-en">CAO Orchestrator vs Standalone Coding CLIs</span>
+        <span class="t-ru">Оркестратор CAO vs Отдельные CLI-инструменты</span>
       </h2>
       <p class="slide-subtitle">
-        <span class="t-en">Why orchestrating Claude Code, Codex, DeepSeek, and Agy together beats relying on any single CLI.</span>
-        <span class="t-ru">Почему оркестрация Claude Code, Codex, DeepSeek и Agy в команде эффективнее любого отдельного CLI.</span>
+        <span class="t-en">Why orchestrating Claude Code, Codex, DeepSeek, and AGY under unified task & quota governance beats running them in isolated silos.</span>
+        <span class="t-ru">Почему оркестрация Claude Code, Codex, DeepSeek и AGY с общим учётом задач, квот и единым tmux превосходит работу в изолированных окнах.</span>
       </p>
 
-      <table class="deck-table" style="margin-bottom: 18px;">
+      <table class="deck-table" style="margin-bottom: 16px;">
         <thead>
           <tr>
             <th>
@@ -1675,71 +1675,71 @@
               <span class="t-ru">Критерий</span>
             </th>
             <th class="col-highlight">
-              <span class="t-en">⚡ CAO Multi-Engine Squad</span>
-              <span class="t-ru">⚡ Команда CAO</span>
+              <span class="t-en">⚡ CAO Multi-Engine Hub</span>
+              <span class="t-ru">⚡ Хаб CAO</span>
             </th>
-            <th>Lone Claude Code</th>
-            <th>Lone OpenAI Codex</th>
-            <th>Lone Aider CLI</th>
-            <th>Lone Antigravity (AGY)</th>
+            <th>Claude Code</th>
+            <th>OpenAI Codex</th>
+            <th>Aider CLI</th>
+            <th>Antigravity (AGY)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong><span class="t-en">Configurable & Interchangeable</span><span class="t-ru">Взаимозаменяемость</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">Swap any model/CLI anytime</span><span class="t-ru">Смена любого движка/модели</span></td>
-            <td>❌ <span class="t-en">Locked to Anthropic</span><span class="t-ru">Только Anthropic</span></td>
-            <td>❌ <span class="t-en">Locked to OpenAI</span><span class="t-ru">Только OpenAI</span></td>
-            <td>⚠️ <span class="t-en">Flags only, 1 model</span><span class="t-ru">Флаги, 1 модель</span></td>
-            <td>❌ <span class="t-en">Locked to Google</span><span class="t-ru">Только Google</span></td>
-          </tr>
-          <tr>
-            <td><strong><span class="t-en">Economic Asymmetry</span><span class="t-ru">Экономическая асимметрия</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">Bulk coder @ 1/50th cost</span><span class="t-ru">Массовый код в 50 раз дешевле</span></td>
-            <td>❌ <span class="t-en">Opus/Sonnet on all CRUD</span><span class="t-ru">Дорогой Claude на всём CRUD</span></td>
-            <td>❌ <span class="t-en">Fixed cost per prompt</span><span class="t-ru">Фиксированная стоимость</span></td>
-            <td>⚠️ <span class="t-en">Manual CLI switch</span><span class="t-ru">Ручное переключение</span></td>
-            <td>❌ <span class="t-en">Single model pool</span><span class="t-ru">Один пул моделей</span></td>
-          </tr>
-          <tr>
-            <td><strong><span class="t-en">Quota Resilience (429)</span><span class="t-ru">Устойчивость к лимитам 429</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">Auto-swap & 1h cooling cache</span><span class="t-ru">Авто-своп + кэш охлаждения</span></td>
-            <td>❌ <span class="t-en">Hard stop until reset</span><span class="t-ru">Полный стоп до сброса лимита</span></td>
-            <td>❌ <span class="t-en">Hard stop on 429</span><span class="t-ru">Полный стоп на 429</span></td>
-            <td>❌ <span class="t-en">Terminates on error</span><span class="t-ru">Падает с ошибкой</span></td>
-            <td>❌ <span class="t-en">Hard stop on quota</span><span class="t-ru">Полный стоп на квоте</span></td>
-          </tr>
-          <tr>
-            <td><strong><span class="t-en">Autonomous DAG Execution</span><span class="t-ru">Автономное выполнение DAG</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">Headless (cao-plan & auto)</span><span class="t-ru">Автономно (plan + auto)</span></td>
-            <td>❌ <span class="t-en">Interactive chat loop</span><span class="t-ru">Интерактивный чат</span></td>
-            <td>❌ <span class="t-en">Single prompt response</span><span class="t-ru">Один промпт</span></td>
-            <td>❌ <span class="t-en">Interactive terminal</span><span class="t-ru">Интерактивный терминал</span></td>
-            <td>❌ <span class="t-en">Interactive prompts</span><span class="t-ru">Интерактивные промпты</span></td>
-          </tr>
-          <tr>
-            <td><strong><span class="t-en">Cross-Tool Memory</span><span class="t-ru">Общая память между инструментами</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">Shared SQLite FTS5 Brain</span><span class="t-ru">Общая база SQLite FTS5</span></td>
-            <td>⚠️ <span class="t-en">Claude-only memory</span><span class="t-ru">Только память Claude</span></td>
+            <td><strong><span class="t-en">Task & Plan Governance</span><span class="t-ru">Учёт задач и планов</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Unified tasks.json DAG + state ledger</span><span class="t-ru">Единый tasks.json DAG + стейт-машина</span></td>
+            <td>⚠️ <span class="t-en">Single-session Todo list</span><span class="t-ru">Todo-список одной сессии</span></td>
             <td>❌ <span class="t-en">Session isolated</span><span class="t-ru">Изолировано сессией</span></td>
-            <td>⚠️ <span class="t-en">Git commits only</span><span class="t-ru">Только коммиты Git</span></td>
-            <td>⚠️ <span class="t-en">AGY rules only</span><span class="t-ru">Только правила AGY</span></td>
+            <td>⚠️ <span class="t-en">Git commits history only</span><span class="t-ru">Только история коммитов Git</span></td>
+            <td>⚠️ <span class="t-en">Tasks / plan artifacts</span><span class="t-ru">Задачи / артефакты планов</span></td>
           </tr>
           <tr>
-            <td><strong><span class="t-en">Multi-File Concurrency</span><span class="t-ru">Параллельная работа с файлами</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">File disjointness locks</span><span class="t-ru">Файловые mutex-замки</span></td>
-            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
-            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
-            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
-            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
+            <td><strong><span class="t-en">Cross-Tool Quota & 429 Tracking</span><span class="t-ru">Учёт лимитов и защита от 429</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">TokenMaster proactive swap @ 80%</span><span class="t-ru">TokenMaster упреждающий своп на 80%</span></td>
+            <td>❌ <span class="t-en">Stops on hourly limit (no failover)</span><span class="t-ru">Стоп при лимите (нет авто-свопа)</span></td>
+            <td>❌ <span class="t-en">Hard stop on 429 rate limit</span><span class="t-ru">Полный стоп на ошибке 429</span></td>
+            <td>❌ <span class="t-en">Fails/waits on API 429</span><span class="t-ru">Падает или ждёт при 429</span></td>
+            <td>❌ <span class="t-en">Stops on quota exhaustion</span><span class="t-ru">Остановка при исчерпании квоты</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Single-Window tmux Backgrounding</span><span class="t-ru">Одно окно и фоновый tmux</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Background daemon in tmux (headless)</span><span class="t-ru">Фоновый демон в tmux (автономен)</span></td>
+            <td>⚠️ <span class="t-en">Interactive terminal prompt</span><span class="t-ru">Интерактивный терминал</span></td>
+            <td>⚠️ <span class="t-en">Interactive CLI prompt</span><span class="t-ru">Интерактивный CLI</span></td>
+            <td>⚠️ <span class="t-en">Interactive terminal chat</span><span class="t-ru">Интерактивный чат</span></td>
+            <td>⚠️ <span class="t-en">Interactive IDE / terminal</span><span class="t-ru">Интерактивный IDE / терминал</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Shared Plugins, Skills & MCP Hub</span><span class="t-ru">Общий пул skills, плагинов и MCP</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Distributes skills/MCP across all CLIs</span><span class="t-ru">Делит skills/MCP между всеми CLI</span></td>
+            <td>⚠️ <span class="t-en">Claude-only MCP config</span><span class="t-ru">Конфиг MCP только для Claude</span></td>
+            <td>⚠️ <span class="t-en">OpenAI function schemas</span><span class="t-ru">Схемы функций OpenAI</span></td>
+            <td>❌ <span class="t-en">No native MCP/skills bridge</span><span class="t-ru">Нет поддержки MCP/skills</span></td>
+            <td>⚠️ <span class="t-en">AGY-only skills & MCP</span><span class="t-ru">Навыки и MCP только для AGY</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Multi-Process File-Mutex Concurrency</span><span class="t-ru">Конкурентная запись с Mutex-замками</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Parallel processes + path mutexes</span><span class="t-ru">Параллельные процессы + mutex путей</span></td>
+            <td>⚠️ <span class="t-en">Subagents for reads, sequential edits</span><span class="t-ru">Субагенты для чтения, 1 поток правок</span></td>
+            <td>⚠️ <span class="t-en">Parallel tool calls, single file stream</span><span class="t-ru">Параллельные tool calls, 1 поток правок</span></td>
+            <td>❌ <span class="t-en">Single file edit stream</span><span class="t-ru">Один поток редактирования файлов</span></td>
+            <td>⚠️ <span class="t-en">Concurrent subagents, shared tree</span><span class="t-ru">Параллельные субагенты, общий воркспейс</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Model Swapping & Economics</span><span class="t-ru">Взаимозаменяемость и экономика</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Declarative TOML + bulk coder routing</span><span class="t-ru">Декларативный TOML + дешёвый кодер</span></td>
+            <td>⚠️ <span class="t-en">Anthropic models (custom via proxy)</span><span class="t-ru">Модели Anthropic (кастом через прокси)</span></td>
+            <td>⚠️ <span class="t-en">OpenAI models / API flags</span><span class="t-ru">Модели OpenAI / флаги API</span></td>
+            <td>✅ <span class="t-en">Multi-model via --model flag & configs</span><span class="t-ru">Мульти-модели через --model и конфиг</span></td>
+            <td>⚠️ <span class="t-en">Selectable models in configs</span><span class="t-ru">Выбор моделей через конфиги</span></td>
           </tr>
           <tr>
             <td><strong><span class="t-en">Anti-Tamper Test Verification</span><span class="t-ru">Защита целостности тестов</span></strong></td>
-            <td class="col-highlight">✅ <span class="t-en">Guaranteed honest code</span><span class="t-ru">Гарантия честного кода</span></td>
-            <td>❌ <span class="t-en">May delete tests</span><span class="t-ru">Может стереть тесты</span></td>
-            <td>❌ <span class="t-en">May bypass assert</span><span class="t-ru">Может обойти assert</span></td>
-            <td>❌ <span class="t-en">No diff watchdog</span><span class="t-ru">Нет стража diff</span></td>
-            <td>❌ <span class="t-en">No diff watchdog</span><span class="t-ru">Нет стража diff</span></td>
+            <td class="col-highlight">✅ <span class="t-en">AST diff watchdog + auto-revert</span><span class="t-ru">AST-дифф страж + автооткат</span></td>
+            <td>❌ <span class="t-en">May weaken or comment out tests</span><span class="t-ru">Может ослабить или скрыть тесты</span></td>
+            <td>❌ <span class="t-en">May edit assertions to pass</span><span class="t-ru">Может подогнать assert под код</span></td>
+            <td>❌ <span class="t-en">No automated diff watchdog</span><span class="t-ru">Нет автоматического стража diff</span></td>
+            <td>❌ <span class="t-en">No automated test tampering check</span><span class="t-ru">Нет автоотката правок тестов</span></td>
           </tr>
         </tbody>
       </table>
@@ -1747,34 +1747,34 @@
       <div class="grid-3">
         <div class="card" style="border-left: 3px solid var(--accent-cyan);">
           <div class="card-title">
-            <span class="t-en">Cost Asymmetry</span>
-            <span class="t-ru">Экономическая асимметрия</span>
+            <span class="t-en">Unified tmux & Quota Hub</span>
+            <span class="t-ru">Единый tmux-хаб, задачи и квоты</span>
           </div>
           <div class="card-text">
-            <span class="t-en">Using Claude Code for thousands of lines of boilerplate typing wastes money. CAO uses Claude only for contracts, saving 80-90% on API costs.</span>
-            <span class="t-ru">Использовать Claude Code для генерации тысяч строк бойлерплейта неэффективно. CAO использует Claude только для контрактов, экономя 80-90% бюджета.</span>
+            <span class="t-en">Drives your existing subscriptions (Claude, Codex, AGY) in a single tmux window with background runs. Keeps a unified task ledger and proactively prevents 429 quota freezes.</span>
+            <span class="t-ru">Управляет всеми подписками (Claude, Codex, AGY) в одном окне tmux в фоновом режиме. Ведёт сквозной учёт задач и упреждающе защищает от блокировок 429.</span>
           </div>
         </div>
 
         <div class="card" style="border-left: 3px solid var(--accent-indigo);">
           <div class="card-title">
-            <span class="t-en">Shared Hive Mind</span>
-            <span class="t-ru">Общий коллективный разум</span>
+            <span class="t-en">Shared Plugins, Skills & MCP Hub</span>
+            <span class="t-ru">Общий пул навыков, плагинов и MCP</span>
           </div>
           <div class="card-text">
-            <span class="t-en">When Claude fixes an obscure SQLite compiler bug, Codex and DeepSeek immediately inherit the fix through <code>wcao/memory.sqlite</code>.</span>
-            <span class="t-ru">Когда Claude находит и чинит скрытый баг в SQLite, Codex и DeepSeek моментально получают это знание через <code>wcao/memory.sqlite</code>.</span>
+            <span class="t-en">Dynamically distributes custom skills (SKILL.md), plugins, and MCP servers across Claude, Codex, AGY, and local models. Tools and domain recipes are shared instantly across all engines.</span>
+            <span class="t-ru">Динамически распределяет кастомные навыки (SKILL.md), плагины и MCP-серверы между Claude, Codex, AGY и локальными моделями. Инструменты доступны всем движкам сразу.</span>
           </div>
         </div>
 
         <div class="card" style="border-left: 3px solid var(--accent-emerald);">
           <div class="card-title">
-            <span class="t-en">True Headless Autonomy</span>
-            <span class="t-ru">Настоящая headless-автономия</span>
+            <span class="t-en">Headless Autonomy & Hive Memory</span>
+            <span class="t-ru">Фоновая автономия и общая память</span>
           </div>
           <div class="card-text">
-            <span class="t-en">Standalone CLIs require continuous manual chatting. CAO decomposes a North Star into a DAG and finishes the entire feature autonomously.</span>
-            <span class="t-ru">Одиночные CLI требуют непрерывных ручных промптов. CAO декомпозирует общую цель в DAG и самостоятельно доводит фичу до продакшена.</span>
+            <span class="t-en">While standalone CLIs require constant manual prompting, CAO autonomously executes the DAG in background tmux, storing every bug fix and lesson in <code>wcao/memory.sqlite</code>.</span>
+            <span class="t-ru">В то время как отдельные CLI требуют постоянных ручных команд, CAO автономно исполняет DAG в фоне tmux, сохраняя каждый решённый баг в единой <code>wcao/memory.sqlite</code>.</span>
           </div>
         </div>
       </div>
