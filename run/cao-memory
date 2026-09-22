@@ -23,8 +23,8 @@ def main():
     parser = argparse.ArgumentParser(description="CAO Episodic Memory CLI (SQLite FTS5)")
     subparsers = parser.add_subparsers(dest="subcommand", required=True)
 
-    # query
-    p_query = subparsers.add_parser("query", help="Search memories by keyword using FTS5")
+    # query / recall
+    p_query = subparsers.add_parser("query", aliases=["recall"], help="Search memories by keyword using FTS5")
     p_query.add_argument("query", help="Search query string")
     p_query.add_argument("--category", "-c", help="Filter by category")
     p_query.add_argument("--limit", "-n", type=int, default=10, help="Maximum results (default: 10)")
@@ -43,7 +43,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.subcommand == "query":
+    if args.subcommand in ("query", "recall"):
         results = query_memory(args.query, category=args.category, limit=args.limit)
         if not results:
             print(f"No memories matched '{args.query}'.")
