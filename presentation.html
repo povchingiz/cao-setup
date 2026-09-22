@@ -34,6 +34,7 @@
       --table-head-color: #e2e8f0;
       --table-hover-bg: rgba(255, 255, 255, 0.02);
       --table-hover-color: #f1f5f9;
+      --table-cao-col: rgba(99, 102, 241, 0.09);
       --btn-bg: rgba(255, 255, 255, 0.06);
       --btn-border: rgba(255, 255, 255, 0.1);
       --btn-hover: rgba(255, 255, 255, 0.12);
@@ -75,6 +76,7 @@
       --table-head-color: #0f172a;
       --table-hover-bg: rgba(241, 245, 249, 0.6);
       --table-hover-color: #0f172a;
+      --table-cao-col: rgba(79, 70, 229, 0.08);
       --btn-bg: rgba(15, 23, 42, 0.05);
       --btn-border: rgba(15, 23, 42, 0.12);
       --btn-hover: rgba(15, 23, 42, 0.1);
@@ -144,7 +146,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      padding: 50px 80px 90px;
+      padding: 45px 70px 85px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -181,16 +183,16 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
+      padding: 5px 12px;
       background: rgba(99, 102, 241, 0.12);
       border: 1px solid rgba(99, 102, 241, 0.3);
       border-radius: 9999px;
       color: var(--code-inline-color);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       width: fit-content;
     }
 
@@ -200,29 +202,29 @@
     }
 
     .slide-title {
-      font-size: 2.6rem;
+      font-size: 2.5rem;
       font-weight: 800;
       line-height: 1.15;
       letter-spacing: -0.03em;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       background: var(--title-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .slide-subtitle {
-      font-size: 1.18rem;
+      font-size: 1.12rem;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.45;
       max-width: 950px;
-      margin-bottom: 28px;
+      margin-bottom: 22px;
     }
 
     /* Layout Grids */
     .grid-2 {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 22px;
+      gap: 20px;
       position: relative;
       z-index: 2;
     }
@@ -230,7 +232,7 @@
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
+      gap: 16px;
       position: relative;
       z-index: 2;
     }
@@ -238,7 +240,7 @@
     .grid-4 {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: 14px;
       position: relative;
       z-index: 2;
     }
@@ -247,8 +249,8 @@
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 22px;
+      border-radius: 14px;
+      padding: 20px;
       backdrop-filter: blur(16px);
       transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
       display: flex;
@@ -271,34 +273,34 @@
     }
 
     .card-icon {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
-      margin-bottom: 14px;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
       background: var(--btn-bg);
       border: 1px solid var(--border);
     }
 
     .card-title {
-      font-size: 1.12rem;
+      font-size: 1.08rem;
       font-weight: 700;
       color: var(--card-title-color);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .card-text {
-      font-size: 0.90rem;
+      font-size: 0.88rem;
       color: var(--text-muted);
       line-height: 1.5;
     }
 
     .badge {
       display: inline-block;
-      font-size: 0.72rem;
+      font-size: 0.70rem;
       font-weight: 700;
       padding: 2px 8px;
       border-radius: 6px;
@@ -334,11 +336,11 @@
       background: var(--code-bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 14px 18px;
-      font-size: 0.85rem;
+      padding: 12px 16px;
+      font-size: 0.83rem;
       line-height: 1.5;
       color: var(--code-text);
-      margin-top: 14px;
+      margin-top: 12px;
       overflow-x: auto;
       transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
@@ -362,7 +364,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin: 16px 0;
+      margin: 14px 0;
       flex-wrap: wrap;
     }
 
@@ -370,8 +372,8 @@
       background: var(--flow-node-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 10px 16px;
-      font-size: 0.88rem;
+      padding: 8px 14px;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-main);
       display: flex;
@@ -395,24 +397,32 @@
     .deck-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.88rem;
-      margin-top: 10px;
+      font-size: 0.84rem;
+      margin-top: 8px;
     }
 
     .deck-table th {
       text-align: left;
-      padding: 12px 16px;
+      padding: 10px 14px;
       background: var(--table-head-bg);
       color: var(--table-head-color);
       font-weight: 700;
       border-bottom: 2px solid var(--border);
     }
 
+    .deck-table th.col-highlight,
+    .deck-table td.col-highlight {
+      background: var(--table-cao-col);
+      font-weight: 700;
+      border-left: 2px solid var(--border-accent);
+      border-right: 2px solid var(--border-accent);
+    }
+
     .deck-table td {
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border);
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.35;
     }
 
     .deck-table td strong {
@@ -424,13 +434,13 @@
       color: var(--table-hover-color);
     }
 
-    /* Diagram Card in Slide 13 */
+    /* Diagram Card in Slide 15 */
     .diagram-container {
       width: 100%;
       background: var(--diagram-bg);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 14px 20px;
+      padding: 12px 18px;
       box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
       overflow-x: auto;
       display: flex;
@@ -439,7 +449,7 @@
 
     .diagram-svg {
       width: 100%;
-      max-width: 1080px;
+      max-width: 1020px;
       height: auto;
     }
 
@@ -449,7 +459,7 @@
       bottom: 0;
       left: 0;
       width: 100vw;
-      padding: 16px 60px;
+      padding: 14px 50px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -484,16 +494,16 @@
     .controls {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .btn {
       background: var(--btn-bg);
       border: 1px solid var(--btn-border);
       color: var(--text-main);
-      padding: 8px 14px;
+      padding: 7px 12px;
       border-radius: 8px;
-      font-size: 0.85rem;
+      font-size: 0.83rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -514,7 +524,7 @@
     }
 
     .brand-mark {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text-muted);
@@ -539,7 +549,7 @@
       border: 1px solid var(--key-pill-border);
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.70rem;
       color: var(--key-pill-color);
     }
   </style>
@@ -572,7 +582,7 @@
         <span class="t-ru">Превращаем передовые AI-терминалы в единую самовосстанавливающуюся инженерную команду с контролем квот.</span>
       </p>
 
-      <div class="card" style="max-width: 850px; margin-bottom: 22px; border-left: 3px solid var(--accent);">
+      <div class="card" style="max-width: 850px; margin-bottom: 20px; border-left: 3px solid var(--accent);">
         <p style="font-size: 0.95rem; color: var(--text-main); line-height: 1.6;">
           <strong style="color: var(--card-title-color);">
             <span class="t-en">Origins & Lineage:</span>
@@ -1158,7 +1168,7 @@
         <span class="t-ru">Превращение высокоуровневых человеческих целей в исполняемый ациклический граф задач (DAG).</span>
       </p>
 
-      <div class="card" style="margin-bottom: 22px;">
+      <div class="card" style="margin-bottom: 20px;">
         <div class="code-box" style="font-size: 0.95rem;">
           $ cao-plan <span class="code-str">"Build a Redis rate limiter with sliding window"</span><br>
           <span class="code-hl">&rarr; Cycle detection verified (acyclic graphlib.TopologicalSorter)</span><br>
@@ -1316,7 +1326,7 @@
         <span class="t-ru">Надёжно, экономично и с непрерывным самообучением.</span>
       </p>
 
-      <div class="grid-3" style="margin-bottom: 22px;">
+      <div class="grid-3" style="margin-bottom: 20px;">
         <div class="card" style="border-top: 3px solid var(--accent-cyan);">
           <div class="card-title">
             <span class="t-en">Token-Aware Economics</span>
@@ -1363,11 +1373,262 @@
       </div>
     </section>
 
-    <!-- SLIDE 13: Native Sequence Diagram ("Last Flight") -->
+    <!-- SLIDE 13: Rival Research — Multi-Agent Platforms -->
     <section class="slide" data-slide="13">
       <div class="slide-tag">
-        <span class="t-en">Architecture Trace</span>
-        <span class="t-ru">Нативная Sequence-Диаграмма</span>
+        <span class="t-en">Rival Benchmark · Multi-Agent Systems</span>
+        <span class="t-ru">Сравнительный анализ · Мульти-агентные системы</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">Killer Features: CAO vs Multi-Agent Orchestrators</span>
+        <span class="t-ru">Ключевые преимущества: CAO vs Оркестраторы</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Rigorous rival audit: how CAO compares against AWS Labs (upstream), OpenHands/Devin, MetaGPT, CrewAI, and AutoGen.</span>
+        <span class="t-ru">Техническое сравнение: чем CAO принципиально отличается от AWS Labs, OpenHands/Devin, MetaGPT, CrewAI и AutoGen.</span>
+      </p>
+
+      <table class="deck-table" style="margin-bottom: 20px;">
+        <thead>
+          <tr>
+            <th>
+              <span class="t-en">Architectural Capability</span>
+              <span class="t-ru">Архитектурная возможность</span>
+            </th>
+            <th class="col-highlight">
+              <span class="t-en">⚡ CAO Platform</span>
+              <span class="t-ru">⚡ Платформа CAO</span>
+            </th>
+            <th>
+              <span class="t-en">AWS Labs CAO</span>
+              <span class="t-ru">AWS Labs CAO</span>
+            </th>
+            <th>OpenHands / Devin</th>
+            <th>CrewAI / AutoGen</th>
+            <th>MetaGPT / ChatDev</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong><span class="t-en">Proactive Quota Telemetry (80% swap)</span><span class="t-ru">Упреждающий контроль квот (80% своп)</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">TokenMaster (On-disk)</span><span class="t-ru">TokenMaster (С диска)</span></td>
+            <td>❌ <span class="t-en">None (429 crash)</span><span class="t-ru">Нет (429 краш)</span></td>
+            <td>❌ <span class="t-en">None</span><span class="t-ru">Нет</span></td>
+            <td>❌ <span class="t-en">None</span><span class="t-ru">Нет</span></td>
+            <td>❌ <span class="t-en">None</span><span class="t-ru">Нет</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Anti-Test-Tampering Gate</span><span class="t-ru">Защита от подделки тестов</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">AST Diff & Auto-Revert</span><span class="t-ru">AST Diff и автооткат</span></td>
+            <td>❌ <span class="t-en">No verification</span><span class="t-ru">Нет проверки</span></td>
+            <td>❌ <span class="t-en">Can weaken tests</span><span class="t-ru">Может стереть тесты</span></td>
+            <td>❌ <span class="t-en">No verification</span><span class="t-ru">Нет проверки</span></td>
+            <td>❌ <span class="t-en">No verification</span><span class="t-ru">Нет проверки</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">File-Disjoint DAG Concurrency</span><span class="t-ru">Параллельность DAG без конфликтов файлов</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">graphlib + Path Mutex</span><span class="t-ru">graphlib + Блокировки</span></td>
+            <td>⚠️ <span class="t-en">Manual dispatch</span><span class="t-ru">Ручной запуск</span></td>
+            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
+            <td>⚠️ <span class="t-en">Sequential/No locks</span><span class="t-ru">Нет блокировок</span></td>
+            <td>⚠️ <span class="t-en">Waterfall steps</span><span class="t-ru">Водопадные роли</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Native Process Isolation</span><span class="t-ru">Нативная изоляция процессов</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Full CLI in tmux</span><span class="t-ru">Нативные CLI в tmux</span></td>
+            <td>✅ <span class="t-en">tmux processes</span><span class="t-ru">Процессы tmux</span></td>
+            <td>⚠️ <span class="t-en">Heavy Docker VM</span><span class="t-ru">Тяжёлый Docker</span></td>
+            <td>❌ <span class="t-en">Python API wrappers</span><span class="t-ru">Python-обёртки API</span></td>
+            <td>❌ <span class="t-en">Pure LLM API calls</span><span class="t-ru">Чистые вызовы API</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Episodic Memory (Sub-millisecond)</span><span class="t-ru">Эпизодическая память (&lt;1мс)</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">SQLite FTS5 BM25</span><span class="t-ru">SQLite FTS5 BM25</span></td>
+            <td>❌ <span class="t-en">Stateless</span><span class="t-ru">Без памяти</span></td>
+            <td>⚠️ <span class="t-en">Vector DB overhead</span><span class="t-ru">Векторные БД</span></td>
+            <td>⚠️ <span class="t-en">ChromaDB / Pinecone</span><span class="t-ru">ChromaDB / Внешние</span></td>
+            <td>❌ <span class="t-en">Session RAM only</span><span class="t-ru">Только RAM сессии</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">50% Context Compactor</span><span class="t-ru">Сжатие контекста по правилу 50%</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Hermes now.md sync</span><span class="t-ru">Hermes now.md чекпоинты</span></td>
+            <td>❌ <span class="t-en">Unbounded bloat</span><span class="t-ru">Бесконечный рост</span></td>
+            <td>⚠️ <span class="t-en">Truncation</span><span class="t-ru">Грубая обрезка</span></td>
+            <td>❌ <span class="t-en">Context overflow</span><span class="t-ru">Переполнение</span></td>
+            <td>❌ <span class="t-en">No auto-compaction</span><span class="t-ru">Нет авто-сжатия</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Self-Healing with L2 Escalation</span><span class="t-ru">Самоисцеление с эскалацией L2</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Coder &rarr; Architect</span><span class="t-ru">Кодер &rarr; Архитектор</span></td>
+            <td>❌ <span class="t-en">Human must fix</span><span class="t-ru">Человек чинит сам</span></td>
+            <td>⚠️ <span class="t-en">Loops same model</span><span class="t-ru">Та же модель по кругу</span></td>
+            <td>⚠️ <span class="t-en">Simple retry</span><span class="t-ru">Простой retry</span></td>
+            <td>❌ <span class="t-en">Static waterfall</span><span class="t-ru">Статичный цикл</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-3">
+        <div class="card" style="border-left: 3px solid var(--accent-amber);">
+          <div class="card-title">
+            <span class="t-en">Zero 429 Halts</span>
+            <span class="t-ru">Ноль зависаний на 429</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Other orchestrators crash when rate limits hit. CAO's TokenMaster swaps tasks ahead of time, ensuring runs finish smoothly.</span>
+            <span class="t-ru">Другие системы падают при исчерпании квот. TokenMaster в CAO перенаправляет задачи заранее, гарантируя финиш пайплайна.</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 3px solid var(--accent-rose);">
+          <div class="card-title">
+            <span class="t-en">Cheat-Proof Audits</span>
+            <span class="t-ru">Защита от читерства</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Agents often modify unit tests to "pass" broken code. CAO automatically inspects git diffs and reverts test cheating.</span>
+            <span class="t-ru">Агенты часто ослабляют ассерты, чтобы отрапортовать об успехе. CAO инспектирует git diff и откатывает такие махинации.</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 3px solid var(--accent-emerald);">
+          <div class="card-title">
+            <span class="t-en">100% Local & Cost-Free</span>
+            <span class="t-ru">100% Локально и без подписок</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">No monthly cloud seat fee, no telemetry lock-in. Everything executes in native terminal processes on your machine.</span>
+            <span class="t-ru">Никаких облачных ежемесячных подписок за платформу. Всё работает локально в нативных процессах вашего терминала.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 14: Rival Research — Standalone Coding CLIs -->
+    <section class="slide" data-slide="14">
+      <div class="slide-tag">
+        <span class="t-en">Rival Benchmark · Standalone Coding CLIs</span>
+        <span class="t-ru">Сравнительный анализ · Одиночные CLI</span>
+      </div>
+      <h2 class="slide-title">
+        <span class="t-en">CAO Squad vs Lone Frontier Coding CLIs</span>
+        <span class="t-ru">Команда CAO vs Одиночные CLI-агенты</span>
+      </h2>
+      <p class="slide-subtitle">
+        <span class="t-en">Why orchestrating Claude Code, Codex, DeepSeek, and Agy together beats relying on any single CLI.</span>
+        <span class="t-ru">Почему оркестрация Claude Code, Codex, DeepSeek и Agy в команде эффективнее любого отдельного CLI.</span>
+      </p>
+
+      <table class="deck-table" style="margin-bottom: 20px;">
+        <thead>
+          <tr>
+            <th>
+              <span class="t-en">Dimension</span>
+              <span class="t-ru">Критерий</span>
+            </th>
+            <th class="col-highlight">
+              <span class="t-en">⚡ CAO Multi-Engine Squad</span>
+              <span class="t-ru">⚡ Команда CAO</span>
+            </th>
+            <th>Lone Claude Code</th>
+            <th>Lone OpenAI Codex</th>
+            <th>Lone Aider CLI</th>
+            <th>Lone Antigravity (AGY)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong><span class="t-en">Economic Asymmetry</span><span class="t-ru">Экономическая асимметрия</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Bulk coder @ 1/50th cost</span><span class="t-ru">Массовый код в 50 раз дешевле</span></td>
+            <td>❌ <span class="t-en">Opus/Sonnet on all CRUD</span><span class="t-ru">Дорогой Claude на всём CRUD</span></td>
+            <td>❌ <span class="t-en">Fixed cost per prompt</span><span class="t-ru">Фиксированная стоимость</span></td>
+            <td>⚠️ <span class="t-en">Manual CLI switch</span><span class="t-ru">Ручное переключение</span></td>
+            <td>❌ <span class="t-en">Single model pool</span><span class="t-ru">Один пул моделей</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Quota Resilience (429)</span><span class="t-ru">Устойчивость к лимитам 429</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Auto-swap & 1h cooling cache</span><span class="t-ru">Авто-своп + кэш охлаждения</span></td>
+            <td>❌ <span class="t-en">Hard stop until reset</span><span class="t-ru">Полный стоп до сброса лимита</span></td>
+            <td>❌ <span class="t-en">Hard stop on 429</span><span class="t-ru">Полный стоп на 429</span></td>
+            <td>❌ <span class="t-en">Terminates on error</span><span class="t-ru">Падает с ошибкой</span></td>
+            <td>❌ <span class="t-en">Hard stop on quota</span><span class="t-ru">Полный стоп на квоте</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Autonomous DAG Execution</span><span class="t-ru">Автономное выполнение DAG</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Headless (cao-plan & auto)</span><span class="t-ru">Автономно (plan + auto)</span></td>
+            <td>❌ <span class="t-en">Interactive chat loop</span><span class="t-ru">Интерактивный чат</span></td>
+            <td>❌ <span class="t-en">Single prompt response</span><span class="t-ru">Один промпт</span></td>
+            <td>❌ <span class="t-en">Interactive terminal</span><span class="t-ru">Интерактивный терминал</span></td>
+            <td>❌ <span class="t-en">Interactive prompts</span><span class="t-ru">Интерактивные промпты</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Cross-Tool Memory</span><span class="t-ru">Общая память между инструментами</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Shared SQLite FTS5 Brain</span><span class="t-ru">Общая база SQLite FTS5</span></td>
+            <td>⚠️ <span class="t-en">Claude-only memory</span><span class="t-ru">Только память Claude</span></td>
+            <td>❌ <span class="t-en">Session isolated</span><span class="t-ru">Изолировано сессией</span></td>
+            <td>⚠️ <span class="t-en">Git commits only</span><span class="t-ru">Только коммиты Git</span></td>
+            <td>⚠️ <span class="t-en">AGY rules only</span><span class="t-ru">Только правила AGY</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Multi-File Concurrency</span><span class="t-ru">Параллельная работа с файлами</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">File disjointness locks</span><span class="t-ru">Файловые mutex-замки</span></td>
+            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
+            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
+            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
+            <td>❌ <span class="t-en">Single thread</span><span class="t-ru">Один поток</span></td>
+          </tr>
+          <tr>
+            <td><strong><span class="t-en">Anti-Tamper Test Verification</span><span class="t-ru">Защита целостности тестов</span></strong></td>
+            <td class="col-highlight">✅ <span class="t-en">Guaranteed honest code</span><span class="t-ru">Гарантия честного кода</span></td>
+            <td>❌ <span class="t-en">May delete tests</span><span class="t-ru">Может стереть тесты</span></td>
+            <td>❌ <span class="t-en">May bypass assert</span><span class="t-ru">Может обойти assert</span></td>
+            <td>❌ <span class="t-en">No diff watchdog</span><span class="t-ru">Нет стража diff</span></td>
+            <td>❌ <span class="t-en">No diff watchdog</span><span class="t-ru">Нет стража diff</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-3">
+        <div class="card" style="border-left: 3px solid var(--accent-cyan);">
+          <div class="card-title">
+            <span class="t-en">Cost Asymmetry</span>
+            <span class="t-ru">Экономическая асимметрия</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Using Claude Code for thousands of lines of boilerplate typing wastes money. CAO uses Claude only for contracts, saving 80-90% on API costs.</span>
+            <span class="t-ru">Использовать Claude Code для генерации тысяч строк бойлерплейта неэффективно. CAO использует Claude только для контрактов, экономя 80-90% бюджета.</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 3px solid var(--accent-indigo);">
+          <div class="card-title">
+            <span class="t-en">Shared Hive Mind</span>
+            <span class="t-ru">Общий коллективный разум</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">When Claude fixes an obscure SQLite compiler bug, Codex and DeepSeek immediately inherit the fix through <code>wcao/memory.sqlite</code>.</span>
+            <span class="t-ru">Когда Claude находит и чинит скрытый баг в SQLite, Codex и DeepSeek моментально получают это знание через <code>wcao/memory.sqlite</code>.</span>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 3px solid var(--accent-emerald);">
+          <div class="card-title">
+            <span class="t-en">True Headless Autonomy</span>
+            <span class="t-ru">Настоящая headless-автономия</span>
+          </div>
+          <div class="card-text">
+            <span class="t-en">Standalone CLIs require continuous manual chatting. CAO decomposes a North Star into a DAG and finishes the entire feature autonomously.</span>
+            <span class="t-ru">Одиночные CLI требуют непрерывных ручных промптов. CAO декомпозирует общую цель в DAG и самостоятельно доводит фичу до продакшена.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 15: Native Sequence Diagram ("Last Flight") -->
+    <section class="slide" data-slide="15">
+      <div class="slide-tag">
+        <span class="t-en">Architecture Trace · Last Flight</span>
+        <span class="t-ru">Нативная Sequence-Диаграмма · Финальный пролёт</span>
       </div>
       <h2 class="slide-title">
         <span class="t-en">End-to-End Execution Sequence</span>
@@ -1577,7 +1838,7 @@
     </div>
 
     <div class="controls">
-      <span class="slide-counter" id="slideCounter">01 / 13</span>
+      <span class="slide-counter" id="slideCounter">01 / 15</span>
       <button class="btn" id="prevBtn" title="Previous (Left Arrow / K)">
         &larr; <span class="t-en">Prev</span><span class="t-ru">Назад</span>
       </button>
