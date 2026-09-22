@@ -63,6 +63,7 @@ fi
 # Look for LOCAL_API_KEY in the first env file that has it (portable across machines).
 for ENV_FILE in \
   "$HOME/.config/cao/cao.env" \
+  "$HOME/wcao/.env" \
   "$HOME/cao-setup/.env"; do
   if [ -f "$ENV_FILE" ]; then
     set -a

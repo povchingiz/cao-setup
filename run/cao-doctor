@@ -27,7 +27,7 @@ hdr()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 SERVER_PORT="${CAO_SERVER_PORT:-9889}"
 
 # Load LOCAL_API_KEY (same search order as cao-run) without printing it.
-for ENV_FILE in "$HOME/.config/cao/cao.env" "$HOME/cao-setup/.env"; do
+for ENV_FILE in "$HOME/.config/cao/cao.env" "$HOME/wcao/.env" "$HOME/cao-setup/.env"; do
   if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE" 2>/dev/null; set +a; break; fi
 done
 

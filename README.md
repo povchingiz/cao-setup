@@ -2,14 +2,14 @@
 
 > **Orchestrate your frontier AI coding CLI engines into a cohesive, self-learning engineering squad.**
 
-[![Interactive Deck](https://img.shields.io/badge/Presentation%20Deck-16%20Slides-6366f1?style=flat-square&logo=googleslides&logoColor=white)](https://povchingiz.github.io/cao-setup/)
-[![Sequence Diagram](https://img.shields.io/badge/Architecture-Sequence%20Diagram-06b6d4?style=flat-square&logo=diagramsdotnet&logoColor=white)](https://povchingiz.github.io/cao-setup/#16)
+[![Interactive Deck](https://img.shields.io/badge/Presentation%20Deck-16%20Slides-6366f1?style=flat-square&logo=googleslides&logoColor=white)](https://povchingiz.github.io/wcao/)
+[![Sequence Diagram](https://img.shields.io/badge/Architecture-Sequence%20Diagram-06b6d4?style=flat-square&logo=diagramsdotnet&logoColor=white)](https://povchingiz.github.io/wcao/#16)
 
 ---
 
 ### Quick Navigation
-* 🌐 **[Interactive Pitch Deck](https://povchingiz.github.io/cao-setup/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
-* 🔄 **[Execution Sequence Diagram](https://povchingiz.github.io/cao-setup/#16)** — native visual trace from North Star goal to verified commit
+* 🌐 **[Interactive Pitch Deck](https://povchingiz.github.io/wcao/)** — 16 bilingual slides (RU/EN), dark/light mode, and rival benchmarks
+* 🔄 **[Execution Sequence Diagram](https://povchingiz.github.io/wcao/#16)** — native visual trace from North Star goal to verified commit
 * ⚠️ **[The Problem](#the-problem)** — 6 fatal flaws of single-agent and uncoordinated coding
 * 🧩 **[The Solution](#the-solution-a-unified-engineering-squad)** — specialist workforce, economic asymmetry, and DAG execution
 * ⚡ **[Core Capabilities](#core-capabilities-at-a-glance)** — multi-engine swarm, 50% context compactor, TokenMaster quota sensors
@@ -125,8 +125,8 @@ engine · `CAO_FALLBACK_PROVIDER` sets the auto-retry engine · `LOCAL_API_KEY`
 ## 1. Install (once)
 
 ```sh
-git clone <this-repo-url> ~/cao-setup
-cd ~/cao-setup
+git clone <this-repo-url> ~/wcao
+cd ~/wcao
 cp .env.example .env               # set LOCAL_API_KEY (bulk-worker endpoint key)
 ./1_install/bootstrap.sh
 ```

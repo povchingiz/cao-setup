@@ -1,7 +1,7 @@
-# cao-setup — Provisioner & Configuration Layer for CLI Agent Orchestrator (CAO)
+# wcao — Multi-Engine Autonomous CLI Agent Orchestrator
 
 ## What this is
-`cao-setup` is the management and prompt configuration repo for CAO. It renders agent profiles, manages tmux worker daemon sessions, and orchestrates multi-agent coding workflows.
+`wcao` is the management, memory, and orchestration platform for CAO. It renders agent profiles, manages tmux worker daemon sessions, and coordinates autonomous multi-agent engineering workflows.
 
 ## Commands
 ```bash
