@@ -17,7 +17,7 @@ test_assert() {
 }
 
 echo "Phase 1: Input fuzzing & boundary flags..."
-for cmd in cao-doctor cao-tokens cao-limits cao-monitor cao-aggressive; do
+for cmd in cao-doctor cao-tokens cao-limits cao-monitor cao-aggressive cao-plan cao-memory; do
   if command -v "$cmd" >/dev/null 2>&1; then
     test_assert "$cmd rejects unknown flags gracefully" bash -c "! $cmd --invalid-fuzz-flag-test-xyz"
     test_assert "$cmd responds to --help cleanly" $cmd --help

@@ -85,7 +85,9 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 |---------|--------------|
 | `cao-run` | health-check, then launch the interactive supervisor in tmux (add `--skip-check` to skip gate) |
 | `cao-plan "<goal>"` | **Autonomous Goal Decomposer**: splits high-level goal into acyclic DAG (`wcao/tasks.json`) with TokenMaster routing |
-| `python run/cao_auto.py --tasks <path>` | **Headless autonomous runner**: executes task DAG, prevents file race collisions, auto-switches 429 quota, self-heals |
+| `cao-auto` / `cao_auto.py` | **Headless autonomous runner**: executes task DAG, prevents file race collisions, auto-switches 429 quota, self-heals |
+| `cao-limits` | **Engine quota status**: live Claude 5h/7d window utilization %, reset times, and engine spend |
+| `cao-monitor` | **Real-time board**: terminal dashboard of running tasks, worker statuses, and file locks |
 | `cao-memory` | **Episodic memory**: SQLite FTS5 store, recall, and list cross-session lessons (`store`, `recall`, `list`) |
 | `cao-aggressive` | **Postflight audit gate**: AST syntax verification, security scan, and test suite execution |
 | `cao-doctor` | run pre-flight health check on its own (toolchain, engines, logins, endpoint) |
