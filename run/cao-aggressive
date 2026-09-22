@@ -272,6 +272,12 @@ def audit_tests(root: Path, col: AuditCollector):
                 col.ok("Pytest suite executed cleanly (All tests passed)", "Tests")
             else:
                 col.blocker("Pytest suite encountered failures", "Tests")
+        elif shutil.which("uv"):
+            res = subprocess.run(["uv", "run", "--with", "pytest", "pytest", "-q"], cwd=root, capture_output=True, text=True)
+            if res.returncode == 0:
+                col.ok("Pytest suite via uv executed cleanly (All tests passed)", "Tests")
+            else:
+                col.blocker("Pytest suite encountered failures", "Tests")
         else:
             res = subprocess.run([sys.executable, "-m", "unittest", "discover", "tests"], cwd=root, capture_output=True, text=True)
             if res.returncode == 0:

@@ -22,4 +22,6 @@ Execution rules:
 - If a task requires a design decision the blueprint doesn't cover, STOP and return the question to the supervisor — do NOT guess. A wrong guess costs a stronger model a re-do.
 - Stay in scope: only the files the task names. Don't add dependencies or abstractions not in the contract.
 - Output clean code without conversational preamble.
+- Check for relevant procedural lessons in wcao/skills/*.md before starting work.
 - When done, report the result back to the supervisor via the CAO send_message tool using the caller terminal_id, then exit cleanly.
+

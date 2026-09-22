@@ -4,6 +4,7 @@
 #   cao-run                     health-check, then launch the supervisor
 #   cao-run --provider <engine> select supervisor engine (claude_code, antigravity_cli, etc)
 #   cao-run --model <model>     select specific model (e.g. gemini-3.8-flash-high)
+#   cao-run --project <name>    scope supervisor tmux session name to project
 #   cao-run --skip-check        skip the cao-doctor pre-flight gate
 #   cao-run -h | --help         show this help
 #
@@ -12,6 +13,7 @@
 # Supervisor engine and model can also be set via environment:
 #   CAO_SUPERVISOR_PROVIDER=<engine>  force a specific engine (highest priority)
 #   CAO_SUPERVISOR_MODEL=<model>      force a specific model for the engine
+#   CAO_PROJECT=<name>                project name for scoped tmux session
 #   ~/.cao/supervisor_provider        fallback hint written by cao-doctor
 #   claude_code                       default engine
 # If claude_code is chosen but its launch fails, cao-run auto-retries once on a
@@ -39,11 +41,16 @@ while [ $# -gt 0 ]; do
     --skip-check) SKIP_CHECK=1 ;;
     --provider)   CAO_SUPERVISOR_PROVIDER="$2"; shift ;;
     --model)      CAO_SUPERVISOR_MODEL="$2"; shift ;;
+    --project)    CAO_PROJECT="$2"; shift ;;
     -h|--help)    awk 'NR>1{ if(/^#/){sub(/^# ?/,"");print} else if(NF){exit} }' "$0"; exit 0 ;;
     *)            PASSTHROUGH+=("$1") ;;
   esac
   shift
 done
+
+PROJECT_NAME="${CAO_PROJECT:-$(basename "$PWD")}"
+SUPERVISOR_SESSION="supervisor-${PROJECT_NAME}"
+TMUX_SESSION="cao-${SUPERVISOR_SESSION}"
 
 # Pre-flight health check (D1-D4). A failed REQUIRED check (missing
 # binary/toolchain) aborts before launch; warnings don't block.
@@ -126,21 +133,21 @@ pick_fallback() {
 }
 
 # 5. Launch the supervisor with its MCP orchestration tools.
-#    --session-name gives a readable tmux session (cao-supervisor) so you can
-#    reattach with `tmux attach -t cao-supervisor` instead of hunting a uuid.
+#    --session-name gives a readable tmux session (cao-supervisor-<project>) so you can
+#    reattach with `tmux attach -t cao-supervisor-<project>` instead of hunting a uuid.
 #    (The server prepends the cao- prefix.) Workers the supervisor spawns via
 #    the assign tool still get auto uuid session names; their tmux WINDOW is
 #    named after the profile (e.g. coder_worker-xxxx), which stays readable.
 #    ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"} safely expands an empty array under
 #    `set -u` (a bare "${PASSTHROUGH[@]}" would error when there are no extras).
 # A leftover supervisor session blocks a new launch with a 400 "Session
-# 'cao-supervisor' already exists" that is NOT a quota problem — switching engines
+# '<session>' already exists" that is NOT a quota problem — switching engines
 # won't help, they'd all hit the same busy name. Catch it up front and tell the
 # user how to clear it (or just reattach) instead of a misleading quota fallback.
-if command -v tmux >/dev/null 2>&1 && tmux has-session -t cao-supervisor 2>/dev/null; then
-  echo "ℹ A supervisor session is already running (tmux: cao-supervisor)." >&2
-  echo "  Reattach:  tmux attach -t cao-supervisor" >&2
-  echo "  Or end it: cao-stop --keep-server   (then re-run cao-run)" >&2
+if command -v tmux >/dev/null 2>&1 && tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+  echo "ℹ A supervisor session is already running (tmux: $TMUX_SESSION)." >&2
+  echo "  Reattach:  tmux attach -t $TMUX_SESSION" >&2
+  echo "  Or end it: cao-stop --project $PROJECT_NAME --keep-server   (then re-run cao-run)" >&2
   exit 1
 fi
 
@@ -159,7 +166,7 @@ launch() {  # $1 = provider; remaining args are the passthrough
   # tee so the user still sees live output while we keep a copy to classify.
   LAUNCH_OUT="$(cao launch --agents code_supervisor --provider "$provider" \
     ${model_args[@]+"${model_args[@]}"} \
-    --session-name supervisor --auto-approve "$@" 2>&1 | tee /dev/tty)"
+    --session-name "$SUPERVISOR_SESSION" --auto-approve "$@" 2>&1 | tee /dev/tty)"
   return "${PIPESTATUS[0]}"
 }
 
@@ -174,7 +181,7 @@ FALLBACK="$(pick_fallback)"
 # primary): just run once and surface whatever happens.
 if [ "$SUP_PROVIDER" != "claude_code" ] || [ -z "$FALLBACK" ] || [ "$FALLBACK" = "$SUP_PROVIDER" ]; then
   launch "$SUP_PROVIDER" ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"} && exit 0
-  is_session_busy && { echo "→ That was a busy session, not a quota problem — 'cao-stop --keep-server' then retry." >&2; exit 1; }
+  is_session_busy && { echo "→ That was a busy session, not a quota problem — 'cao-stop --project $PROJECT_NAME --keep-server' then retry." >&2; exit 1; }
   exit 1
 fi
 
@@ -185,7 +192,7 @@ if launch "$SUP_PROVIDER" ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}; then
 fi
 if is_session_busy; then
   echo "→ Launch failed because a supervisor session is busy, not a quota problem." >&2
-  echo "  Clear it with 'cao-stop --keep-server' and re-run cao-run." >&2
+  echo "  Clear it with 'cao-stop --project $PROJECT_NAME --keep-server' and re-run cao-run." >&2
   exit 1
 fi
 echo "⚠ Supervisor launch on '$SUP_PROVIDER' failed — likely Claude quota/login." >&2
@@ -197,4 +204,5 @@ if [ -n "${CAO_SUPERVISOR_MODEL:-}" ]; then
 fi
 exec cao launch --agents code_supervisor --provider "$FALLBACK" \
   ${FALLBACK_MODEL_ARGS[@]+"${FALLBACK_MODEL_ARGS[@]}"} \
-  --session-name supervisor --auto-approve ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}
+  --session-name "$SUPERVISOR_SESSION" --auto-approve ${PASSTHROUGH[@]+"${PASSTHROUGH[@]}"}
+

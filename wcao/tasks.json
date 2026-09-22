@@ -1,0 +1,181 @@
+[
+  {
+    "id": "task_01_repo_root_fix",
+    "title": "Fix working_directory root detection in run/cao_auto.py for wcao/tasks.json",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [],
+    "files": [
+      "run/cao_auto.py",
+      "tests/test_auto.py"
+    ],
+    "detail": "In run/cao_auto.py, replace hardcoded self.session_dir.parent.parent with a robust find_repo_root helper that searches upward for .git, pyproject.toml, or cao.config.toml. Ensure both working_directory in _dispatch_task and root_dir in _run_audit_gate resolve to the repo root regardless of whether tasks.json is in wcao/ or wcao/sessions/session_NNN/. Update tests in tests/test_auto.py.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_02_scoped_sessions",
+    "title": "Add multi-project scoped supervisor session names to cao-run and cao-stop",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [
+      "task_01_repo_root_fix"
+    ],
+    "files": [
+      "run/cao-run",
+      "run/cao-stop"
+    ],
+    "detail": "In run/cao-run, replace hardcoded 'cao-supervisor' session name with a scoped session name 'cao-supervisor-<project_name>' (defaulting to directory basename or accepting --project <name>). Update tmux session collision checks and attach messages. In run/cao-stop, allow targeting specific project supervisor sessions or --all.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_03_pytest_pythonpath",
+    "title": "Add pythonpath configuration to pyproject.toml and sync task state",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [],
+    "files": [
+      "pyproject.toml"
+    ],
+    "detail": "In pyproject.toml, add pythonpath = ['.'] under [tool.pytest.ini_options] so pytest can be run without manual PYTHONPATH=. environment variable.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_04_context_compactor",
+    "title": "Build turn/token estimator and context compactor module (Hermes 50% rule)",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [
+      "task_01_repo_root_fix"
+    ],
+    "files": [
+      "run/cao_compactor.py",
+      "tests/test_compactor.py"
+    ],
+    "detail": "Implement run/cao_compactor.py with ContextCompactor class. Estimate tokens and turn counts. When estimated context exceeds 50% of the active model window, compact stdout logs and worker outputs into a structured state diff while preserving root goal, task DAG, and wcao/design/ contracts. Write unit tests in tests/test_compactor.py.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_05_compactor_integration",
+    "title": "Wire compactor hook into cao-auto autonomous runner",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [
+      "task_04_context_compactor"
+    ],
+    "files": [
+      "run/cao_auto.py"
+    ],
+    "detail": "Hook ContextCompactor into AutonomousRunner execution loop in run/cao_auto.py. Trigger compaction and checkpoint updates to wcao/plans/now.md when turn counts or output thresholds are reached.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_06_procedural_skills",
+    "title": "Build dynamic procedural memory manager (wcao/skills/)",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [
+      "task_01_repo_root_fix"
+    ],
+    "files": [
+      "run/cao_skills.py",
+      "2_configure/prompts/coder.md",
+      "2_configure/prompts/supervisor.md"
+    ],
+    "detail": "Create run/cao_skills.py with helper to record learned procedural skills into wcao/skills/<topic>.md. Update supervisor and coder prompt templates so agents check wcao/skills/*.md before executing tasks.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_07_sqlite_fts5_memory",
+    "title": "Implement SQLite FTS5 episodic memory layer and cao-memory CLI",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [
+      "task_01_repo_root_fix"
+    ],
+    "files": [
+      "run/cao_memory.py",
+      "run/cao-memory",
+      "tests/test_memory.py"
+    ],
+    "detail": "Create run/cao_memory.py backed by wcao/memory.sqlite using an FTS5 virtual table (session_id, category, summary, details, file_paths, created_at). Build CLI tool run/cao-memory with query/store subcommands. Add unit tests in tests/test_memory.py.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_08_hermes_worker",
+    "title": "Integrate Nous Hermes CLI worker provider into CAO config and prompts",
+    "status": "done",
+    "engine": "coder_worker",
+    "depends_on": [
+      "task_01_repo_root_fix"
+    ],
+    "files": [
+      "3_apply/render_config.py",
+      "run/cao-doctor",
+      "2_configure/cao.config.toml",
+      "2_configure/prompts/hermes.md"
+    ],
+    "detail": "Add hermes_cli to KNOWN_PROVIDERS in 3_apply/render_config.py. Add hermes detection in run/cao-doctor. Define hermes_worker in 2_configure/cao.config.toml and create prompt template 2_configure/prompts/hermes.md.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  },
+  {
+    "id": "task_09_conformance_stress_tests",
+    "title": "Implement HarnessRouter-inspired conformance and crash recovery tests",
+    "status": "done",
+    "engine": "antigravity_worker",
+    "depends_on": [
+      "task_02_scoped_sessions",
+      "task_05_compactor_integration",
+      "task_07_sqlite_fts5_memory"
+    ],
+    "files": [
+      "tests/test_conformance.py"
+    ],
+    "detail": "Create tests/test_conformance.py testing worker crash recovery (ensuring dead worker PIDs do not deadlock cao-auto), mid-DAG 429 quota failover handling, and post-task artifact integrity validation.",
+    "qa": {
+      "verdict": "pass",
+      "by": "antigravity_worker",
+      "at": "2026-09-22T05:18:40.843362+00:00",
+      "notes": "Automated test suite passed."
+    }
+  }
+]

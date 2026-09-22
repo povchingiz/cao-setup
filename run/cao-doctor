@@ -84,6 +84,8 @@ check_engine "opencode_cli"    opencode
 check_engine "codex"           codex
 check_engine "antigravity_cli" agy
 command -v copilot >/dev/null 2>&1 && ok "copilot_cli: 'copilot' present" || wrn "copilot_cli: 'copilot' missing (copilot_worker won't launch)"
+command -v hermes >/dev/null 2>&1 && ok "hermes_cli: 'hermes' present" || wrn "hermes_cli: 'hermes' missing (hermes_worker won't launch)"
+
 
 # --- D3: auth / logins (best-effort; some CLIs have no clean status) --------
 hdr "D3 — Logins"

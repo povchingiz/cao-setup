@@ -1,6 +1,8 @@
 {
   "project": "cao-setup",
-  "active_plan": "wcao/plans/now.md",
-  "focus": "Milestone 5 (cao-auto) completed. Next: cao-limits (v2 step 1) and specialist workers.",
+  "active_plan": "wcao/plans/master-plan.md",
+  "now_file": "wcao/plans/now.md",
+  "tasks_file": "wcao/tasks.json",
+  "focus": "P0: Repo root resolution in cao_auto & multi-project tmux session scoping. P1: Hermes 50% context compactor.",
   "current_branch": "master"
 }

@@ -10,7 +10,7 @@ def test_audit_gate_pass(tmp_path):
     tasks_file.write_text(json.dumps(tasks))
 
     runner = AutonomousRunner(tasks_file=tasks_file, dry_run=True)
-    passed = runner._run_audit_gate(tasks)
+    passed, notes = runner._run_audit_gate(tasks)
     assert passed is True
     assert tasks[0]["qa"]["verdict"] == "pass"
 
@@ -31,7 +31,7 @@ def test_audit_gate_failure(tmp_path):
         mock_res.stderr = "FAILED test_something"
         mock_sub.return_value = mock_res
 
-        passed = runner._run_audit_gate(tasks)
+        passed, notes = runner._run_audit_gate(tasks)
         assert passed is False
         assert tasks[0]["qa"]["verdict"] == "block"
         assert "FAILED test_something" in tasks[0]["qa"]["notes"]

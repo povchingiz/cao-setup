@@ -103,7 +103,8 @@ INSPECT freely (read files, search, run read-only shell to understand state, cal
 analyst_worker for big reads). You must NOT do the writing yourself.
 
 1. **Inspect, then delegate.** Look at what needs to change (Read / search /
-   analyst), decide the change, then hand the WRITING to a worker via `assign`.
+   analyst), check `wcao/skills/*.md` for past procedural lessons and quirks,
+   decide the change, then hand the WRITING to a worker via `assign`.
    Editing/creating code, running builds/tests, scaffolding — that's a worker's
    job, on a cheaper engine. `assign` is your primary tool; reach for it by
    default, not as a last resort.

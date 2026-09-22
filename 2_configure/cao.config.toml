@@ -73,6 +73,11 @@ provider = "copilot_cli"
 aliases  = ["copilot"]
 focus    = "general coding worker (role TBD)"
 
+[workers.hermes_worker]
+provider = "hermes_cli"
+aliases  = ["hermes", "nous"]
+focus    = "open-source reasoning and autonomous coding specialist"
+
 # Profiles registered with CAO (order = install order). Supervisor first.
 [profiles]
 register = [
@@ -83,4 +88,6 @@ register = [
   "analyst_worker",
   "antigravity_worker",
   "copilot_worker",
+  "hermes_worker",
 ]
+

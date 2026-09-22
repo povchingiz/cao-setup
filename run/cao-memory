@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""cao-memory — CLI interface for SQLite FTS5 Episodic Memory Layer.
+
+Usage:
+  cao-memory query <terms> [--category <cat>] [--limit <N>]
+  cao-memory store --category <cat> --summary <sum> [--details <det>] [--files <f>] [--session <id>]
+  cao-memory list [--limit <N>]
+"""
+import argparse
+import sys
+from pathlib import Path
+
+# Add repo root to sys.path
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+from run.cao_memory import store_memory, query_memory, list_memories
+
+
+def main():
+    parser = argparse.ArgumentParser(description="CAO Episodic Memory CLI (SQLite FTS5)")
+    subparsers = parser.add_subparsers(dest="subcommand", required=True)
+
+    # query
+    p_query = subparsers.add_parser("query", help="Search memories by keyword using FTS5")
+    p_query.add_argument("query", help="Search query string")
+    p_query.add_argument("--category", "-c", help="Filter by category")
+    p_query.add_argument("--limit", "-n", type=int, default=10, help="Maximum results (default: 10)")
+
+    # store
+    p_store = subparsers.add_parser("store", help="Store a memory entry")
+    p_store.add_argument("--category", "-c", required=True, help="Category (e.g. bug_fix, architecture, preference)")
+    p_store.add_argument("--summary", "-s", required=True, help="Short summary")
+    p_store.add_argument("--details", "-d", default="", help="Detailed memory or solution context")
+    p_store.add_argument("--files", "-f", default="", help="Associated file paths")
+    p_store.add_argument("--session", default="manual", help="Session ID")
+
+    # list
+    p_list = subparsers.add_parser("list", help="List recent memories")
+    p_list.add_argument("--limit", "-n", type=int, default=15, help="Maximum entries to list")
+
+    args = parser.parse_args()
+
+    if args.subcommand == "query":
+        results = query_memory(args.query, category=args.category, limit=args.limit)
+        if not results:
+            print(f"No memories matched '{args.query}'.")
+            return
+        print(f"Found {len(results)} memory match(es):")
+        for r in results:
+            print(f"\n[{r['category']}] {r['summary']} ({r['created_at'][:19]})")
+            if r['details']:
+                print(f"  Details: {r['details']}")
+            if r['file_paths']:
+                print(f"  Files: {r['file_paths']}")
+
+    elif args.subcommand == "store":
+        rowid = store_memory(
+            category=args.category,
+            summary=args.summary,
+            details=args.details,
+            file_paths=args.files,
+            session_id=args.session,
+        )
+        print(f"✓ Stored memory entry #{rowid} in wcao/memory.sqlite")
+
+    elif args.subcommand == "list":
+        results = list_memories(limit=args.limit)
+        if not results:
+            print("No memories recorded yet.")
+            return
+        print(f"Recent {len(results)} memory entry(ies):")
+        for r in results:
+            print(f"- [#{r['rowid']} | {r['category']}] {r['summary']} ({r['created_at'][:19]})")
+
+
+if __name__ == "__main__":
+    main()

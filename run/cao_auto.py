@@ -9,6 +9,7 @@ time for cao-monitor, and executes the automated Audit Gate upon completion.
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -20,8 +21,23 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from run.cao_fallback import is_quota_error, apply_fallback
 from run.cao_telegram import notify_telegram
+from run.cao_compactor import ContextCompactor
 
 DEFAULT_SERVER_PORT = 9889
+
+
+def find_repo_root(start_dir: Path) -> Path:
+    """Search upward from start_dir for .git, pyproject.toml, or cao.config.toml."""
+    curr = start_dir.resolve()
+    for parent in [curr, *curr.parents]:
+        if (
+            (parent / ".git").exists()
+            or (parent / "pyproject.toml").exists()
+            or (parent / "cao.config.toml").exists()
+            or (parent / "2_configure" / "cao.config.toml").exists()
+        ):
+            return parent
+    return curr
 
 
 class DagScheduler:
@@ -129,12 +145,19 @@ class AutonomousRunner:
         max_workers: int = 4,
         client: Optional[CaoClient] = None,
         dry_run: bool = False,
+        self_heal: bool = True,
+        max_heal_attempts: int = 3,
     ):
         self.tasks_file = tasks_file
         self.session_dir = tasks_file.parent
+        self.repo_root = find_repo_root(self.session_dir)
         self.max_workers = max_workers
         self.client = client or CaoClient()
         self.dry_run = dry_run
+        self.self_heal = self_heal
+        self.max_heal_attempts = max_heal_attempts
+        self.compactor = ContextCompactor()
+        self.recent_worker_outputs: List[str] = []
         # Map: task_id -> {terminal_id, started_monotonic}
         self.active_workers: Dict[str, dict] = {}
 
@@ -172,6 +195,24 @@ class AutonomousRunner:
             self.save_tasks(tasks)
             scheduler = DagScheduler(tasks)
 
+            # 4. Hermes 50% Context Compaction Hook
+            self.compactor.record_turn()
+            if self.compactor.should_compact():
+                design_dir = self.repo_root / "wcao" / "design"
+                design_contracts = (
+                    [str(f.relative_to(self.repo_root)) for f in design_dir.glob("*.md")]
+                    if design_dir.exists()
+                    else []
+                )
+                compacted = self.compactor.compact(
+                    root_goal=f"Autonomous session in {self.session_dir.name}",
+                    tasks=tasks,
+                    worker_outputs=self.recent_worker_outputs,
+                    design_contracts=design_contracts,
+                )
+                now_md = self.repo_root / "wcao" / "plans" / "now.md"
+                self.compactor.checkpoint_to_now_md(now_md, compacted)
+
             if not self.active_workers and not scheduler.get_ready_tasks(running_files) and not scheduler.is_complete():
                 # Stalled: all pending tasks have unresolved dependencies or blocks
                 notify_telegram(
@@ -183,29 +224,95 @@ class AutonomousRunner:
             if not scheduler.is_complete():
                 time.sleep(poll_interval)
 
-        # 4. Trigger Autonomous Audit Gate
-        notify_telegram(f"All {len(tasks)} tasks finished. Running Audit Gate & tests...", level="info")
-        audit_pass = self._run_audit_gate(tasks)
-        self.save_tasks(tasks)
+        # 4. Trigger Autonomous Audit Gate & Self-Healing Loop
+        heal_attempt = 0
+        last_failure_reason = ""
+        while heal_attempt <= self.max_heal_attempts:
+            notify_telegram(
+                f"Running Postflight Audit Gate for `{self.session_dir.name}` (Attempt {heal_attempt + 1})...",
+                level="info",
+            )
+            audit_pass, audit_notes = self._run_audit_gate(tasks)
+            self.save_tasks(tasks)
 
-        if audit_pass:
-            notify_telegram(
-                f"Session `{self.session_dir.name}` COMPLETE: all tasks done, 0 audit blockers!",
-                level="success",
-            )
-            return True
-        else:
-            notify_telegram(
-                f"Session `{self.session_dir.name}` completed with audit warnings/blockers.",
-                level="warn",
-            )
-            return False
+            if audit_pass:
+                if heal_attempt > 0:
+                    # Hermes Retrospective: Store the lesson learned!
+                    from run.cao_memory import store_memory
+                    from run.cao_skills import save_skill
+                    summary = f"Self-healed audit issue in {self.session_dir.name}"
+                    details = f"Fixed audit blocker after {heal_attempt} remediation attempt(s). Root cause: {last_failure_reason}. Result: {audit_notes}"
+                    db_path = self.repo_root / "wcao" / "memory.sqlite"
+                    store_memory("self_healing", summary, details, session_id=self.session_dir.name, db_path=db_path)
+                    save_skill(f"healing_{self.session_dir.name}", f"# {summary}\n\n{details}", repo_root=self.repo_root)
+                    notify_telegram(f"Hermes retrospective stored self-healing lesson: {summary}", level="info")
+
+                notify_telegram(
+                    f"Session `{self.session_dir.name}` COMPLETE: all tasks done, 0 audit blockers!",
+                    level="success",
+                )
+                return True
+
+            last_failure_reason = audit_notes
+            if not self.self_heal or heal_attempt >= self.max_heal_attempts:
+                notify_telegram(
+                    f"Session `{self.session_dir.name}` completed with audit warnings/blockers after {heal_attempt} healing attempt(s).",
+                    level="warn",
+                )
+                return False
+
+            # Trigger Self-Healing: Generate remediation task
+            heal_attempt += 1
+            remediation_id = f"remediation_heal_{heal_attempt}_{int(time.time())}"
+            remediation_task = {
+                "id": remediation_id,
+                "title": f"Self-healing fix for audit failure (Attempt {heal_attempt})",
+                "status": "pending",
+                "engine": "coder_worker",
+                "depends_on": [],
+                "detail": f"Audit Gate failed with: {audit_notes}\nFix the failing tests, syntax errors, or security blockers and ensure the audit passes.",
+            }
+            tasks.append(remediation_task)
+            self.save_tasks(tasks)
+            notify_telegram(f"Spawned self-healing remediation task: `{remediation_id}`", level="warn")
+
+            # Execute remediation task
+            scheduler = DagScheduler(tasks)
+            while not scheduler.is_complete():
+                running_files = set()
+                for t in scheduler.get_running_tasks():
+                    running_files.update(t.get("files") or [])
+                slots = self.max_workers - len(self.active_workers)
+                if slots > 0:
+                    ready_tasks = scheduler.get_ready_tasks(running_files)[:slots]
+                    for t in ready_tasks:
+                        self._dispatch_task(t, tasks)
+                self._poll_active_terminals(tasks)
+                self.save_tasks(tasks)
+                scheduler = DagScheduler(tasks)
+                if not self.active_workers and not scheduler.get_ready_tasks(running_files) and not scheduler.is_complete():
+                    break
+                if not scheduler.is_complete():
+                    time.sleep(poll_interval)
 
     def _dispatch_task(self, task: dict, all_tasks: List[dict]) -> None:
         tid = task["id"]
         engine = task.get("engine", "coder_worker")
         model = task.get("model")
         payload = f"Task {tid}: {task.get('title')}\n\n{task.get('detail')}"
+
+        # Hermes Pre-Task Recall Gate: Query memory for relevant past lessons
+        query_text = f"{task.get('title', '')} {' '.join(task.get('files', []))} {task.get('detail', '')}".strip()
+        from run.cao_memory import query_memory
+        db_path = self.repo_root / "wcao" / "memory.sqlite"
+        memories = query_memory(query_text, limit=3, db_path=db_path) if db_path.exists() else []
+        if memories:
+            mem_lines = ["--- Inherited Project Knowledge (Hermes Memory) ---"]
+            for m in memories:
+                mem_lines.append(f"- [{m.get('category', 'general')}]: {m.get('summary', '')} - {m.get('details', '')}")
+            mem_lines.append("---------------------------------------------------\n")
+            payload = "\n".join(mem_lines) + "\n" + payload
+            task["recalled_memories"] = [m.get("summary") for m in memories]
 
         task["status"] = "running"
         task["started_at"] = datetime.now(timezone.utc).isoformat()
@@ -220,7 +327,7 @@ class AutonomousRunner:
                 agent_profile=engine,
                 initial_message=payload,
                 model=model,
-                working_directory=str(self.session_dir.parent.parent),
+                working_directory=str(self.repo_root),
             )
             terminal_id = resp.get("terminal_id") or resp.get("terminals", [{}])[0].get("terminal_id")
             self.active_workers[tid] = {
@@ -288,6 +395,7 @@ class AutonomousRunner:
                     task["done_at"] = datetime.now(timezone.utc).isoformat()
                     self.client.delete_terminal(terminal_id)
                     completed.append(tid)
+                    self.recent_worker_outputs.append(f"Task {tid} done ({output[:100] if output else 'no output'})")
                 elif status == "ERROR":
                     task["status"] = "blocked"
                     task.setdefault("comments", []).append(
@@ -305,27 +413,67 @@ class AutonomousRunner:
         for tid in completed:
             self.active_workers.pop(tid, None)
 
-    def _run_audit_gate(self, all_tasks: List[dict]) -> bool:
-        """Run project tests and record QA verdict."""
-        # 1. Run local test suite if present
-        root_dir = self.session_dir.parent.parent
-        test_cmd = None
-        if (root_dir / "pyproject.toml").exists():
-            test_cmd = ["python3", "-m", "pytest", "-q"]
-        elif (root_dir / "package.json").exists():
-            test_cmd = ["npm", "test"]
-
+    def _run_audit_gate(self, all_tasks: List[dict]) -> Tuple[bool, str]:
+        """Run project tests and aggressive audit, recording QA verdict."""
+        root_dir = self.repo_root
         passed = True
         notes = "Automated test suite passed."
-        if test_cmd and not self.dry_run:
+
+        aggressive_script = root_dir / "run" / "cao-aggressive"
+        if aggressive_script.exists() and not self.dry_run:
             try:
-                res = subprocess.run(test_cmd, cwd=str(root_dir), capture_output=True, text=True, timeout=60)
-                if res.returncode != 0:
+                res = subprocess.run(
+                    [sys.executable, str(aggressive_script), "--json"],
+                    cwd=str(root_dir),
+                    capture_output=True,
+                    text=True,
+                    timeout=90,
+                )
+                if res.returncode == 0:
+                    try:
+                        data = json.loads(res.stdout)
+                        if data.get("verdict") == "pass":
+                            passed = True
+                            notes = "Aggressive audit passed: 0 blockers."
+                        else:
+                            passed = False
+                            blockers = [b.get("message", "") for b in data.get("blockers", [])]
+                            notes = f"Aggressive audit blockers: {'; '.join(blockers)}"
+                    except Exception:
+                        passed = True
+                        notes = "Aggressive audit executed cleanly."
+                else:
                     passed = False
-                    notes = f"Tests failed: {res.stderr[:200] or res.stdout[:200]}"
+                    try:
+                        data = json.loads(res.stdout)
+                        blockers = [b.get("message", "") for b in data.get("blockers", [])]
+                        notes = f"Audit failed: {'; '.join(blockers) or res.stderr[:200]}"
+                    except Exception:
+                        notes = f"Audit failed: {res.stderr[:200] or res.stdout[:200]}"
             except Exception as e:
                 passed = False
-                notes = f"Test execution error: {e}"
+                notes = f"Audit execution error: {e}"
+        else:
+            test_cmd = None
+            if (root_dir / "pyproject.toml").exists():
+                if shutil.which("pytest"):
+                    test_cmd = ["pytest", "-q"]
+                elif shutil.which("uv"):
+                    test_cmd = ["uv", "run", "--with", "pytest", "pytest", "-q"]
+                else:
+                    test_cmd = [sys.executable, "-m", "unittest", "discover", "tests"]
+            elif (root_dir / "package.json").exists() and shutil.which("npm"):
+                test_cmd = ["npm", "test"]
+
+            if test_cmd and not self.dry_run:
+                try:
+                    res = subprocess.run(test_cmd, cwd=str(root_dir), capture_output=True, text=True, timeout=60)
+                    if res.returncode != 0:
+                        passed = False
+                        notes = f"Tests failed: {res.stderr[:200] or res.stdout[:200]}"
+                except Exception as e:
+                    passed = False
+                    notes = f"Test execution error: {e}"
 
         verdict = "pass" if passed else "block"
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -336,4 +484,4 @@ class AutonomousRunner:
                 "at": now_iso,
                 "notes": notes,
             }
-        return passed
+        return passed, notes

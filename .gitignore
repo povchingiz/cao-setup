@@ -10,5 +10,30 @@ cao.config.local.toml
 __pycache__/
 *.pyc
 
+# Python virtualenvs
+.venv/
+env/
+venv/
+
+# SQLite runtime databases
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.db
+
+# Test and linting caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# CAO runtime sessions & logs
+cao_session/
+*.log
+
 # opencode local project artifact
 .opencode/
+

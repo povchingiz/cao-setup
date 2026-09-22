@@ -12,3 +12,4 @@ keywords = ["cli", "agent", "orchestrator", "claude", "opencode", "codex", "gemi
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+pythonpath = ["."]

@@ -1,30 +1,26 @@
 # CAO Aggressive Project Audit Report
-*Generated on 2026-09-19 20:18:10 UTC for `cao-setup`*
+*Generated on 2026-09-22 05:16:31 UTC for `cao-setup`*
 
 ## Executive Scorecard
 - **Blockers / Criticals:** 0
-- **Warnings / Recommendations:** 10
-- **Passed Checks:** 8
+- **Warnings / Recommendations:** 0
+- **Passed Checks:** 10
 
-## ⚠️ Warnings & Improvements
-- **[12-Factor]** Factor II (Dependencies): No formal dependency manifest (pyproject/requirements/package.json)
-- **[Code Quality]** run/cao-plugins:186 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-aggressive:234 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-aggressive:162 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-aggressive:178 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-aggressive:281 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-aggressive:215 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-tokens:183 — Silent exception trap (except ...: pass)
-- **[Code Quality]** run/cao-tokens:120 — Silent exception trap (except ...: pass)
-- **[Tests]** No automated test runner detected (pytest/npm test)
+## Generated Audit Artifacts
+- **Real Sequence Diagram:** `wcao/audit/real-sequence-diagram.mmd`
+- **Stress-Test Plan:** `wcao/audit/stress-test-plan.md`
+- **Executable Test Harness:** `wcao/audit/stress-test.sh`
+- **Architectural Weaknesses:** `wcao/audit/weaknesses.md`
 
 ## ✅ Passed Gates
 - **[Security]** .env excluded in .gitignore
 - **[Security]** No hardcoded high-entropy secrets or private keys found
 - **[12-Factor]** Factor I (Codebase): Git repository present
+- **[12-Factor]** Factor II (Dependencies): Explicitly declared via pyproject.toml
 - **[12-Factor]** Factor III (Config): Base URLs and endpoints configurable via environment
 - **[12-Factor]** Factor IX (Disposability): Signal handling / process lifecycle controls found
 - **[12-Factor]** Factor XI (Logs): Clean repository tree (no committed .log files)
-- **[Code Quality]** All 11 Python source files passed AST syntax compilation
-- **[Code Quality]** All 5 Shell scripts passed bash syntax verification
+- **[Code Quality]** All 29 Python source files passed AST syntax compilation
+- **[Code Quality]** All 6 Shell scripts passed bash syntax verification
+- **[Tests]** Pytest suite via uv executed cleanly (All tests passed)
 

@@ -4,6 +4,8 @@
 # end a work session cleanly.
 #
 #   cao-stop            stop the daemon + every cao- tmux session (default)
+#   cao-stop --project <name>  stop supervisor session for a specific project
+#   cao-stop --all      stop all projects and daemon
 #   cao-stop --workers  stop worker sessions only, leave the supervisor + daemon up
 #   cao-stop --keep-server / -k
 #                       kill the tmux sessions but leave the daemon running
@@ -11,11 +13,14 @@ set -e
 
 SERVER_PORT=9889
 MODE=all
+PROJECT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --workers)              MODE=workers ;;
     --keep-server|-k)       MODE=keep-server ;;
+    --project)              PROJECT="$2"; shift ;;
+    --all)                  MODE=all ;;
     -h|--help)
       awk 'NR>1{ if(/^#/){sub(/^# ?/,"");print} else if(NF){exit} }' "$0"; exit 0 ;;
     *) echo "unknown flag: $1 (see --help)"; exit 1 ;;
@@ -25,18 +30,30 @@ done
 
 killed=0
 if command -v tmux >/dev/null 2>&1 && tmux ls >/dev/null 2>&1; then
-  # cao- prefixes every session cao-run/assign creates. Supervisor = cao-supervisor.
+  # cao- prefixes every session cao-run/assign creates. Supervisor = cao-supervisor[-<project>].
   for s in $(tmux ls -F '#{session_name}' 2>/dev/null | grep '^cao-' || true); do
-    if [ "$MODE" = workers ] && [ "$s" = "cao-supervisor" ]; then
-      continue   # --workers keeps the supervisor
+    if [ -n "$PROJECT" ]; then
+      if [ "$s" != "cao-supervisor-$PROJECT" ] && [ "$s" != "cao-supervisor" ]; then
+        continue
+      fi
+    fi
+
+    if [ "$MODE" = workers ]; then
+      case "$s" in
+        cao-supervisor*) continue ;;
+      esac
     fi
     tmux kill-session -t "$s" 2>/dev/null && { echo "✓ stopped tmux session $s"; killed=1; }
   done
 fi
-[ "$killed" = 0 ] && echo "· no cao- tmux sessions running"
+[ "$killed" = 0 ] && echo "· no matching cao- tmux sessions running"
 
-if [ "$MODE" = workers ] || [ "$MODE" = keep-server ]; then
-  echo "· daemon left running (cao-server on :$SERVER_PORT)"
+if [ "$MODE" = workers ] || [ "$MODE" = keep-server ] || [ -n "$PROJECT" ]; then
+  if [ -n "$PROJECT" ] && [ "$MODE" != keep-server ]; then
+    echo "· left daemon running for other projects (use cao-stop --all to stop daemon)"
+  else
+    echo "· daemon left running (cao-server on :$SERVER_PORT)"
+  fi
   exit 0
 fi
 
