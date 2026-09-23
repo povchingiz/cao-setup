@@ -50,7 +50,7 @@ sudo apt-get update && sudo apt-get install -y git curl
 git clone <this-repo> ~/wcao
 cd ~/wcao
 cp .env.example .env    # set LOCAL_API_KEY
-./1_install/bootstrap.sh
+./setup/1_install/bootstrap.sh
 ```
 
 Then the interactive logins and `cao-run` — exactly the Linux flow in the main

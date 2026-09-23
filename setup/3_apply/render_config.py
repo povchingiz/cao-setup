@@ -23,10 +23,13 @@ try:
 except ModuleNotFoundError:
     sys.exit("ERROR: need Python 3.11+ (tomllib). Run through apply.sh.")
 
-HERE = Path(__file__).resolve().parent      # 3_apply/
-REPO = HERE.parent                          # repo root
-CONFIGURE = REPO / "2_configure"
+HERE = Path(__file__).resolve().parent      # setup/3_apply/
+REPO = HERE.parent.parent                   # repo root
+CONFIGURE = REPO / "setup" / "2_configure"
 GENERATED = REPO / ".generated"
+# .generated/ is gitignored, so it is absent on a fresh clone - create it
+# rather than failing on the first write.
+GENERATED.mkdir(parents=True, exist_ok=True)
 HOME = Path.home()
 # Prefer a private local config if present (gitignored) — this keeps your real
 # endpoint/models out of the committed template. Fall back to the template.
@@ -37,7 +40,7 @@ CFG = CFG_LOCAL if CFG_LOCAL.exists() else CONFIGURE / "cao.config.toml"
 def load():
     if not CFG.exists():
         sys.exit(f"ERROR: config not found: {CFG}\n"
-                 "  Copy 2_configure/cao.config.toml and fill in your endpoint,\n"
+                 "  Copy setup/2_configure/cao.config.toml and fill in your endpoint,\n"
                  "  or create cao.config.local.toml. See the README.")
     try:
         with open(CFG, "rb") as f:
@@ -128,7 +131,7 @@ def _apply_frontmatter(text: str, edits: dict) -> str:
 
 def render_workers(c):
     """Read each tracked prompt, apply provider/model from config, and write the
-    result to the LIVE store — the tracked source in 2_configure/prompts is NEVER
+    result to the LIVE store — the tracked source in setup/2_configure/prompts is NEVER
     modified (so a private model id can't leak into the committed template)."""
     endpoint = c["endpoint"]["name"]
     LIVE_STORE.mkdir(parents=True, exist_ok=True)
@@ -212,7 +215,7 @@ def copy_remaining_profiles(c):
 
 
 def prune_stale_profiles(c):
-    """Delete live-store profiles that are no longer tracked in 2_configure —
+    """Delete live-store profiles that are no longer tracked in setup/2_configure —
     e.g. a worker that was renamed or removed. Without this, a renamed profile
     (opencode_worker -> coder_worker) leaves the old .md orphaned in the live
     store, and cao may still pick it up. Only prune files that have a tracked

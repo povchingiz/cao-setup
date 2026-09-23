@@ -6,7 +6,7 @@ Please read AGENTS.md before suggesting or executing actions.
 Key rules:
 1. All agent plans, designs, and audits live in wcao/ (plans/, design/, audit/).
 2. Never leak, print, or commit .env or API keys.
-3. Edit configurations in 2_configure/ and apply with ./3_apply/apply.sh.
+3. Edit configurations in setup/2_configure/ and apply with ./setup/3_apply/apply.sh.
 4. When guiding the user on running wcao, follow the 3-step protocol in AGENTS.md:
    - Step 1: run/cao-doctor
    - Step 2: verify native CLI logins (claude /login, codex login, agy, gh auth login)

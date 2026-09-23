@@ -23,9 +23,9 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="$(cd "$HERE/.." && pwd)"   # repo root (this script lives in 1_install/)
-CONFIGURE="$REPO/2_configure"
-APPLY="$REPO/3_apply"
+REPO="$(cd "$HERE/../.." && pwd)"   # repo root (this script lives in setup/1_install/)
+CONFIGURE="$REPO/setup/2_configure"
+APPLY="$REPO/setup/3_apply"
 WITH_KODEKS=0
 WITH_GUARD_HOOK=0
 INHERIT_MCP=0
@@ -185,7 +185,7 @@ log "Initializing CAO database + registering profiles..."
 cao init >/dev/null 2>&1 || true
 # Register exactly the profiles the config lists (single source of truth), so a
 # renamed/added worker doesn't need this line edited.
-CFG="$REPO/2_configure/cao.config.local.toml"; [ -f "$CFG" ] || CFG="$REPO/2_configure/cao.config.toml"
+CFG="$REPO/setup/2_configure/cao.config.local.toml"; [ -f "$CFG" ] || CFG="$REPO/setup/2_configure/cao.config.toml"
 PROFILES="$("$PY" - "$CFG" <<'PYEOF'
 import sys, tomllib
 print(" ".join(tomllib.load(open(sys.argv[1],"rb")).get("profiles",{}).get("register",[])))

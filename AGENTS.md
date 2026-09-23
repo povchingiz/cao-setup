@@ -21,7 +21,7 @@ Run `run/cao-doctor` directly on the user's behalf:
 ```bash
 run/cao-doctor
 ```
-- **If `cao` or `cao-server` is missing:** Run `./1_install/bootstrap.sh` to install the orchestrator daemon and symlink helper scripts.
+- **If `cao` or `cao-server` is missing:** Run `./setup/1_install/bootstrap.sh` to install the orchestrator daemon and symlink helper scripts.
 - **If `tmux` is missing:** Advise the user to install it (`brew install tmux` on macOS, `sudo apt install tmux` on Linux).
 - **If some worker engines are missing:** Reassure the user that **they do not need all 5 engines!** `wcao` works smoothly even with just 1 supervisor (e.g. Claude) and 1 worker (e.g. OpenCode, Codex, or Agy).
 
@@ -56,13 +56,14 @@ All AI agents operating in this repository MUST follow these rules:
    - *DO NOT create loose markdown plans or state files in the root directory.*
 
 2. **Configuration Workflow (Never edit rendered files directly!):**
-   - Edit worker definitions, models, or endpoints in: [`2_configure/cao.config.toml`](file:///Users/yerta/wcao/2_configure/cao.config.toml)
-   - Edit worker system prompts in: [`2_configure/prompts/`](file:///Users/yerta/wcao/2_configure/prompts/)
-   - After editing, ALWAYS run: `./3_apply/apply.sh` to regenerate daemon profiles.
+   - Edit worker definitions, models, or endpoints in: [`setup/2_configure/cao.config.toml`](file:///Users/yerta/wcao/2_configure/cao.config.toml)
+   - Edit worker system prompts in: [`setup/2_configure/prompts/`](file:///Users/yerta/wcao/2_configure/prompts/)
+   - After editing, ALWAYS run: `./setup/3_apply/apply.sh` to regenerate daemon profiles.
 
 3. **Security & Secrets Guardrails:**
    - NEVER print, log, or commit `.env` or `LOCAL_API_KEY`.
    - Never run destructive git commands (`git reset --hard`, `git push --force`) without explicit user permission.
+   - **STRICT GIT PUSH POLICY:** NEVER run `git push` to any remote without explicit, prior user confirmation! Commit locally, verify tests, but wait for user approval before pushing.
 
 ---
 
@@ -78,7 +79,7 @@ All AI agents operating in this repository MUST follow these rules:
 | `run/cao-limits` | TokenMaster quota sensor: remaining requests & reset windows |
 | `run/cao-monitor` | Live terminal task board viewer |
 | `run/cao-aggressive` | Run 5-vector audit gate and generate `stress-test.sh` |
-| `./3_apply/apply.sh` | Compile configs & register worker profiles with CAO daemon |
+| `./setup/3_apply/apply.sh` | Compile configs & register worker profiles with CAO daemon |
 | `uv run --with pytest pytest tests/` | Execute orchestrator test suite (56 unit & integration tests) |
 
 ---
@@ -89,9 +90,9 @@ All AI agents operating in this repository MUST follow these rules:
 |---|---|---|
 | Port 9889 already in use | Stale `cao-server` instance running | Run `run/cao-stop --keep-server` or terminate process on port 9889 |
 | Stale tmux session | Previous session didn't cleanly exit | Run `run/cao-stop` to kill lingering daemon panes |
-| Worker missing error | CLI engine not installed | Check `2_configure/cao.config.toml` and disable unneeded worker, then run `./3_apply/apply.sh` |
+| Worker missing error | CLI engine not installed | Check `setup/2_configure/cao.config.toml` and disable unneeded worker, then run `./setup/3_apply/apply.sh` |
 | Rate limit / quota hit | Provider rate limits exhausted | Run `run/cao-limits`. CAO supervisor will auto-fallback to secondary provider |
 | Test tampering detected | Worker modified unit test assertions | AST anti-tampering hook halts execution; inspect `wcao/audit/weaknesses.md` |
 | Supervisor launch times out (~30s client / 60s server) | `cao update` erased the `wait_for_shell` patch, so shell readiness waits on a FIFO that never publishes | Run `run/cao-patch` (or `run/cao-doctor` D8). Re-run after every `cao update` / reinstall — `cao-run` now does this automatically. Background: `wcao/audit/2026-09-23-session-launch-timeout.md` |
 | `opencode` worker fails auth for no visible reason | The daemon was started by hand and inherited no `LOCAL_API_KEY`; worker panes inherit the daemon's env, not your shell's | Restart via `run/cao-run` (it passes the key through). `run/cao-doctor` D7 checks this |
-| Supervisor routes to the wrong worker | The live routing table drifted from the config | Run `./3_apply/apply.sh`. `run/cao-doctor` D6 detects the drift |
+| Supervisor routes to the wrong worker | The live routing table drifted from the config | Run `./setup/3_apply/apply.sh`. `run/cao-doctor` D6 detects the drift |

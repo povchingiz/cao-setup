@@ -5,11 +5,11 @@
 sequenceDiagram
     autonumber
     actor U as You (human)
-    participant BS as bootstrap.sh<br/>(1_install)
-    participant CFG as cao.config.local.toml<br/>(2_configure, gitignored)
-    participant PR as prompts/.md files<br/>(2_configure)
-    participant RC as render_config.py<br/>(3_apply)
-    participant AP as apply.sh<br/>(3_apply)
+    participant BS as bootstrap.sh<br/>(setup/1_install)
+    participant CFG as cao.config.local.toml<br/>(setup/2_configure, gitignored)
+    participant PR as prompts/.md files<br/>(setup/2_configure)
+    participant RC as render_config.py<br/>(setup/3_apply)
+    participant AP as apply.sh<br/>(setup/3_apply)
     participant STG as agent_store (_)<br/>STAGING
     participant CAO as cao CLI + DB<br/>agent-store (-) CANONICAL
     participant OCJ as opencode.json<br/>(~/.aws/opencode)

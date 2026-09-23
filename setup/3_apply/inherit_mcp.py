@@ -36,9 +36,9 @@ import os
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent      # 3_apply/
-REPO = HERE.parent                          # repo root
-STORE = REPO / "2_configure" / "prompts"    # worker prompts + frontmatter
+HERE = Path(__file__).resolve().parent      # setup/3_apply/
+REPO = HERE.parent.parent                   # repo root
+STORE = REPO / "setup" / "2_configure" / "prompts"    # worker prompts + frontmatter
 CLAUDE_JSON = Path.home() / ".claude.json"
 
 DEFAULT_WORKERS = ["claude_worker", "coder_worker", "codex_worker", "analyst_worker", "antigravity_worker", "copilot_worker"]

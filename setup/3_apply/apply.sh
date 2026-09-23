@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
-# apply.sh — push 2_configure (cao.config.toml + prompts/) into the live CAO.
-# Run after editing 2_configure/cao.config.toml or any prompts/*.md.
+# apply.sh — push setup/2_configure (cao.config.toml + prompts/) into the live CAO.
+# Run after editing setup/2_configure/cao.config.toml or any prompts/*.md.
 #
 # Steps:
 #   1. Render cao.config.toml -> settings.json, opencode.json, worker frontmatter.
-#   2. Copy 2_configure/prompts/*.md into ~/.aws/cli-agent-orchestrator/agent_store/.
+#   2. Copy setup/2_configure/prompts/*.md into ~/.aws/cli-agent-orchestrator/agent_store/.
 #   3. Re-register every profile with `cao install`.
 #   4. Offer to restart cao-server so changes take effect.
 #
 set -euo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # 3_apply/
-REPO="$(cd "$HERE/.." && pwd)"                          # repo root
-CONFIGURE="$REPO/2_configure"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # setup/3_apply/
+REPO="$(cd "$HERE/../.." && pwd)"                       # repo root
+CONFIGURE="$REPO/setup/2_configure"
 log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m[ok]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
@@ -30,7 +30,7 @@ fi
 
 log "Rendering config with $PY..."
 # render_config writes the fully-rendered profiles straight to the live store
-# (tracked prompts in 2_configure/prompts are never modified).
+# (tracked prompts in setup/2_configure/prompts are never modified).
 "$PY" "$HERE/render_config.py"
 STORE="$HOME/.aws/cli-agent-orchestrator/agent_store"
 

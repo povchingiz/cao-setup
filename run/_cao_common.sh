@@ -66,8 +66,8 @@ cao_server_port() {
     echo "$CAO_SERVER_PORT"
     return 0
   fi
-  local cfg="$run_dir/../2_configure/cao.config.local.toml"
-  [ -f "$cfg" ] || cfg="$run_dir/../2_configure/cao.config.toml"
+  local cfg="$run_dir/../setup/2_configure/cao.config.local.toml"
+  [ -f "$cfg" ] || cfg="$run_dir/../setup/2_configure/cao.config.toml"
   if [ -f "$cfg" ]; then
     port="$(python3 -c "
 import sys, tomllib

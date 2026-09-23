@@ -11,7 +11,15 @@
 #                       kill the tmux sessions but leave the daemon running
 set -e
 
-SERVER_PORT=9889
+# Read server_port from config (local overrides base), fall back to 9889.
+_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_CFG="$_HERE/../setup/2_configure/cao.config.local.toml"
+[ -f "$_CFG" ] || _CFG="$_HERE/../setup/2_configure/cao.config.toml"
+SERVER_PORT="$(python3 -c "
+import sys, tomllib
+cfg = tomllib.load(open(sys.argv[1],'rb'))
+print(cfg.get('orchestrator',{}).get('server_port', 9889))
+" "$_CFG" 2>/dev/null)" || SERVER_PORT=9889
 MODE=all
 PROJECT=""
 

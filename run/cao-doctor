@@ -203,8 +203,8 @@ fi
 # --- D6: config / runtime drift ---------------------------------------------
 hdr "D6 — Config drift"
 LIVE_SUP="$HOME/.aws/cli-agent-orchestrator/agent_store/code_supervisor.md"
-CFG_FILE="$RUN_DIR/../2_configure/cao.config.local.toml"
-[ -f "$CFG_FILE" ] || CFG_FILE="$RUN_DIR/../2_configure/cao.config.toml"
+CFG_FILE="$RUN_DIR/../setup/2_configure/cao.config.local.toml"
+[ -f "$CFG_FILE" ] || CFG_FILE="$RUN_DIR/../setup/2_configure/cao.config.toml"
 if [ ! -f "$LIVE_SUP" ]; then
   wrn "no rendered supervisor in the live store — run ./3_apply/apply.sh"
 elif [ ! -f "$CFG_FILE" ]; then

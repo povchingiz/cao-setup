@@ -35,7 +35,7 @@ def find_repo_root(start_dir: Path) -> Path:
             (parent / ".git").exists()
             or (parent / "pyproject.toml").exists()
             or (parent / "cao.config.toml").exists()
-            or (parent / "2_configure" / "cao.config.toml").exists()
+            or (parent / "setup" / "2_configure" / "cao.config.toml").exists()
         ):
             return parent
     return curr

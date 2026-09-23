@@ -18,7 +18,7 @@ while [ -L "$SELF" ]; do
   T="$(readlink "$SELF")"; case "$T" in /*) SELF="$T" ;; *) SELF="$(dirname "$SELF")/$T" ;; esac
 done
 RUN_DIR="$(cd "$(dirname "$SELF")" && pwd)"
-INSTALL_DIR="$RUN_DIR/../1_install"
+INSTALL_DIR="$RUN_DIR/../setup/1_install"
 
 CHECK_ONLY=0
 [ "${1:-}" = "--check" ] && CHECK_ONLY=1

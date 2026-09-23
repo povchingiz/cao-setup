@@ -10,7 +10,7 @@
 run/cao-doctor             # Validate system dependencies and worker engines
 run/cao-run                # Start interactive supervisor session in tmux
 run/cao-auto "<goal>"      # Run headless autonomous DAG execution
-./3_apply/apply.sh         # Render prompts/configs and re-register profiles with daemon
+./setup/3_apply/apply.sh         # Render prompts/configs and re-register profiles with daemon
 uv run --with pytest pytest tests/  # Run orchestrator test suite
 run/cao-stop               # Terminate running orchestrator sessions
 run/cao-limits             # Inspect provider token and rate limits
@@ -27,8 +27,8 @@ run/cao-monitor            # Real-time task board viewer
    - Check `wcao/projectstate.json` and `wcao/plans/now.md` for active tasks.
    - Mark completed items with `[x]` as work progresses.
 3. **Configuration Protocol**:
-   - Edit worker prompts in `2_configure/prompts/` and settings in `2_configure/cao.config.toml`.
-   - Always run `./3_apply/apply.sh` after configuration modifications.
+   - Edit worker prompts in `setup/2_configure/prompts/` and settings in `setup/2_configure/cao.config.toml`.
+   - Always run `./setup/3_apply/apply.sh` after configuration modifications.
 4. **Full Agent Guidance**:
    - See [`AGENTS.md`](file:///Users/yerta/wcao/AGENTS.md) for the complete troubleshooting matrix and onboarding flow.
 5. **Strict Git Push Policy**:

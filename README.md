@@ -18,7 +18,7 @@
 
 ```bash
 git clone git@github.com:povchingiz/wcao.git ~/wcao && cd ~/wcao
-./1_install/bootstrap.sh && run/cao-run
+./setup/1_install/bootstrap.sh && run/cao-run
 ```
 
 ---
@@ -35,7 +35,7 @@ git clone git@github.com:povchingiz/wcao.git ~/wcao && cd ~/wcao
 * 🚀 **[Installation & Setup](#1-install-once)** — 5-minute bootstrap and configuration
 * 🧠 **[Hermes Learning & Memory](#hermes-learning--memory-system)** — SQLite FTS5 episodic storage and now.md checkpoints
 * 🛡️ **[Autonomous Self-Healing](#autonomous-execution--self-healing-cao_auto)** — AST anti-tampering, 5-vector audit gate, and L2 escalation
-* 🔬 **[Audit & Stress-Testing Docs](docs/AUDIT_AND_STRESS_TESTING.md)** — 5-vector verification gate, threat analysis, and auto-generated load harness (`wcao/audit/stress-test.sh`)
+* 🔬 **[Audit & Stress-Testing Docs](wcao/docs/AUDIT_AND_STRESS_TESTING.md)** — 5-vector verification gate, threat analysis, and auto-generated load harness (`wcao/audit/stress-test.sh`)
 
 ---
 
@@ -112,21 +112,25 @@ falls back to another engine automatically — `cao-run` never dead-ends (see
 Roles above are the **defaults** — every one is editable (see *Configure*).
 
 > **Windows:** not supported natively (CAO needs tmux + POSIX ptys). Use WSL2 —
-> see [WINDOWS.md](WINDOWS.md). Inside WSL these steps apply unchanged, if the
+> see [WINDOWS.md](wcao/docs/WINDOWS.md). Inside WSL these steps apply unchanged, if the
 > repo lives in your WSL home (not `/mnt/c`).
 
 ## Repo layout — by lifecycle phase
 
 ```
-wcao/          plans/ · design/ · skills/ · audit/ · tasks.json  ← project state, contracts, & memory
-1_install/     bootstrap.sh · bootstrap.ps1 · patch_pyte.py     ← run once
-2_configure/   cao.config.toml · prompts/*.md                   ← edit these
-3_apply/       apply.sh · render_config.py · inherit_mcp.py · inherit_all.py   ← push edits · share MCP
-run/           cao-run · cao_auto.py · cao-doctor · cao-stop · cao-memory · cao-aggressive · cao-tokens · cao-plugins
-.generated/    settings.json · opencode.json    ← auto-written locally (gitignored)
+setup/                                                     ← install & configure, in order
+  1_install/    bootstrap.sh · bootstrap.ps1 · patch_*.py      ← run once
+  2_configure/  cao.config.toml · prompts/*.md                 ← edit these
+  3_apply/      apply.sh · render_config.py · inherit_*.py     ← push edits · share MCP
+run/            cao-run · cao-doctor · cao-patch · cao-stop · cao-auto · cao-memory · …
+                (dash-named = executables, cao_*.py = importable modules)
+tests/          pytest suite
+wcao/           plans/ · design/ · audit/ · docs/ · tasks.json ← project state, contracts, memory
+index.html      the deck (served by GitHub Pages)
+.generated/     settings.json · opencode.json                  ← auto-written locally (gitignored)
 ```
 
-Edit only in `2_configure/`. Everything else is machinery. Never edit the live
+Edit only in `setup/2_configure/`. Everything else is machinery. Never edit the live
 files under `~/.aws` or `~/.config` directly — they are generated.
 
 ## Command cheatsheet
@@ -146,9 +150,10 @@ Every command takes `-h`/`--help`. Nothing here needs arguments to start.
 | `cao-tokens` | heatmap + per-day usage across **all engines**, last 7 days, cao-only (cells are in/out) |
 | `cao-plugins` | share Claude MCP + plugins/skills with every engine (`list`, `broadcast --dry-run`) |
 | `cao-stop` | end session: stop daemon + tmux sessions (`--workers` keeps supervisor, `-k` keeps daemon) |
-| `./3_apply/apply.sh` | push `2_configure/` edits live (renders config, re-registers, offers restart) |
-| `python3 3_apply/inherit_mcp.py` | copy your Claude MCP servers into worker profiles (`--list`, `--dry-run`) |
-| `python3 3_apply/inherit_all.py` | register those MCP servers with every engine's own CLI (codex/opencode/agy/copilot) |
+| `cao-config` | **Browser config editor**: edit endpoint, models, port, API key and apply in one click (serves on localhost:9877) |
+| `./setup/3_apply/apply.sh` | push `setup/2_configure/` edits live (renders config, re-registers, offers restart) |
+| `python3 setup/3_apply/inherit_mcp.py` | copy your Claude MCP servers into worker profiles (`--list`, `--dry-run`) |
+| `python3 setup/3_apply/inherit_all.py` | register those MCP servers with every engine's own CLI (codex/opencode/agy/copilot) |
 
 Environment knobs (all optional): `CAO_SUPERVISOR_PROVIDER` forces the supervisor
 engine · `CAO_FALLBACK_PROVIDER` sets the auto-retry engine · `LOCAL_API_KEY`
@@ -160,7 +165,7 @@ engine · `CAO_FALLBACK_PROVIDER` sets the auto-retry engine · `LOCAL_API_KEY`
 git clone <this-repo-url> ~/wcao
 cd ~/wcao
 cp .env.example .env               # set LOCAL_API_KEY (bulk-worker endpoint key)
-./1_install/bootstrap.sh
+./setup/1_install/bootstrap.sh
 ```
 
 Flags: `--inherit-mcp` (give your existing Claude MCP servers to the workers),
@@ -182,7 +187,7 @@ gh auth login   # GitHub Copilot CLI subscription (if using copilot_worker)
 
 ## 2. Configure — one file
 
-Edit `2_configure/cao.config.toml`, then `./3_apply/apply.sh`. That's the loop.
+Edit `setup/2_configure/cao.config.toml`, then `./setup/3_apply/apply.sh`. That's the loop.
 
 | Section | Controls |
 |---------|----------|
@@ -221,11 +226,11 @@ one block controls engine, model, and responsibility. Change `focus`/`aliases`
 to reassign work; change `provider` to move a role onto another engine.
 
 Only the **detailed prompt** (execution rules) lives separately, in
-`2_configure/prompts/<worker>.md` below the frontmatter — edit it there for
+`setup/2_configure/prompts/<worker>.md` below the frontmatter — edit it there for
 fine behavior. `apply.sh` never touches that text; it only regenerates the
 supervisor's routing table (between the `AUTO-MAPPING` markers).
 
-After any edit: `./3_apply/apply.sh`.
+After any edit: `./setup/3_apply/apply.sh`.
 
 ## 4. Run
 
@@ -337,7 +342,7 @@ python run/cao_auto.py --tasks wcao/tasks.json --max-workers 4
 3. **Proactive TokenMaster Quota Control**: Reads live quota utilization via `cao_limits`. If quota exceeds the 80% watermark or is blocked, it proactively reassigns tasks to `hermes_worker` or `coder_worker` before hitting rate limits.
 4. **Anti-Test-Tampering Gate (`cao_tamper.py`)**: During postflight audit, inspects git diffs to ensure workers have not weakened assertions, inserted bypasses (`assert True`), or deleted test functions. Automatically reverts tampered tests and forces fixes in production code.
 5. **Architect Escalation Protocol**: If a bulk implementation worker fails to fix an audit blocker on attempt 1, self-healing automatically escalates attempt 2+ to an Architect/Reasoning engine (`hermes_worker` or `claude_worker`) for root-cause diagnosis.
-6. **5-Vector Audit & Auto-Generated Stress Testing (`cao-aggressive`)**: Runs AST compilation across all files, high-entropy secrets scanning, and test suites. Automatically generates an executable load/stress test harness (`wcao/audit/stress-test.sh`) to stress concurrency bursts, CLI arguments, and process stability (see [Audit & Stress-Testing Docs](docs/AUDIT_AND_STRESS_TESTING.md)).
+6. **5-Vector Audit & Auto-Generated Stress Testing (`cao-aggressive`)**: Runs AST compilation across all files, high-entropy secrets scanning, and test suites. Automatically generates an executable load/stress test harness (`wcao/audit/stress-test.sh`) to stress concurrency bursts, CLI arguments, and process stability (see [Audit & Stress-Testing Docs](wcao/docs/AUDIT_AND_STRESS_TESTING.md)).
 
 ## Hermes Learning & Memory System
 
@@ -364,14 +369,14 @@ symdex, …) can reach all of them. Two scripts, two levels:
 
 ```sh
 # 1. Into cao WORKER PROFILES (cao writes them into each engine's config at install):
-python3 3_apply/inherit_mcp.py --list      # what you have
-python3 3_apply/inherit_mcp.py             # add to all worker profiles
-./3_apply/apply.sh                         # push live
+python3 setup/3_apply/inherit_mcp.py --list      # what you have
+python3 setup/3_apply/inherit_mcp.py             # add to all worker profiles
+./setup/3_apply/apply.sh                         # push live
 
 # 2. Directly into every ENGINE's own CLI config (works outside cao too):
-python3 3_apply/inherit_all.py --list      # per-engine plan
-python3 3_apply/inherit_all.py --dry-run   # print the mcp-add commands
-python3 3_apply/inherit_all.py             # register with codex/opencode/agy/copilot
+python3 setup/3_apply/inherit_all.py --list      # per-engine plan
+python3 setup/3_apply/inherit_all.py --dry-run   # print the mcp-add commands
+python3 setup/3_apply/inherit_all.py             # register with codex/opencode/agy/copilot
 ```
 
 Both read `~/.claude.json` global `mcpServers` (skipping cao's own server). A
@@ -421,7 +426,7 @@ whole files into its context:
   This is exactly what `analyst_worker` leans on.
 
 Add them to your **own** Claude first (they live in `~/.claude.json` global
-`mcpServers`), confirm with `python3 3_apply/inherit_mcp.py --list`, then run the
+`mcpServers`), confirm with `python3 setup/3_apply/inherit_mcp.py --list`, then run the
 inherit + apply steps above to push them to every worker. They're independent,
 optional tools — CAO works without them; they only make each worker cheaper.
 
@@ -438,7 +443,7 @@ it as `{env:LOCAL_API_KEY}`). Endpoint URL and model ids are not secret.
 
 ## After `cao update`
 
-Re-run `./1_install/bootstrap.sh` — it re-applies the pyte patch (which lives in
+Re-run `./setup/1_install/bootstrap.sh` — it re-applies the pyte patch (which lives in
 the CAO venv and is lost on reinstall). Idempotent.
 
 ## dev-kodeks (optional development standard)
@@ -461,14 +466,14 @@ Both are off unless you pass the flag.
 If a user hands you this repo and says *connect everything*, do this in order —
 stop at each 🔸 (needs a human):
 
-1. Confirm OS is macOS/Linux (Windows → tell them WSL2 per `WINDOWS.md`, stop).
+1. Confirm OS is macOS/Linux (Windows → tell them WSL2 per `wcao/docs/WINDOWS.md`, stop).
 2. 🔸 Ask for `LOCAL_API_KEY`; `cp .env.example .env` and write it. Never print
    or commit it.
-3. Check `[endpoint]` in `2_configure/cao.config.toml` matches their endpoint.
-4. Run `./1_install/bootstrap.sh` (add `--inherit-mcp` / `--with-kodeks` only if
+3. Check `[endpoint]` in `setup/2_configure/cao.config.toml` matches their endpoint.
+4. Run `./setup/1_install/bootstrap.sh` (add `--inherit-mcp` / `--with-kodeks` only if
    they ask).
 5. 🔸 Tell them to run the logins themselves: `claude` → `/login`, `codex
    login`, `agy`. You cannot.
 6. Verify: `cao-run`, delegate a trivial task to each worker, confirm replies.
-7. Point them at `cao-run` from any project. Edits go through `2_configure/` +
-   `./3_apply/apply.sh`, never the live files.
+7. Point them at `cao-run` from any project. Edits go through `setup/2_configure/` +
+   `./setup/3_apply/apply.sh`, never the live files.

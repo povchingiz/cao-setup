@@ -103,8 +103,8 @@
     ],
     "files": [
       "run/cao_skills.py",
-      "2_configure/prompts/coder.md",
-      "2_configure/prompts/supervisor.md"
+      "setup/2_configure/prompts/coder.md",
+      "setup/2_configure/prompts/supervisor.md"
     ],
     "detail": "Create run/cao_skills.py with helper to record learned procedural skills into wcao/skills/<topic>.md. Update supervisor and coder prompt templates so agents check wcao/skills/*.md before executing tasks.",
     "qa": {
@@ -144,12 +144,12 @@
       "task_01_repo_root_fix"
     ],
     "files": [
-      "3_apply/render_config.py",
+      "setup/3_apply/render_config.py",
       "run/cao-doctor",
-      "2_configure/cao.config.toml",
-      "2_configure/prompts/hermes.md"
+      "setup/2_configure/cao.config.toml",
+      "setup/2_configure/prompts/hermes.md"
     ],
-    "detail": "Add hermes_cli to KNOWN_PROVIDERS in 3_apply/render_config.py. Add hermes detection in run/cao-doctor. Define hermes_worker in 2_configure/cao.config.toml and create prompt template 2_configure/prompts/hermes.md.",
+    "detail": "Add hermes_cli to KNOWN_PROVIDERS in setup/3_apply/render_config.py. Add hermes detection in run/cao-doctor. Define hermes_worker in setup/2_configure/cao.config.toml and create prompt template setup/2_configure/prompts/hermes.md.",
     "qa": {
       "verdict": "pass",
       "by": "antigravity_worker",
