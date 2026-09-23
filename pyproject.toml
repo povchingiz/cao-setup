@@ -1,5 +1,5 @@
 [project]
-name = "cao-setup"
+name = "wcao"
 version = "0.2.0"
 description = "Provisioner, health checker, and config layer for the CLI Agent Orchestrator (CAO)"
 requires-python = ">=3.11"

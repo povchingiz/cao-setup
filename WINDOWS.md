@@ -25,8 +25,8 @@ user. (Or run `.\bootstrap.ps1` from this repo — it does this step for you.)
 
 This is the one thing that matters for paths.
 
-- **Do:** clone and run under your Linux home, e.g. `~/cao-setup`
-  (`/home/<you>/cao-setup`). All setup paths are `$HOME`-relative
+- **Do:** clone and run under your Linux home, e.g. `~/wcao`
+  (`/home/<you>/wcao`). All setup paths are `$HOME`-relative
   (`~/.aws`, `~/.config`, `~/.local`) and resolve to the **native** WSL
   filesystem — fast, normal POSIX permissions, identical to plain Ubuntu.
 - **Don't:** `cd /mnt/c/Users/...` and run there. `/mnt/c` is the mounted
@@ -47,10 +47,10 @@ Inside Ubuntu (WSL):
 
 ```bash
 sudo apt-get update && sudo apt-get install -y git curl
-git clone <this-repo> ~/cao-setup
-cd ~/cao-setup
+git clone <this-repo> ~/wcao
+cd ~/wcao
 cp .env.example .env    # set LOCAL_API_KEY
-./bootstrap.sh
+./1_install/bootstrap.sh
 ```
 
 Then the interactive logins and `cao-run` — exactly the Linux flow in the main
@@ -72,7 +72,7 @@ distro.
 
 ## Editing config from Windows (optional)
 
-You can edit `~/cao-setup/cao.config.toml` with VS Code on Windows via the
-**WSL extension** (`code .` from inside `~/cao-setup` opens it in the WSL
+You can edit `~/wcao/2_configure/cao.config.toml` with VS Code on Windows via
+the **WSL extension** (`code .` from inside `~/wcao` opens it in the WSL
 context, keeping files on the Linux filesystem). Do not copy the repo onto a
 `C:\` path to edit it — keep it in WSL home and edit in place.

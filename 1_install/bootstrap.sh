@@ -168,7 +168,7 @@ persist_path() {
   for f in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zprofile"; do
     [ -f "$f" ] && grep -q '\.local/bin' "$f" 2>/dev/null && return 0
   done
-  printf '\n# Added by cao-setup bootstrap — cao-run/cao-tokens/etc live here\n%s\n' "$line" >> "$rc"
+  printf '\n# Added by wcao bootstrap — cao-run/cao-tokens/etc live here\n%s\n' "$line" >> "$rc"
   warn "Added ~/.local/bin to PATH in $rc — open a new shell or 'source $rc'."
 }
 persist_path
