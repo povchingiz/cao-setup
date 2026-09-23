@@ -37,6 +37,11 @@
   - [x] **Anti-Test-Tampering Gate**: Built [`run/cao_tamper.py`](../../run/cao_tamper.py) detecting weakened assertions or deleted test functions during self-healing, automatically reverting test regressions (4/4 tests passing in [`tests/test_tamper.py`](../../tests/test_tamper.py)).
   - [x] **Architect Escalation Protocol**: Wired self-healing attempt 2+ in [`run/cao_auto.py`](../../run/cao_auto.py) to escalate from `coder_worker` to `hermes_worker` / `claude_worker` for deep root-cause diagnosis.
   - [x] All 56/56 tests passing cleanly.
+- [x] **Session-launch timeout fix (2026-09-23)**:
+  - [x] Diagnosed `Shell initialization timed out after 60s` (surfacing to the user as a 30s `cao-server` read timeout): CAO's FIFO reader pulls the shell's prompt bytes but does not publish them to the event bus until teardown, so `wait_for_shell` polls an empty StatusMonitor buffer for the full init timeout. Upstream bug, ~50% of launches, independent of provider and of Claude quota.
+  - [x] Added [`1_install/patch_shell_wait.py`](../../1_install/patch_shell_wait.py) — `wait_for_shell` falls back to `backend.get_history()` (the live tmux pane) while the buffer is blank; wired into [`1_install/bootstrap.sh`](../../1_install/bootstrap.sh) next to the pyte patch. Verified 6/6 launches succeed (was 0/6).
+  - [x] [`run/cao-run`](../../run/cao-run) now reaps the half-created supervisor session before the fallback-engine retry, so a client-side read timeout no longer cascades into `400 Session '<name>' already exists`.
+  - [x] Full write-up with evidence and open items: [`wcao/audit/2026-09-23-session-launch-timeout.md`](../audit/2026-09-23-session-launch-timeout.md).
 
 ---
 

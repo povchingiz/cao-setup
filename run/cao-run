@@ -63,6 +63,8 @@ fi
 # Look for LOCAL_API_KEY in the first env file that has it (portable across machines).
 for ENV_FILE in \
   "$HOME/.config/cao/cao.env" \
+  "$HERE/../.env" \
+  "$PWD/.env" \
   "$HOME/wcao/.env" \
   "$HOME/cao-setup/.env"; do
   if [ -f "$ENV_FILE" ]; then
@@ -199,6 +201,24 @@ fi
 echo "⚠ Supervisor launch on '$SUP_PROVIDER' failed — likely Claude quota/login." >&2
 echo "  Auto-retrying on fallback engine '$FALLBACK'..." >&2
 echo "  (Skip Claude next time with: CAO_SUPERVISOR_PROVIDER=$FALLBACK cao-run)" >&2
+
+# A launch that failed on a CLIENT-side read timeout still left the server
+# finishing (and often registering) the session under this exact name, so the
+# retry would hit 400 "Session '<name>' already exists" and abort on what looks
+# like a second, unrelated failure. Reap the half-created session before
+# retrying; the primary attempt is dead either way.
+reap_stale_session() {
+  curl -fsS -m 10 -X DELETE "http://127.0.0.1:$SERVER_PORT/sessions/$TMUX_SESSION" \
+    -o /dev/null 2>/dev/null || true
+  tmux kill-session -t "$TMUX_SESSION" 2>/dev/null || true
+  # The server tears the session down asynchronously; wait for the name to free
+  # up so the retry does not race it.
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    tmux has-session -t "$TMUX_SESSION" 2>/dev/null || break
+    sleep 1
+  done
+}
+reap_stale_session
 FALLBACK_MODEL_ARGS=()
 if [ -n "${CAO_SUPERVISOR_MODEL:-}" ]; then
   FALLBACK_MODEL_ARGS=(--model "$CAO_SUPERVISOR_MODEL")
