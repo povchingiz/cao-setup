@@ -265,6 +265,20 @@ def validate(c):
     if not (CONFIGURE / "prompts" / f"{sup}.md").exists():
         errs.append(f"supervisor '{sup}' has no prompts/{sup}.md")
 
+    # An alias on two workers makes routing nondeterministic: the supervisor
+    # picks by reading the rendered table, so the same word can reach either
+    # engine, silently and without recording which one ran.
+    by_alias = {}
+    for wname, w in c.get("workers", {}).items():
+        for alias in w.get("aliases") or []:
+            by_alias.setdefault(alias, []).append(wname)
+    for alias, owners in sorted(by_alias.items()):
+        if len(owners) > 1:
+            errs.append(
+                f"alias '{alias}' is claimed by {' and '.join(sorted(owners))} - "
+                f"routing would be ambiguous; give each worker a distinct alias"
+            )
+
     if errs:
         sys.exit("ERROR: config problems:\n  - " + "\n  - ".join(errs) +
                  "\n  Fix these in the config, then re-run ./apply.sh.")

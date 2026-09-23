@@ -50,7 +50,7 @@ focus    = "architecture, domain logic, API contracts, DDD boundaries, refactori
 [workers.coder_worker]
 provider = "opencode_cli"
 model    = "<provider>/<cheap-model>"   # or drop + switch provider to run bulk on another engine
-aliases  = ["coder", "code", "bulk"]
+aliases  = ["coder", "code", "bulk", "opencode", "cheap"]
 focus    = "cheap high-throughput coding model: boilerplate, DB schemas, migrations, repetitive utilities, implementing against a contract/blueprint"
 
 [workers.codex_worker]
@@ -76,7 +76,7 @@ focus    = "GitHub PRs, Actions workflows, CI/CD pipelines, deployment configs (
 [workers.hermes_worker]
 provider = "hermes_cli"
 aliases  = ["hermes", "nous"]
-focus    = "open-source reasoning and autonomous coding specialist"
+focus    = "open-source reasoning and autonomous coding: complex implementation, scaffolding, targeted refactors against a contract. Distinct from coder_worker - route here to compare engines on the same task class, never as a synonym for 'bulk'."
 
 # Profiles registered with CAO (order = install order). Supervisor first.
 [profiles]
