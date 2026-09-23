@@ -200,6 +200,9 @@ done
 log "Patching pyte (Antigravity private-SGR crash)..."
 python3 "$HERE/patch_pyte.py" || warn "pyte patch failed — antigravity may crash the server"
 
+log "Patching wait_for_shell (session launch times out after 60s)..."
+python3 "$HERE/patch_shell_wait.py" || warn "shell-wait patch failed — launches may time out"
+
 # --- 6. Antigravity onboarding skip + codex hooks neutralize -----------------
 log "Skipping Antigravity onboarding wizard..."
 ONB="$HOME/.gemini/antigravity-cli/cache/onboarding.json"
