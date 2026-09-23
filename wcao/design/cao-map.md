@@ -8,14 +8,14 @@ This file is the human index to that diagram — the three phases, the files eac
 
 | Phase | Trigger | Entry point | What it does |
 |-------|---------|-------------|--------------|
-| **1. Install** | once, on a fresh machine | `1_install/bootstrap.sh` | prereqs → CAO → worker CLIs → copy prompts → `cao install` → patches → prints login steps |
-| **2. Apply** | after editing config/prompts | `3_apply/apply.sh` | `render_config.py` → write live configs → `cao install` each profile → offer server restart |
+| **1. Install** | once, on a fresh machine | `setup/1_install/bootstrap.sh` | prereqs → CAO → worker CLIs → copy prompts → `cao install` → patches → prints login steps |
+| **2. Apply** | after editing config/prompts | `setup/3_apply/apply.sh` | `render_config.py` → write live configs → `cao install` each profile → offer server restart |
 | **3. Runtime** | each work session | `run/cao-run` | doctor pre-flight → pick supervisor provider → start daemon → `cao launch` supervisor → orchestrate workers |
 
 ## Config flow (single source of truth → generated targets)
 
 ```
-2_configure/cao.config.local.toml   (gitignored, YOUR real endpoint+models+roles)
+setup/2_configure/cao.config.local.toml   (gitignored, YOUR real endpoint+models+roles)
         │  (falls back to cao.config.toml template if local absent)
         ▼  render_config.py
    ├── ~/.config/cao/settings.json           (orchestrator block)
@@ -50,5 +50,5 @@ Models in endpoint but **not yet assigned to a worker**: `moonshotai/Kimi-K3`, `
 |-----|-------|-----|
 | **Two stores.** render writes `agent_store` (_, staging); cao uses `agent-store` (-, canonical). Rename/remove of a worker leaves a ghost in the canonical store + cao DB. | `render_config.py:97` LIVE_STORE, cao internals | `prune_stale_profiles` cleans staging only. A rename also needs `cao profile remove <old> -y`. **Consider:** have apply.sh reconcile cao DB against the register list. |
 | **kimi/glm idle.** In endpoint, no worker uses them. | `cao.config.local.toml` [endpoint] | Add a `longctx_worker` or fallback wiring when needed. |
-| **MCP not inherited.** lean-ctx/symdex are in `~/.claude.json` but workers only have `cao-mcp-server`. | `inherit_mcp.py` (not yet run) | Run `python3 3_apply/inherit_mcp.py --dry-run` then apply. Skills (superpowers) are Claude-Code-only — can't port to codex/agy. |
+| **MCP not inherited.** lean-ctx/symdex are in `~/.claude.json` but workers only have `cao-mcp-server`. | `inherit_mcp.py` (not yet run) | Run `python3 setup/3_apply/inherit_mcp.py --dry-run` then apply. Skills (superpowers) are Claude-Code-only — can't port to codex/agy. |
 | **Claude quota not pre-checkable.** `claude auth status` shows login, not quota. | inherent | Real quota only surfaces at launch → cao-run's launch-fail retry covers it. |
