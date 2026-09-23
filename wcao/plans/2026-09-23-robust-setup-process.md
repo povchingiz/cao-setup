@@ -122,7 +122,7 @@ Phase 1 first — nothing is testable until launches succeed. Phases 2 and 5 are
 ## Out of scope
 
 - Root-causing the FIFO reader stall — upstream CAO; the patch bypasses the gate, it does not fix the pipeline.
-- Restructuring the `wcao/` ↔ `cao-setup/` dual-checkout layout. Phase 2 makes path resolution independent of it; the layout decision is separate.
+- Restructuring the `wcao/` ↔ `cao-setup/` layout. Phase 2 makes path resolution independent of it; the layout decision is separate. *(Later finding: `~/cao-setup` is a symlink to `~/wcao` — there is no dual checkout. See `wcao/audit/2026-09-23-repo-structure-cleanup.md`.)*
 
 ## Verification
 
@@ -163,6 +163,8 @@ that would actually have caught the incident. 56 tests pass throughout.
 - Audit items #1 (FIFO stall not root-caused) and #6 (upstream's cold-start
   rescue is unreachable for this failure shape) - both belong upstream.
 - Items #4, #5, #7 - low severity, untouched.
-- The `wcao/` vs `cao-setup/` dual-checkout layout. Phase 2 made path
-  resolution independent of it, so this is now a tidiness decision rather than
-  a correctness one.
+- ~~The `wcao/` vs `cao-setup/` dual-checkout layout.~~ **Resolved, and the
+  premise was wrong:** `~/cao-setup` is a symlink to `~/wcao`, not a second
+  checkout - there was never anything to reconcile. The stale *name* was
+  fixed in `bf82d2f`. See
+  `wcao/audit/2026-09-23-repo-structure-cleanup.md`.
