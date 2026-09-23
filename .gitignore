@@ -37,3 +37,4 @@ cao_session/
 # opencode local project artifact
 .opencode/
 
+.symdex/

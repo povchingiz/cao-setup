@@ -31,3 +31,20 @@ run/cao-monitor            # Real-time task board viewer
    - Always run `./3_apply/apply.sh` after configuration modifications.
 4. **Full Agent Guidance**:
    - See [`AGENTS.md`](file:///Users/yerta/wcao/AGENTS.md) for the complete troubleshooting matrix and onboarding flow.
+5. **Strict Git Push Policy**:
+   - NEVER run `git push` without explicit user confirmation. Commit locally, run tests, but wait for user approval before pushing.
+
+## Agent Directives
+
+### Execution & Style
+- Be concise, direct, and factual. Zero conversational filler.
+- Follow `.claude/rules/carpathy-style.md` (simplicity) and `.claude/rules/code-integrity.md` (read-before-write) strictly.
+- When referencing third-party APIs or fast-moving frameworks, query **context7** first instead of relying on training data.
+
+### Context & Integrity Safeguards
+- SymDex/AST tools are for discovery only. A full read is mandatory before editing.
+- Never suppress or truncate test runner output, typechecker diagnostics, or tracebacks.
+
+### Verification & Memory
+- A task is complete ONLY when `.claude/verify.sh` exits 0 (pytest is the hard gate; ruff is advisory until the legacy backlog is cleared).
+- Append newly discovered environment quirks and breaking changes to `.claude/memory.md` under **Known Quirks**.
