@@ -48,10 +48,9 @@ aliases  = ["claude", "architect"]
 focus    = "architecture, domain logic, API contracts, DDD boundaries, refactoring, hard reasoning"
 
 [workers.coder_worker]
-provider = "opencode_cli"
-model    = "<provider>/<cheap-model>"   # or drop + switch provider to run bulk on another engine
-aliases  = ["coder", "code", "bulk"]
-focus    = "cheap high-throughput coding model: boilerplate, DB schemas, migrations, repetitive utilities, implementing against a contract/blueprint"
+provider = "hermes_cli"
+aliases  = ["coder", "code", "bulk", "hermes"]
+focus    = "open-source reasoning and autonomous coding: complex implementation, scaffolding, targeted refactors, implementing against contracts"
 
 [workers.codex_worker]
 provider = "codex"
@@ -74,9 +73,10 @@ aliases  = ["copilot", "deploy", "ci", "github"]
 focus    = "GitHub PRs, Actions workflows, CI/CD pipelines, deployment configs (in progress / WIP)"
 
 [workers.hermes_worker]
-provider = "hermes_cli"
-aliases  = ["hermes", "nous"]
-focus    = "open-source reasoning and autonomous coding specialist"
+provider = "opencode_cli"
+model    = "<provider>/<cheap-model>"
+aliases  = ["opencode", "bulk", "nous"]
+focus    = "high-throughput local/fast coding model: boilerplate, DB schemas, migrations, repetitive utilities"
 
 # Profiles registered with CAO (order = install order). Supervisor first.
 [profiles]

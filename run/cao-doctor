@@ -26,11 +26,6 @@ hdr()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
 SERVER_PORT="${CAO_SERVER_PORT:-9889}"
 
-# Load LOCAL_API_KEY (same search order as cao-run) without printing it.
-for ENV_FILE in "$HOME/.config/cao/cao.env" "$HOME/wcao/.env" "$HOME/cao-setup/.env"; do
-  if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE" 2>/dev/null; set +a; break; fi
-done
-
 # Resolve our own real location (through any symlink) so we can tell whether the
 # cao-* tools on PATH point back at this repo or are stale copies.
 SELF="${BASH_SOURCE[0]}"
@@ -38,6 +33,14 @@ while [ -L "$SELF" ]; do
   T="$(readlink "$SELF")"; case "$T" in /*) SELF="$T" ;; *) SELF="$(dirname "$SELF")/$T" ;; esac
 done
 RUN_DIR="$(cd "$(dirname "$SELF")" && pwd)"
+
+# Load LOCAL_API_KEY (same search order as cao-run) without printing it.
+for ENV_FILE in "$HOME/.config/cao/cao.env" "$RUN_DIR/../.env" "$PWD/.env" "$HOME/wcao/.env" "$HOME/cao-setup/.env"; do
+  if [ -f "$ENV_FILE" ]; then
+    set -a; . "$ENV_FILE" 2>/dev/null; set +a
+    [ -n "${LOCAL_API_KEY:-}" ] && break
+  fi
+done
 
 # --- D1: orchestrator toolchain ---------------------------------------------
 hdr "D1 — Orchestrator toolchain"
