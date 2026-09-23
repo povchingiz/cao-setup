@@ -32,6 +32,9 @@ while [ -L "$SELF" ]; do
 done
 HERE="$(cd "$(dirname "$SELF")" && pwd)"
 
+# shellcheck source=run/_cao_common.sh
+. "$HERE/_cao_common.sh"
+
 # Parse our own flags; collect the rest to pass through to `cao launch`.
 # --skip-check works in ANY position, not just first.
 SKIP_CHECK=0
@@ -60,19 +63,8 @@ fi
 
 # API key for the bulk worker's OpenAI-compatible endpoint.
 # opencode resolves {env:LOCAL_API_KEY} in ~/.aws/opencode/opencode.json at launch.
-# Look for LOCAL_API_KEY in the first env file that has it (portable across machines).
-for ENV_FILE in \
-  "$HOME/.config/cao/cao.env" \
-  "$HOME/wcao/.env" \
-  "$HOME/cao-setup/.env"; do
-  if [ -f "$ENV_FILE" ]; then
-    set -a
-    # shellcheck disable=SC1090
-    . "$ENV_FILE"
-    set +a
-    [ -n "${LOCAL_API_KEY:-}" ] && break
-  fi
-done
+# Resolution order lives in _cao_common.sh and is repo-location independent.
+cao_load_env "$HERE"
 
 # 1. Start the CAO daemon if it is not already listening.
 if ! nc -z 127.0.0.1 "$SERVER_PORT" >/dev/null 2>&1; then
