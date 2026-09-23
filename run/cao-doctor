@@ -2,17 +2,22 @@
 #
 # cao-doctor — pre-flight health check for the CAO orchestrator.
 # Verifies the environment is ready BEFORE you launch, so a worker doesn't fail
-# silently mid-task. Grouped into four dimensions (D1-D4). Exits non-zero if any
+# silently mid-task. Grouped into dimensions (D1-D8). Exits non-zero if any
 # REQUIRED check fails; warnings don't block.
 #
 # Run standalone (`cao-doctor`) or automatically at the top of `cao-run`.
+#   --deep   also launch a throwaway session end-to-end (D5). Slower, but it
+#            is the only check that proves a launch actually works - presence
+#            checks alone once reported "Ready" while every launch failed.
 # Exit code: 0 = ready, non-zero = a required check failed.
 #
 set -uo pipefail
 
+DEEP=0
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) awk 'NR>1{ if(/^#/){sub(/^# ?/,"");print} else if(NF){exit} }' "$0"; exit 0 ;;
+    --deep) DEEP=1 ;;
     *) echo "Unknown flag: $1. Run cao-doctor --help" >&2; exit 1 ;;
   esac
   shift
@@ -167,6 +172,106 @@ else
       000) bad "endpoint unreachable ($BASE_URL) — DNS/network/URL";;
       *) wrn "endpoint returned $code ($BASE_URL) — may still work";;
     esac
+  fi
+fi
+
+# --- D5: launch smoke test (--deep) -----------------------------------------
+# The check that would have caught the 2026-09-23 incident: every presence
+# check passed (15/1/0) while every real launch timed out. Presence is not
+# function, so actually create a session and tear it down.
+if [ "$DEEP" = 1 ]; then
+  hdr "D5 — Launch smoke test"
+  if ! curl -fsS -m 5 "http://127.0.0.1:$SERVER_PORT/health" -o /dev/null 2>/dev/null; then
+    wrn "daemon not running on :$SERVER_PORT — start it with cao-run, or skip --deep"
+  else
+    SMOKE="doctor-smoke-$$"
+    SMOKE_PROVIDER="${CAO_SUPERVISOR_PROVIDER:-claude_code}"
+    code="$(curl -s -o /tmp/cao-doctor-smoke.$$ -w '%{http_code}' -m 90 -X POST \
+      "http://127.0.0.1:$SERVER_PORT/sessions?agent_profile=code_supervisor&working_directory=$PWD&provider=$SMOKE_PROVIDER&session_name=$SMOKE&allowed_tools=%2A" 2>/dev/null)"
+    case "$code" in
+      200|201) ok "session launched end-to-end on '$SMOKE_PROVIDER' (HTTP $code)" ;;
+      000)     bad "session launch timed out — shell init likely stalled; see 'Patch integrity' below and wcao/audit/2026-09-23-session-launch-timeout.md" ;;
+      *)       bad "session launch failed (HTTP $code): $(head -c 200 /tmp/cao-doctor-smoke.$$ 2>/dev/null)" ;;
+    esac
+    # Always reap, whatever happened: a half-created session blocks the name.
+    curl -fsS -m 10 -X DELETE "http://127.0.0.1:$SERVER_PORT/sessions/$SMOKE" -o /dev/null 2>/dev/null || true
+    tmux kill-session -t "cao-$SMOKE" 2>/dev/null || true
+    rm -f /tmp/cao-doctor-smoke.$$
+  fi
+fi
+
+# --- D6: config / runtime drift ---------------------------------------------
+hdr "D6 — Config drift"
+LIVE_SUP="$HOME/.aws/cli-agent-orchestrator/agent_store/code_supervisor.md"
+CFG_FILE="$RUN_DIR/../2_configure/cao.config.local.toml"
+[ -f "$CFG_FILE" ] || CFG_FILE="$RUN_DIR/../2_configure/cao.config.toml"
+if [ ! -f "$LIVE_SUP" ]; then
+  wrn "no rendered supervisor in the live store — run ./3_apply/apply.sh"
+elif [ ! -f "$CFG_FILE" ]; then
+  wrn "no cao.config.toml found next to $RUN_DIR"
+else
+  # Every worker defined in the config must appear in the rendered routing
+  # table, and vice versa. Drift here means the supervisor is routing against
+  # a stale table - it once listed a worker that no longer existed.
+  DRIFT="$(python3 -c "
+import re, sys, tomllib
+cfg = tomllib.load(open(sys.argv[1], 'rb'))
+want = set(cfg.get('workers', {}))
+live = open(sys.argv[2]).read()
+m = re.search(r'AUTO-MAPPING START.*?-->(.*?)<!-- AUTO-MAPPING END', live, re.S)
+have = set(re.findall(r'-> .(\w+).', m.group(1))) if m else set()
+missing, extra = sorted(want - have), sorted(have - want)
+out = []
+if missing: out.append('not in the live table: ' + ', '.join(missing))
+if extra:   out.append('stale in the live table: ' + ', '.join(extra))
+print(' | '.join(out))
+" "$CFG_FILE" "$LIVE_SUP" 2>/dev/null)"
+  if [ -z "$DRIFT" ]; then
+    ok "live supervisor table matches $(basename "$CFG_FILE")"
+  else
+    wrn "config/runtime drift — $DRIFT (run ./3_apply/apply.sh)"
+  fi
+fi
+
+# --- D7: daemon environment -------------------------------------------------
+# opencode_cli resolves {env:LOCAL_API_KEY} inside the worker pane, which
+# inherits the DAEMON's environment - not this shell's. A daemon started by
+# hand has no key, and every opencode worker then fails auth with no clear
+# cause.
+hdr "D7 — Daemon environment"
+DAEMON_PID="$(pgrep -f 'cao-server' 2>/dev/null | head -1 || true)"
+if [ -z "$DAEMON_PID" ]; then
+  wrn "cao-server not running — cao-run starts it and passes LOCAL_API_KEY through"
+elif [ -z "${LOCAL_API_KEY:-}" ]; then
+  wrn "LOCAL_API_KEY unset here, so the running daemon likely lacks it too (opencode workers will fail auth)"
+else
+  # Best-effort: /proc on Linux, ps -E on macOS. Neither is guaranteed.
+  DAEMON_ENV=""
+  if [ -r "/proc/$DAEMON_PID/environ" ]; then
+    DAEMON_ENV="$(tr '\0' '\n' < "/proc/$DAEMON_PID/environ" 2>/dev/null | grep -c '^LOCAL_API_KEY=' || true)"
+  fi
+  if [ "${DAEMON_ENV:-0}" -gt 0 ] 2>/dev/null; then
+    ok "running daemon (pid $DAEMON_PID) has LOCAL_API_KEY"
+  elif [ -r "/proc/$DAEMON_PID/environ" ]; then
+    bad "running daemon (pid $DAEMON_PID) has no LOCAL_API_KEY — restart it via cao-run, or opencode workers will fail auth"
+  else
+    wrn "cannot read the daemon's env on this platform — if opencode workers fail auth, restart the daemon via cao-run"
+  fi
+fi
+
+# --- D8: patch integrity ----------------------------------------------------
+# `cao update` / reinstall rewrites site-packages and silently drops our
+# patches, reintroducing the bugs they fix.
+hdr "D8 — Patch integrity"
+CAO_UTILS="$(find "$HOME/.local/share/uv/tools/cli-agent-orchestrator" \
+  -path '*cli_agent_orchestrator/utils/terminal.py' 2>/dev/null | head -1)"
+if [ -z "$CAO_UTILS" ]; then
+  wrn "installed cli_agent_orchestrator not found — cannot verify patches"
+else
+  if grep -q '# wcao: pane fallback' "$CAO_UTILS" 2>/dev/null; then
+    ok "wait_for_shell pane-fallback patch present"
+  else
+    bad "wait_for_shell patch missing (erased by 'cao update'?) — re-run 1_install/patch_shell_wait.py or launches may time out"
   fi
 fi
 
