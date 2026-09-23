@@ -92,3 +92,6 @@ All AI agents operating in this repository MUST follow these rules:
 | Worker missing error | CLI engine not installed | Check `2_configure/cao.config.toml` and disable unneeded worker, then run `./3_apply/apply.sh` |
 | Rate limit / quota hit | Provider rate limits exhausted | Run `run/cao-limits`. CAO supervisor will auto-fallback to secondary provider |
 | Test tampering detected | Worker modified unit test assertions | AST anti-tampering hook halts execution; inspect `wcao/audit/weaknesses.md` |
+| Supervisor launch times out (~30s client / 60s server) | `cao update` erased the `wait_for_shell` patch, so shell readiness waits on a FIFO that never publishes | Run `run/cao-patch` (or `run/cao-doctor` D8). Re-run after every `cao update` / reinstall — `cao-run` now does this automatically. Background: `wcao/audit/2026-09-23-session-launch-timeout.md` |
+| `opencode` worker fails auth for no visible reason | The daemon was started by hand and inherited no `LOCAL_API_KEY`; worker panes inherit the daemon's env, not your shell's | Restart via `run/cao-run` (it passes the key through). `run/cao-doctor` D7 checks this |
+| Supervisor routes to the wrong worker | The live routing table drifted from the config | Run `./3_apply/apply.sh`. `run/cao-doctor` D6 detects the drift |

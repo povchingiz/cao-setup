@@ -80,9 +80,13 @@ def main() -> int:
         print(f"OK  already patched: {target}")
         return 0
     if OLD not in text:
+        # Neither our marker nor the original body: CAO changed upstream, or a
+        # previous patch was partially undone. Either way the fallback is NOT
+        # in place, so report failure - exiting 0 here would let cao-run's
+        # self-repair silently no-op and launches would time out again.
         print(f"WARN wait_for_shell body not found (CAO changed?): {target}", file=sys.stderr)
         print("     Inspect manually; shell-readiness may already read the pane.", file=sys.stderr)
-        return 0
+        return 2
 
     target.write_text(text.replace(OLD, NEW, 1), encoding="utf-8")
     print(f"OK  patched: {target}")

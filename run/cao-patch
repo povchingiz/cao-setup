@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# cao-patch — reapply the site-packages patches CAO needs.
+#
+# `cao update` and any reinstall rewrite site-packages, silently dropping
+# these patches and reintroducing the bugs they fix (most visibly: supervisor
+# launches that time out after 60s). Every patch script is idempotent, so this
+# is safe to run at any time and cheap when nothing needs doing.
+#
+#   cao-patch            apply anything missing
+#   cao-patch --check    report status only, change nothing (exit 1 if a patch
+#                        is missing) - this is what cao-run uses
+#
+set -uo pipefail
+
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+  T="$(readlink "$SELF")"; case "$T" in /*) SELF="$T" ;; *) SELF="$(dirname "$SELF")/$T" ;; esac
+done
+RUN_DIR="$(cd "$(dirname "$SELF")" && pwd)"
+INSTALL_DIR="$RUN_DIR/../1_install"
+
+CHECK_ONLY=0
+[ "${1:-}" = "--check" ] && CHECK_ONLY=1
+[ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] && {
+  awk 'NR>1{ if(/^#/){sub(/^# ?/,"");print} else if(NF){exit} }' "$0"; exit 0
+}
+
+# marker|relative_path|patch_script — the marker each patch leaves behind, the
+# installed file it lives in, and the script that (re)applies it. Pipe-
+# delimited because the markers themselves contain colons.
+PATCHES=(
+  "# wcao: pane fallback|cli_agent_orchestrator/utils/terminal.py|patch_shell_wait.py"
+)
+
+missing=0
+failed=0
+for entry in "${PATCHES[@]}"; do
+  marker="${entry%%|*}"
+  rest="${entry#*|}"
+  relpath="${rest%%|*}"
+  script="${rest#*|}"
+
+  target="$(find "$HOME/.local/share/uv/tools/cli-agent-orchestrator" \
+    -path "*$relpath" 2>/dev/null | head -1)"
+
+  if [ -z "$target" ]; then
+    echo "  ? $relpath not found — is cli-agent-orchestrator installed?" >&2
+    continue
+  fi
+
+  if grep -q "$marker" "$target" 2>/dev/null; then
+    [ "$CHECK_ONLY" = 1 ] || echo "  ok  $script (already applied)"
+    continue
+  fi
+
+  missing=$((missing + 1))
+  if [ "$CHECK_ONLY" = 1 ]; then
+    echo "  !! $script is MISSING (erased by 'cao update'?)" >&2
+  else
+    echo "  -> reapplying $script"
+    if ! python3 "$INSTALL_DIR/$script"; then
+      echo "  !! $script could not be applied — inspect $target manually" >&2
+      failed=$((failed + 1))
+    fi
+  fi
+done
+
+if [ "$CHECK_ONLY" = 1 ] && [ "$missing" -gt 0 ]; then
+  echo "  Run 'cao-patch' to reapply." >&2
+  exit 1
+fi
+[ "$failed" -gt 0 ] && exit 1
+exit 0

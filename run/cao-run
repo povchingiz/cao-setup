@@ -61,6 +61,13 @@ if [ "$SKIP_CHECK" = 0 ] && [ -x "$HERE/cao-doctor" ]; then
   "$HERE/cao-doctor" || { echo "Pre-flight failed. Fix the above or re-run with --skip-check."; exit 1; }
 fi
 
+# `cao update` silently drops our site-packages patches, and the first symptom
+# is a 60s launch timeout. Cheap marker check; reapply only when one is gone.
+if [ -x "$HERE/cao-patch" ] && ! "$HERE/cao-patch" --check >/dev/null 2>&1; then
+  echo "⚡ Reapplying CAO patches (lost to a 'cao update'?)..."
+  "$HERE/cao-patch" || true
+fi
+
 # API key for the bulk worker's OpenAI-compatible endpoint.
 # opencode resolves {env:LOCAL_API_KEY} in ~/.aws/opencode/opencode.json at launch.
 # Resolution order lives in _cao_common.sh and is repo-location independent.
